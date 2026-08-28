@@ -578,6 +578,18 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
+    // Handle Alt+Tab for panel toggle
+    if key.modifiers.contains(KeyModifiers::ALT) && key.code == KeyCode::Tab {
+        app.active_panel.toggle();
+        app.sidebar_actions_selected = None;
+        app.sidebar_objects_selected = None;
+        app.set_message(match app.active_panel {
+            ActivePanel::Canvas => "Canvas mode",
+            ActivePanel::Sidebar => "Sidebar mode",
+        });
+        return;
+    }
+    
     // Handle special actions (Shift+Enter when supported)
     if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
         if app.active_panel == ActivePanel::Sidebar && app.sidebar_section == SidebarSection::Objects {
@@ -690,7 +702,7 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
             }
         }
         
-        // Field selection / Section switching
+        // Field navigation with Tab/Shift+Tab
         KeyCode::Tab => {
             if app.active_panel == ActivePanel::Canvas {
                 app.editor.select_next_field();
@@ -709,15 +721,14 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                 });
             }
         }
-        // Toggle between Canvas and Sidebar navigation
         KeyCode::BackTab => {
-            app.active_panel.toggle();
-            app.sidebar_actions_selected = None;
-            app.sidebar_objects_selected = None;
-            app.set_message(match app.active_panel {
-                ActivePanel::Canvas => "Canvas mode",
-                ActivePanel::Sidebar => "Sidebar mode",
-            });
+            if app.active_panel == ActivePanel::Canvas {
+                app.editor.select_prev_field();
+                if let Some(idx) = app.editor.selected_field {
+                    let field = &app.editor.map.fields[idx];
+                    app.editor.cursor_pos = field.pos;
+                }
+            }
         }
         
         // Execute selected sidebar action or insert object
@@ -1667,8 +1678,9 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     
     // Help hints
     lines.push(Line::from(""));
-    lines.push(Line::from("Shift+Tab: Toggle Canvas/Sidebar".dim()));
-    lines.push(Line::from("Tab: Switch Actions/Objects".dim()));
+    lines.push(Line::from("Alt+Tab: Toggle Canvas/Sidebar".dim()));
+    lines.push(Line::from("Tab: Next field / Switch section".dim()));
+    lines.push(Line::from("Shift+Tab: Previous field".dim()));
     
     let text = Text::from(lines);
     let paragraph = Paragraph::new(text)
