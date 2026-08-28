@@ -195,6 +195,7 @@ enum SidebarAction {
     Attributes,
     AddField,
     AddLongField,
+    PreviewBms,
 }
 
 impl SidebarAction {
@@ -208,6 +209,7 @@ impl SidebarAction {
             SidebarAction::Attributes,
             SidebarAction::AddField,
             SidebarAction::AddLongField,
+            SidebarAction::PreviewBms,
         ]
     }
 
@@ -221,6 +223,7 @@ impl SidebarAction {
             SidebarAction::Attributes => "t: Attrs",
             SidebarAction::AddField => "a: Add field",
             SidebarAction::AddLongField => "A: Add long",
+            SidebarAction::PreviewBms => "p: Preview BMS",
         }
     }
 
@@ -235,6 +238,7 @@ impl SidebarAction {
             't' => Some(SidebarAction::Attributes),
             'a' => Some(SidebarAction::AddField),
             'A' => Some(SidebarAction::AddLongField),
+            'p' => Some(SidebarAction::PreviewBms),
             _ => None,
         }
     }
@@ -371,6 +375,8 @@ struct App {
     sidebar_section: SidebarSection,
     sidebar_actions_selected: Option<usize>,
     sidebar_objects_selected: Option<usize>,
+    // Affichage canvas: grid ou text BMS
+    show_bms_text: bool,
     // Pour le mode properties
     property_index: usize,
     // Pour le mode insert position
@@ -411,6 +417,7 @@ impl App {
             sidebar_section: SidebarSection::Actions,
             sidebar_actions_selected: None,
             sidebar_objects_selected: None,
+            show_bms_text: false,
             property_index: 0,
             pending_object: None,
             pending_position: (0, 0),
@@ -757,6 +764,14 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                                     SidebarAction::AddLongField => {
                                         app.editor.add_field_at_cursor(20);
                                         app.set_message("Added long field");
+                                    }
+                                    SidebarAction::PreviewBms => {
+                                        app.show_bms_text = !app.show_bms_text;
+                                        app.set_message(if app.show_bms_text {
+                                            "BMS text preview ON"
+                                        } else {
+                                            "BMS text preview OFF"
+                                        });
                                     }
                                 }
                             }
@@ -1338,15 +1353,19 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
         .border_style(Style::default().fg(border_color));
     f.render_widget(canvas_block, canvas_area);
     
-    // Render grid
-    let grid_area = Rect {
+    // Render content based on mode
+    let content_area = Rect {
         x: canvas_area.x + 1,
         y: canvas_area.y + 1,
         width: canvas_area.width.saturating_sub(2),
         height: canvas_area.height.saturating_sub(2),
     };
     
-    render_bms_grid(f, app, grid_area);
+    if app.show_bms_text {
+        render_bms_text_preview(f, app, content_area);
+    } else {
+        render_bms_grid(f, app, content_area);
+    }
 }
 
 fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
@@ -1433,6 +1452,19 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
         //     .range(0, map.size.0.saturating_sub(visible_rows as u16));
         // f.render_widget(scrollbar, area);
     }
+}
+
+fn render_bms_text_preview(f: &mut Frame, app: &App, area: Rect) {
+    // Generate BMS text
+    let bms_text = render_bms_text(&app.editor.map);
+    
+    // Create a scrollable text paragraph
+    let text = Text::from(bms_text);
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::NONE))
+        .scroll((app.scroll as u16, 0));
+    
+    f.render_widget(paragraph, area);
 }
 
 fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
