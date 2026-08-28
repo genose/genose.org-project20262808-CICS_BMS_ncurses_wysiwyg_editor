@@ -568,15 +568,10 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
-    // Debug: Detect Shift+Enter globally
-    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
-        app.set_message("DEBUG: Shift+Enter detected in Edit mode!");
-    }
-    
-    // Handle Shift+Enter for special actions
+    // Handle special actions (Shift+Enter when supported)
     if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
         if app.active_panel == ActivePanel::Sidebar && app.sidebar_section == SidebarSection::Objects {
-            // Shift+Enter in Objects sidebar: insert object at cursor position directly
+            // Direct insert in Objects sidebar (Shift+Enter when supported)
             if let Some(selected_idx) = app.sidebar_objects_selected {
                 let objects = InsertableObject::all();
                 if selected_idx < objects.len() {
@@ -586,7 +581,7 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                     app.set_message(&format!("Inserted {}", obj.display()));
                 }
             }
-            // Also handle pending object (from Enter then Shift+Enter)
+            // Also handle pending object (from Enter then confirmation)
             if let Some(obj) = app.pending_object.take() {
                 if let Some(pos_idx) = app.sidebar_objects_selected {
                     let objects = InsertableObject::all();
@@ -598,13 +593,13 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                 }
             }
         } else if app.active_panel == ActivePanel::Canvas {
-            // Shift+Enter on selected field in Canvas: open EditProperties
+            // Open EditProperties on selected field in Canvas
             if let Some(idx) = app.editor.selected_field {
                 let field = app.editor.map.fields[idx].clone();
                 app.edit_properties_field = Some(field);
                 app.edit_properties_index = 0;
                 app.mode = AppMode::EditProperties;
-                app.set_message("Edit properties - Shift+Enter to save");
+                app.set_message("Edit properties - Enter to save");
             }
         }
         return;
@@ -790,7 +785,7 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                                 app.pending_object = Some(obj);
                                 app.pending_position = app.editor.cursor_pos;
                                 app.mode = AppMode::InsertPosition;
-                                app.set_message("Set position with arrows, Shift+Enter to confirm");
+                                app.set_message("Set position with arrows, Enter to confirm");
                             }
                         }
                     }
@@ -978,40 +973,31 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
-    // Debug: Detect Shift+Enter in InsertPosition mode
-    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
-        app.set_message("DEBUG: Shift+Enter detected in InsertPosition mode that my shift-enter !!");
-    }
-    
-    // Handle Enter (Shift+Enter or regular Enter) for confirmation
+    // Handle Enter for confirmation (terminal doesn't support Shift+Enter detection)
     if key.code == KeyCode::Enter {
-        // For now, accept both Shift+Enter and regular Enter
-        let allow_regular_enter = true;
-        if allow_regular_enter || key.modifiers.contains(KeyModifiers::SHIFT) {
-            let obj = if let Some(obj) = app.pending_object.take() {
-                Some(obj)
-            } else if app.active_panel == ActivePanel::Sidebar {
-                // Fallback: try to get object from sidebar selection
-                app.sidebar_objects_selected.and_then(|idx| {
-                    InsertableObject::all().get(idx).cloned()
-                })
-            } else {
-                None
-            };
-            
-            if let Some(obj) = obj {
-                let field = obj.create_field(app.pending_position);
-                app.editor.map.fields.push(field);
-                app.mode = AppMode::Edit;
-                app.pending_object = None;
-                app.sidebar_objects_selected = None;
-                app.active_panel = ActivePanel::Canvas;
-                app.set_message(&format!("Inserted {}", obj.display()));
-            } else {
-                app.set_message("No object selected!");
-            }
-            return;
+        let obj = if let Some(obj) = app.pending_object.take() {
+            Some(obj)
+        } else if app.active_panel == ActivePanel::Sidebar {
+            // Fallback: try to get object from sidebar selection
+            app.sidebar_objects_selected.and_then(|idx| {
+                InsertableObject::all().get(idx).cloned()
+            })
+        } else {
+            None
+        };
+        
+        if let Some(obj) = obj {
+            let field = obj.create_field(app.pending_position);
+            app.editor.map.fields.push(field);
+            app.mode = AppMode::Edit;
+            app.pending_object = None;
+            app.sidebar_objects_selected = None;
+            app.active_panel = ActivePanel::Canvas;
+            app.set_message(&format!("Inserted {}", obj.display()));
+        } else {
+            app.set_message("No object selected!");
         }
+        return;
     }
     
     match key.code {
@@ -1041,8 +1027,8 @@ fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
-    // Handle Shift+Enter for saving
-    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
+    // Handle Enter for saving
+    if key.code == KeyCode::Enter {
         if let Some(field) = app.edit_properties_field.take() {
             if let Some(idx) = app.editor.selected_field {
                 app.editor.map.fields[idx] = field;
@@ -1670,7 +1656,7 @@ fn render_insert_position_dialog(f: &mut Frame, app: &App, area: Rect) {
         Line::from(format!("  Col: {}", col)),
         Line::from(""),
         Line::from("Arrows: Move".dim()),
-        Line::from("Shift+Enter: Confirm".dim()),
+        Line::from("Enter: Confirm".dim()),
         Line::from("Esc: Cancel".dim()),
     ];
     
@@ -1718,7 +1704,7 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
             Line::from(""),
             Line::from("Up/Down: Navigate".dim()),
             Line::from(r#"+/- : Modify"#.dim()),
-            Line::from("Shift+Enter: Save".dim()),
+            Line::from("Enter: Save".dim()),
             Line::from("Esc: Cancel".dim()),
         ];
         
