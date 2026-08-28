@@ -568,6 +568,11 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
+    // Debug: Detect Shift+Enter globally
+    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
+        app.set_message("DEBUG: Shift+Enter detected in Edit mode!");
+    }
+    
     // Handle Shift+Enter for special actions
     if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
         if app.active_panel == ActivePanel::Sidebar && app.sidebar_section == SidebarSection::Objects {
@@ -973,6 +978,11 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
+    // Debug: Detect Shift+Enter in InsertPosition mode
+    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
+        app.set_message("DEBUG: Shift+Enter detected in InsertPosition mode that my shift-enter !!");
+    }
+    
     // Handle Enter (Shift+Enter or regular Enter) for confirmation
     if key.code == KeyCode::Enter {
         // For now, accept both Shift+Enter and regular Enter
