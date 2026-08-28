@@ -36,7 +36,7 @@ use std::{
 
 use cobol_bms_core::{
     parse_bms_file, generate_cobol, render_bms_text, FieldType, FieldAttribute,
-    BmsEditor, EditorMode, CursorDirection, ResizeDirection, create_default_map,
+    BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection, create_default_map,
 };
 use cobol_bms_core::model::Color as BmsColor;
 
@@ -236,6 +236,121 @@ impl SidebarAction {
     }
 }
 
+/// Types d'objets insérables dans le Canvas
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InsertableObject {
+    AlphanumericField,
+    NumericField,
+    DateField,
+    TimeField,
+    BooleanField,
+    Literal,
+    ProtectedLiteral,
+    Group,
+    Line,
+    Box,
+}
+
+impl InsertableObject {
+    pub fn all() -> &'static [InsertableObject] {
+        &[
+            InsertableObject::AlphanumericField,
+            InsertableObject::NumericField,
+            InsertableObject::DateField,
+            InsertableObject::TimeField,
+            InsertableObject::BooleanField,
+            InsertableObject::Literal,
+            InsertableObject::ProtectedLiteral,
+            InsertableObject::Group,
+            InsertableObject::Line,
+            InsertableObject::Box,
+        ]
+    }
+
+    pub fn display(&self) -> &'static str {
+        match self {
+            InsertableObject::AlphanumericField => "Alphanumeric Field",
+            InsertableObject::NumericField => "Numeric Field",
+            InsertableObject::DateField => "Date Field",
+            InsertableObject::TimeField => "Time Field",
+            InsertableObject::BooleanField => "Boolean Field",
+            InsertableObject::Literal => "Literal",
+            InsertableObject::ProtectedLiteral => "Protected Literal",
+            InsertableObject::Group => "Group",
+            InsertableObject::Line => "Horizontal Line",
+            InsertableObject::Box => "Box",
+        }
+    }
+
+    pub fn create_field(&self, pos: (u16, u16)) -> BmsField {
+        let mut field = BmsField::default();
+        field.pos = pos;
+        field.length = match self {
+            InsertableObject::AlphanumericField => 20,
+            InsertableObject::NumericField => 10,
+            InsertableObject::DateField => 8,
+            InsertableObject::TimeField => 6,
+            InsertableObject::BooleanField => 1,
+            InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
+            InsertableObject::Group => 1,
+            InsertableObject::Line | InsertableObject::Box => 40,
+        };
+        field.name = match self {
+            InsertableObject::AlphanumericField => "ALNUM_FIELD".to_string(),
+            InsertableObject::NumericField => "NUM_FIELD".to_string(),
+            InsertableObject::DateField => "DATE_FIELD".to_string(),
+            InsertableObject::TimeField => "TIME_FIELD".to_string(),
+            InsertableObject::BooleanField => "BOOL_FIELD".to_string(),
+            InsertableObject::Literal => "LITERAL".to_string(),
+            InsertableObject::ProtectedLiteral => "PROT_LITERAL".to_string(),
+            InsertableObject::Group => "GROUP".to_string(),
+            InsertableObject::Line => "HLINE".to_string(),
+            InsertableObject::Box => "BOX".to_string(),
+        };
+        field.field_type = FieldType::Field;
+        field.attrb = match self {
+            InsertableObject::ProtectedLiteral => vec![FieldAttribute::Prot],
+            InsertableObject::NumericField => vec![FieldAttribute::Num],
+            InsertableObject::DateField => vec![FieldAttribute::Date],
+            InsertableObject::TimeField => vec![FieldAttribute::Time],
+            InsertableObject::BooleanField => vec![FieldAttribute::Bool],
+            _ => vec![FieldAttribute::Norm],
+        };
+        field.pic = match self {
+            InsertableObject::NumericField => Some("9(10)".to_string()),
+            InsertableObject::DateField => Some("X(8)".to_string()),
+            InsertableObject::TimeField => Some("X(6)".to_string()),
+            InsertableObject::BooleanField => Some("X(1)".to_string()),
+            _ => None,
+        };
+        field
+    }
+}
+
+/// Section de la sidebar active
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SidebarSection {
+    Actions,
+    Objects,
+}
+
+impl SidebarSection {
+    fn next(&self) -> Self {
+        match self {
+            SidebarSection::Actions => SidebarSection::Objects,
+            SidebarSection::Objects => SidebarSection::Actions,
+        }
+    }
+
+    #[allow(dead_code)]
+    fn previous(&self) -> Self {
+        match self {
+            SidebarSection::Actions => SidebarSection::Objects,
+            SidebarSection::Objects => SidebarSection::Actions,
+        }
+    }
+}
+
 /// Etat de l'application
 #[derive(Debug)]
 struct App {
@@ -249,7 +364,9 @@ struct App {
     // Panel actif pour la navigation
     active_panel: ActivePanel,
     // Navigation sidebar
-    sidebar_selected: Option<usize>,
+    sidebar_section: SidebarSection,
+    sidebar_actions_selected: Option<usize>,
+    sidebar_objects_selected: Option<usize>,
     // Pour le mode properties
     property_index: usize,
     // Pour le mode color picker
@@ -281,7 +398,9 @@ impl App {
             message_timeout: None,
             exit: false,
             active_panel: ActivePanel::Canvas,
-            sidebar_selected: None,
+            sidebar_section: SidebarSection::Actions,
+            sidebar_actions_selected: None,
+            sidebar_objects_selected: None,
             property_index: 0,
             selected_color: None,
             selected_attribute: None,
@@ -434,12 +553,25 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                 app.editor.select_field_at(app.editor.cursor_pos);
             } else {
                 // Sidebar navigation
-                let actions = SidebarAction::all();
-                if let Some(current) = app.sidebar_selected {
-                    let next = (current + 1).min(actions.len().saturating_sub(1));
-                    app.sidebar_selected = Some(next);
-                } else if !actions.is_empty() {
-                    app.sidebar_selected = Some(0);
+                match app.sidebar_section {
+                    SidebarSection::Actions => {
+                        let actions = SidebarAction::all();
+                        if let Some(current) = app.sidebar_actions_selected {
+                            let next = (current + 1).min(actions.len().saturating_sub(1));
+                            app.sidebar_actions_selected = Some(next);
+                        } else if !actions.is_empty() {
+                            app.sidebar_actions_selected = Some(0);
+                        }
+                    }
+                    SidebarSection::Objects => {
+                        let objects = InsertableObject::all();
+                        if let Some(current) = app.sidebar_objects_selected {
+                            let next = (current + 1).min(objects.len().saturating_sub(1));
+                            app.sidebar_objects_selected = Some(next);
+                        } else if !objects.is_empty() {
+                            app.sidebar_objects_selected = Some(0);
+                        }
+                    }
                 }
             }
         }
@@ -449,13 +581,28 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                 app.editor.select_field_at(app.editor.cursor_pos);
             } else {
                 // Sidebar navigation
-                if let Some(current) = app.sidebar_selected {
-                    let prev = current.saturating_sub(1);
-                    app.sidebar_selected = if prev > 0 || current == 0 { Some(prev) } else { None };
-                } else {
-                    let actions = SidebarAction::all();
-                    if !actions.is_empty() {
-                        app.sidebar_selected = Some(actions.len() - 1);
+                match app.sidebar_section {
+                    SidebarSection::Actions => {
+                        if let Some(current) = app.sidebar_actions_selected {
+                            let prev = current.saturating_sub(1);
+                            app.sidebar_actions_selected = if prev > 0 || current == 0 { Some(prev) } else { None };
+                        } else {
+                            let actions = SidebarAction::all();
+                            if !actions.is_empty() {
+                                app.sidebar_actions_selected = Some(actions.len() - 1);
+                            }
+                        }
+                    }
+                    SidebarSection::Objects => {
+                        if let Some(current) = app.sidebar_objects_selected {
+                            let prev = current.saturating_sub(1);
+                            app.sidebar_objects_selected = if prev > 0 || current == 0 { Some(prev) } else { None };
+                        } else {
+                            let objects = InsertableObject::all();
+                            if !objects.is_empty() {
+                                app.sidebar_objects_selected = Some(objects.len() - 1);
+                            }
+                        }
                     }
                 }
             }
@@ -473,7 +620,7 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
             }
         }
         
-        // Field selection
+        // Field selection / Section switching
         KeyCode::Tab => {
             if app.active_panel == ActivePanel::Canvas {
                 app.editor.select_next_field();
@@ -481,70 +628,95 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                     let field = &app.editor.map.fields[idx];
                     app.editor.cursor_pos = field.pos;
                 }
+            } else {
+                // Toggle between Actions and Objects sections in Sidebar
+                app.sidebar_section = app.sidebar_section.next();
+                app.sidebar_actions_selected = None;
+                app.sidebar_objects_selected = None;
+                app.set_message(match app.sidebar_section {
+                    SidebarSection::Actions => "Actions section",
+                    SidebarSection::Objects => "Objects section",
+                });
             }
         }
         // Toggle between Canvas and Sidebar navigation
         KeyCode::BackTab => {
             app.active_panel.toggle();
-            app.sidebar_selected = None;
+            app.sidebar_actions_selected = None;
+            app.sidebar_objects_selected = None;
             app.set_message(match app.active_panel {
                 ActivePanel::Canvas => "Canvas mode",
                 ActivePanel::Sidebar => "Sidebar mode",
             });
         }
         
-        // Execute selected sidebar action
+        // Execute selected sidebar action or insert object
         KeyCode::Enter => {
             if app.active_panel == ActivePanel::Sidebar {
-                if let Some(selected_idx) = app.sidebar_selected {
-                    let actions = SidebarAction::all();
-                    if selected_idx < actions.len() {
-                        match actions[selected_idx] {
-                            SidebarAction::Edit => {
-                                if app.editor.selected_field.is_some() {
-                                    app.mode = AppMode::Properties;
-                                    app.property_index = 0;
+                match app.sidebar_section {
+                    SidebarSection::Actions => {
+                        if let Some(selected_idx) = app.sidebar_actions_selected {
+                            let actions = SidebarAction::all();
+                            if selected_idx < actions.len() {
+                                match actions[selected_idx] {
+                                    SidebarAction::Edit => {
+                                        if app.editor.selected_field.is_some() {
+                                            app.mode = AppMode::Properties;
+                                            app.property_index = 0;
+                                        }
+                                    }
+                                    SidebarAction::Delete => {
+                                        if app.editor.selected_field.is_some() {
+                                            app.mode = AppMode::Confirm;
+                                            app.confirm_action = ConfirmAction::DeleteField;
+                                        }
+                                    }
+                                    SidebarAction::Move => {
+                                        if let Some(idx) = app.editor.selected_field {
+                                            app.editor.drag_start = Some(app.editor.map.fields[idx].pos);
+                                            app.editor.mode = EditorMode::MoveField;
+                                            app.set_message("Move field - arrows to move, Enter to drop");
+                                        }
+                                    }
+                                    SidebarAction::Resize => {
+                                        if let Some(idx) = app.editor.selected_field {
+                                            app.editor.drag_start = Some((app.editor.map.fields[idx].pos.0, app.editor.map.fields[idx].pos.1 + app.editor.map.fields[idx].length - 1));
+                                            app.editor.mode = EditorMode::ResizeField { direction: ResizeDirection::Right };
+                                            app.set_message("Resize field - Left/Right to resize");
+                                        }
+                                    }
+                                    SidebarAction::Color => {
+                                        if app.editor.selected_field.is_some() {
+                                            app.mode = AppMode::ColorPicker;
+                                            app.selected_color = None;
+                                        }
+                                    }
+                                    SidebarAction::Attributes => {
+                                        if app.editor.selected_field.is_some() {
+                                            app.mode = AppMode::AttributePicker;
+                                            app.selected_attribute = None;
+                                        }
+                                    }
+                                    SidebarAction::AddField => {
+                                        app.editor.add_field_at_cursor(10);
+                                        app.set_message("Added field");
+                                    }
+                                    SidebarAction::AddLongField => {
+                                        app.editor.add_field_at_cursor(20);
+                                        app.set_message("Added long field");
+                                    }
                                 }
                             }
-                            SidebarAction::Delete => {
-                                if app.editor.selected_field.is_some() {
-                                    app.mode = AppMode::Confirm;
-                                    app.confirm_action = ConfirmAction::DeleteField;
-                                }
-                            }
-                            SidebarAction::Move => {
-                                if let Some(idx) = app.editor.selected_field {
-                                    app.editor.drag_start = Some(app.editor.map.fields[idx].pos);
-                                    app.editor.mode = EditorMode::MoveField;
-                                    app.set_message("Move field - arrows to move, Enter to drop");
-                                }
-                            }
-                            SidebarAction::Resize => {
-                                if let Some(idx) = app.editor.selected_field {
-                                    app.editor.drag_start = Some((app.editor.map.fields[idx].pos.0, app.editor.map.fields[idx].pos.1 + app.editor.map.fields[idx].length - 1));
-                                    app.editor.mode = EditorMode::ResizeField { direction: ResizeDirection::Right };
-                                    app.set_message("Resize field - Left/Right to resize");
-                                }
-                            }
-                            SidebarAction::Color => {
-                                if app.editor.selected_field.is_some() {
-                                    app.mode = AppMode::ColorPicker;
-                                    app.selected_color = None;
-                                }
-                            }
-                            SidebarAction::Attributes => {
-                                if app.editor.selected_field.is_some() {
-                                    app.mode = AppMode::AttributePicker;
-                                    app.selected_attribute = None;
-                                }
-                            }
-                            SidebarAction::AddField => {
-                                app.editor.add_field_at_cursor(10);
-                                app.set_message("Added field");
-                            }
-                            SidebarAction::AddLongField => {
-                                app.editor.add_field_at_cursor(20);
-                                app.set_message("Added long field");
+                        }
+                    }
+                    SidebarSection::Objects => {
+                        if let Some(selected_idx) = app.sidebar_objects_selected {
+                            let objects = InsertableObject::all();
+                            if selected_idx < objects.len() {
+                                let obj = objects[selected_idx];
+                                let field = obj.create_field(app.editor.cursor_pos);
+                                app.editor.map.fields.push(field);
+                                app.set_message(&format!("Inserted {}", obj.display()));
                             }
                         }
                     }
@@ -1109,27 +1281,51 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
         lines.push(Line::from(""));
     }
     
-    lines.push(Line::from(" Actions: "));
+    // Section title based on active section
+    let section_title = match app.sidebar_section {
+        SidebarSection::Actions => "> Actions ",
+        SidebarSection::Objects => "> Objects ",
+    };
+    lines.push(Line::from(section_title));
+    lines.push(Line::from(""));
     
-    // Render sidebar actions with selection highlight
-    let actions = SidebarAction::all();
-    for (i, action) in actions.iter().enumerate() {
-        let display_text = action.display();
-        let style = if app.active_panel == ActivePanel::Sidebar && app.sidebar_selected == Some(i) {
-            Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
-        } else {
-            Style::default().fg(TuiColor::White)
-        };
-        lines.push(Line::from(Span::styled(display_text, style)));
-    }
-    
-    // Additional actions not in SidebarAction enum
-    if app.editor.selected_field.is_none() {
-        lines.push(Line::from(""));
-        lines.push(Line::from("n: New map"));
-        lines.push(Line::from("N: Template"));
-        lines.push(Line::from("v: Paste"));
-        lines.push(Line::from("g: Gen COBOL"));
+    // Render appropriate section
+    match app.sidebar_section {
+        SidebarSection::Actions => {
+            // Render sidebar actions with selection highlight
+            let actions = SidebarAction::all();
+            for (i, action) in actions.iter().enumerate() {
+                let display_text = action.display();
+                let style = if app.active_panel == ActivePanel::Sidebar && app.sidebar_actions_selected == Some(i) {
+                    Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
+                } else {
+                    Style::default().fg(TuiColor::White)
+                };
+                lines.push(Line::from(Span::styled(display_text, style)));
+            }
+            
+            // Additional actions not in SidebarAction enum
+            if app.editor.selected_field.is_none() {
+                lines.push(Line::from(""));
+                lines.push(Line::from("n: New map"));
+                lines.push(Line::from("N: Template"));
+                lines.push(Line::from("v: Paste"));
+                lines.push(Line::from("g: Gen COBOL"));
+            }
+        }
+        SidebarSection::Objects => {
+            // Render insertable objects with selection highlight
+            let objects = InsertableObject::all();
+            for (i, obj) in objects.iter().enumerate() {
+                let display_text = obj.display();
+                let style = if app.active_panel == ActivePanel::Sidebar && app.sidebar_objects_selected == Some(i) {
+                    Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
+                } else {
+                    Style::default().fg(TuiColor::White)
+                };
+                lines.push(Line::from(Span::styled(display_text, style)));
+            }
+        }
     }
     
     let text = Text::from(lines);
