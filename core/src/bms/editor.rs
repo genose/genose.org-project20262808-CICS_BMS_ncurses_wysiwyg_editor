@@ -226,7 +226,7 @@ impl BmsEditor {
         }
         
         self.selected_field = Some(
-            (self.selected_field.map_or(0, |i| (i + 1) % self.map.fields.len()))
+            self.selected_field.map_or(0, |i| (i + 1) % self.map.fields.len())
         );
     }
     
@@ -389,7 +389,7 @@ impl BmsEditor {
     pub fn undo(&mut self) {
         if let Some(op) = self.history.undo() {
             match op {
-                EditOperation::AddField { field, index } => {
+                EditOperation::AddField { field: _, index } => {
                     if index < self.map.fields.len() {
                         self.map.fields.remove(index);
                     }
@@ -399,27 +399,27 @@ impl BmsEditor {
                     self.map.fields.insert(index, field);
                     self.selected_field = Some(index);
                 }
-                EditOperation::ModifyField { old_field, new_field, index } => {
+                EditOperation::ModifyField { old_field, new_field: _, index } => {
                     if index < self.map.fields.len() {
                         self.map.fields[index] = old_field;
                     }
                 }
-                EditOperation::MoveField { field_index, old_pos, new_pos } => {
+                EditOperation::MoveField { field_index, old_pos, new_pos: _ } => {
                     if field_index < self.map.fields.len() {
                         self.map.fields[field_index].pos = old_pos;
                     }
                 }
-                EditOperation::ResizeField { field_index, old_length, new_length } => {
+                EditOperation::ResizeField { field_index, old_length, new_length: _ } => {
                     if field_index < self.map.fields.len() {
                         self.map.fields[field_index].length = old_length;
                     }
                 }
-                EditOperation::ChangeColor { field_index, old_color, new_color } => {
+                EditOperation::ChangeColor { field_index, old_color, new_color: _ } => {
                     if field_index < self.map.fields.len() {
                         self.map.fields[field_index].color = old_color;
                     }
                 }
-                EditOperation::ChangeAttributes { field_index, old_attrs, new_attrs } => {
+                EditOperation::ChangeAttributes { field_index, old_attrs, new_attrs: _ } => {
                     if field_index < self.map.fields.len() {
                         self.map.fields[field_index].attrb = old_attrs;
                     }

@@ -20,7 +20,7 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     Terminal,
-    widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation},
+    widgets::{Block, Borders, Paragraph},
     layout::{Constraint, Direction, Layout, Rect},
     style::{Style, Stylize},
     text::{Line, Span, Text},
@@ -29,13 +29,13 @@ use ratatui::{
 use ratatui::style::Color as TuiColor;
 use std::{
     fs,
-    io::{self, stdout, Write},
+    io::stdout,
     path::PathBuf,
     time::Duration,
 };
 
 use cobol_bms_core::{
-    parse_bms_file, generate_cobol, render_bms_text, BmsMap, BmsField, FieldType, FieldAttribute,
+    parse_bms_file, generate_cobol, render_bms_text, FieldType, FieldAttribute,
     BmsEditor, EditorMode, CursorDirection, ResizeDirection, create_default_map,
 };
 use cobol_bms_core::model::Color as BmsColor;
@@ -187,6 +187,7 @@ struct App {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 enum ConfirmAction {
     QuitWithoutSave,
     DeleteField,
@@ -214,7 +215,7 @@ impl App {
     fn is_modified(&self) -> bool {
         self.current_file.is_none() || 
         (self.current_file.as_ref().and_then(|p| {
-            fs::read_to_string(p).ok().and_then(|content| {
+            fs::read_to_string(p).ok().and_then(|_| {
                 parse_bms_file(p.to_str().unwrap()).ok()
             })
         }).map_or(true, |original| original != self.editor.map))
@@ -252,7 +253,7 @@ impl App {
 }
 
 /// Execution de l'editeur
-fn run_editor(mut editor: BmsEditor) -> Result<()> {
+fn run_editor(editor: BmsEditor) -> Result<()> {
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = stdout();
@@ -569,7 +570,7 @@ fn handle_color_picker_mode(app: &mut App, key: event::KeyEvent) {
         }
         KeyCode::Enter => {
             if let Some(color) = app.selected_color.clone() {
-                if let Some(idx) = app.editor.selected_field {
+                if app.editor.selected_field.is_some() {
                     app.editor.set_selected_field_color(Some(color));
                 }
             }
@@ -599,7 +600,7 @@ fn handle_attribute_picker_mode(app: &mut App, key: event::KeyEvent) {
         }
         KeyCode::Enter => {
             if let Some(attr) = app.selected_attribute.clone() {
-                if let Some(idx) = app.editor.selected_field {
+                if app.editor.selected_field.is_some() {
                     app.editor.add_selected_field_attribute(attr);
                 }
             }
@@ -694,7 +695,7 @@ fn handle_normal_mode(app: &mut App, key: event::KeyEvent) {
 // ==================== UI ====================
 
 fn ui(f: &mut Frame, app: &App) {
-    let size = f.size();
+    let size = f.area();
     
     // Main layout
     let main_layout = Layout::default()
@@ -1116,7 +1117,7 @@ fn render_save_dialog(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
 }
 
-fn render_help(f: &mut Frame, app: &App, area: Rect) {
+fn render_help(f: &mut Frame, _app: &App, area: Rect) {
     let help_area = area;
     let block = Block::default()
         .title(" Help ")
@@ -1261,12 +1262,14 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(file, status_layout[2]);
 }
 
+#[allow(dead_code)]
 fn app_scroll_up(app: &mut App) {
     if app.scroll > 0 {
         app.scroll -= 1;
     }
 }
 
+#[allow(dead_code)]
 fn app_scroll_down(app: &mut App) {
     app.scroll += 1;
 }

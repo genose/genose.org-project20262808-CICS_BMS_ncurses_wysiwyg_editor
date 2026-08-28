@@ -1,12 +1,10 @@
 use crate::bms::model::*;
 use nom::{
     IResult,
-    branch::alt,
-    bytes::complete::{tag, tag_no_case, take_until, take_while1},
-    character::complete::{char, digit1, multispace0, space0, one_of},
-    combinator::{map, opt, recognize},
-    multi::{many0, separated_list1},
-    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
+    bytes::complete::{tag_no_case, take_until, take_while1},
+    character::complete::{char, digit1, multispace0, space0},
+    combinator::{map, opt},
+    sequence::{delimited, separated_pair},
 };
 use std::fs;
 use thiserror::Error;
@@ -22,7 +20,7 @@ pub enum BmsParseError {
 
 /// Parse a BMS source string and return a BmsMap
 pub fn parse_bms(input: &str) -> Result<BmsMap, BmsParseError> {
-    let mut map = BmsMap::new("UNNAMED", "DEFAULT");
+    let map = BmsMap::new("UNNAMED", "DEFAULT");
     let mut current_map: Option<BmsMap> = None;
     
     // Split into lines and process each
