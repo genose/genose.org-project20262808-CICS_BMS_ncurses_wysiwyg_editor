@@ -3,7 +3,7 @@ use nom::{
     IResult,
     branch::alt,
     bytes::complete::{tag, tag_no_case, take_until, take_while1},
-    character::complete::{alpha1, alphanumeric1, char, digit1, multispace0, space0, one_of},
+    character::complete::{char, digit1, multispace0, space0, one_of},
     combinator::{map, opt, recognize},
     multi::{many0, separated_list1},
     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
@@ -66,9 +66,9 @@ fn parse_dfhmsd(input: &str) -> IResult<&str, BmsMap> {
     let (input, _) = space0(input)?;
     
     let (input, type_value) = parse_attribute_value("TYPE", input)?;
-    let (input, mapset_value) = opt(parse_attribute_value("MAPSET", input)).unwrap_or((input, "DEFAULT".to_string()));
-    let (input, lang_value) = opt(parse_attribute_value("LANG", input)).unwrap_or((input, "COBOL".to_string()));
-    let (input, physical_value) = opt(parse_attribute_value("PHYSICAL", input)).unwrap_or((input, "YES".to_string()));
+    let (input, mapset_value) = parse_optional_attribute("MAPSET", "DEFAULT", input)?;
+    let (input, lang_value) = parse_optional_attribute("LANG", "COBOL", input)?;
+    let (input, physical_value) = parse_optional_attribute("PHYSICAL", "YES", input)?;
     
     let physical = physical_value.to_uppercase() == "YES";
     
@@ -80,6 +80,15 @@ fn parse_dfhmsd(input: &str) -> IResult<&str, BmsMap> {
         fields: vec![],
         physical,
     }))
+}
+
+/// Helper: Parse an optional attribute with a default value
+fn parse_optional_attribute<'a>(attr_name: &str, default: &str, input: &'a str) -> IResult<&'a str, String> {
+    match opt(|i: &'a str| parse_attribute_value(attr_name, i))(input) {
+        Ok((remaining, Some(value))) => Ok((remaining, value)),
+        Ok((remaining, None)) => Ok((remaining, default.to_string())),
+        Err(e) => Err(e),
+    }
 }
 
 /// Parse DFHMDI statement (map dimensions)
@@ -113,7 +122,10 @@ fn parse_dfhmnd(input: &str) -> IResult<&str, BmsField> {
     
     // Parse all attributes
     loop {
-        let input = remaining;
+        // Skip optional separators before each attribute
+        let (input, _) = multispace0(remaining)?;
+        let (input, _) = opt(char(','))(input)?;
+        let (input, _) = multispace0(input)?;
         
         // POS=(line,col)
         if let Ok((new_input, pos)) = parse_pos(input) {
@@ -244,14 +256,16 @@ fn parse_attrb(input: &str) -> IResult<&str, Vec<FieldAttribute>> {
 
 /// Helper: Parse COLOR=value
 fn parse_color(input: &str) -> IResult<&str, Color> {
+    // Skip optional separators
+    let (input, _) = multispace0(input)?;
+    let (input, _) = opt(char(','))(input)?;
+    let (input, _) = multispace0(input)?;
+    
     let (input, _) = tag_no_case("COLOR")(input)?;
     let (input, _) = char('=')(input)?;
     let (input, color_str) = take_while1(|c: char| c.is_alphabetic())(input)?;
     
-    match Color::from_str(color_str) {
-        Some(color) => Ok((input, color)),
-        None => Ok((input, Color::Unknown(color_str.to_string()))),
-    }
+    Ok((input, Color::from_str(color_str)))
 }
 
 /// Helper: Parse TYPE=value (for DFHMND)
@@ -299,6 +313,11 @@ fn parse_pic(input: &str) -> IResult<&str, String> {
 
 /// Helper: Parse a generic attribute value (TYPE=value, MAPSET=value, etc.)
 fn parse_attribute_value<'a>(attr_name: &str, input: &'a str) -> IResult<&'a str, String> {
+    // Skip optional separators (comma, space) before the attribute
+    let (input, _) = multispace0(input)?;
+    let (input, _) = opt(char(','))(input)?;
+    let (input, _) = multispace0(input)?;
+    
     let (input, _) = tag_no_case(attr_name)(input)?;
     let (input, _) = char('=')(input)?;
     let (input, value) = take_while1(|c: char| c != ',' && !c.is_whitespace())(input)?;
@@ -314,12 +333,5 @@ fn parse_u16(input: &str) -> IResult<&str, u16> {
 impl FieldAttribute {
     pub fn unknown(s: &str) -> Self {
         FieldAttribute::Unknown(s.to_string())
-    }
-}
-
-/// Color for Unknown variant
-impl Color {
-    pub fn unknown(s: &str) -> Self {
-        Color::Unknown(s.to_string())
     }
 }

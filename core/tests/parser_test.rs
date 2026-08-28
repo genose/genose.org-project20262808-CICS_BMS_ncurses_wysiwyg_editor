@@ -1,4 +1,4 @@
-use cobol_bms_core::bms::{parse_bms, BmsMap, BmsField, FieldType, FieldAttribute, Color};
+use cobol_bms_core::{parse_bms, parse_bms_file, BmsMap, BmsField, FieldType, FieldAttribute, Color, generate_cobol, render_bms_text};
 
 #[test]
 fn test_parse_basic_map() {
@@ -121,8 +121,6 @@ fn test_case_insensitive_parsing() {
 
 #[test]
 fn test_generate_cobol_basic() {
-    use cobol_bms_core::bms::generate_cobol;
-    
     let source = r#"
         DFHMSD TYPE=MENU01,MAPSET=MAPSET1
         DFHMDI SIZE=(24,80)
@@ -140,8 +138,6 @@ fn test_generate_cobol_basic() {
 
 #[test]
 fn test_render_bms_text() {
-    use cobol_bms_core::bms::render_bms_text;
-    
     let source = r#"
         DFHMSD TYPE=MENU01,MAPSET=MAPSET1
         DFHMDI SIZE=(5,10)
@@ -153,7 +149,7 @@ fn test_render_bms_text() {
     let text = render_bms_text(&map);
     
     assert!(text.contains("Map: MENU01"));
-    assert!(text.contains("5,10"));
-    assert!(text.contains("P P P")); // Protected field
-    assert!(text.contains("0 0 0 0 0")); // Numeric field
+    assert!(text.contains("(5, 10)")); // Size is displayed as tuple
+    assert!(text.contains("PPP")); // Protected field (3 P's together)
+    assert!(text.contains("00000")); // Numeric field (5 0's together)
 }

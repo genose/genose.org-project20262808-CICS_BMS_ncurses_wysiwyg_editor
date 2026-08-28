@@ -33,7 +33,7 @@ pub enum EditOperation {
 }
 
 /// Historique des operations pour undo/redo
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct EditHistory {
     pub undo_stack: Vec<EditOperation>,
     pub redo_stack: Vec<EditOperation>,
@@ -155,7 +155,7 @@ impl BmsEditor {
     /// Ajouter un champ a la position du curseur
     pub fn add_field(&mut self, field: BmsField) -> usize {
         let index = self.map.fields.len();
-        self.map.fields.push(field);
+        self.map.fields.push(field.clone());
         self.history.push(EditOperation::AddField { field: field.clone(), index });
         self.selected_field = Some(index);
         index
@@ -242,9 +242,9 @@ impl BmsEditor {
         }
         
         self.selected_field = Some(
-            (self.selected_field.map_or(0, |i| {
+            self.selected_field.map_or(self.map.fields.len() - 1, |i| {
                 if i == 0 { self.map.fields.len() - 1 } else { i - 1 }
-            }))
+            })
         );
     }
     
@@ -310,8 +310,8 @@ impl BmsEditor {
     /// Modifier la couleur du champ selectionne
     pub fn set_selected_field_color(&mut self, color: Option<Color>) {
         if let Some(index) = self.selected_field {
-            let old_color = self.map.fields[index].color;
-            self.map.fields[index].color = color;
+            let old_color = self.map.fields[index].color.clone();
+            self.map.fields[index].color = color.clone();
             self.history.push(EditOperation::ChangeColor { field_index: index, old_color, new_color: color });
         }
     }
@@ -319,7 +319,7 @@ impl BmsEditor {
     /// Modifier les attributs du champ selectionne
     pub fn set_selected_field_attributes(&mut self, attrs: Vec<FieldAttribute>) {
         if let Some(index) = self.selected_field {
-            let old_attrs = std::mem::replace(&mut self.map.fields[index].attrb, attrs);
+            let old_attrs = std::mem::replace(&mut self.map.fields[index].attrb, attrs.clone());
             self.history.push(EditOperation::ChangeAttributes { field_index: index, old_attrs, new_attrs: attrs });
         }
     }

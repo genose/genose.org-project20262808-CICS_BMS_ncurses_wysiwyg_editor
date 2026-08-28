@@ -382,18 +382,23 @@ fn test_add_remove_field_attribute() {
     editor.add_field_at_cursor(10);
     editor.selected_field = Some(0);
     
+    // Le champ a deja Norm par defaut
+    assert_eq!(editor.map.fields[0].attrb.len(), 1);
+    assert!(editor.map.fields[0].attrb.contains(&FieldAttribute::Norm));
+    
     // Ajouter un attribut
     editor.add_selected_field_attribute(FieldAttribute::Prot);
-    assert_eq!(editor.map.fields[0].attrb.len(), 1);
+    assert_eq!(editor.map.fields[0].attrb.len(), 2);
     
     // Ajouter un autre
     editor.add_selected_field_attribute(FieldAttribute::Num);
-    assert_eq!(editor.map.fields[0].attrb.len(), 2);
+    assert_eq!(editor.map.fields[0].attrb.len(), 3);
     
     // Retirer un attribut
     editor.remove_selected_field_attribute(&FieldAttribute::Prot);
-    assert_eq!(editor.map.fields[0].attrb.len(), 1);
+    assert_eq!(editor.map.fields[0].attrb.len(), 2);
     assert!(editor.map.fields[0].attrb.contains(&FieldAttribute::Num));
+    assert!(editor.map.fields[0].attrb.contains(&FieldAttribute::Norm));
 }
 
 #[test]

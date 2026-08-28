@@ -33,9 +33,9 @@ use std::{
     time::Duration,
 };
 
-use cobol_bms_core::bms::{
+use cobol_bms_core::{
     parse_bms_file, generate_cobol, render_bms_text, BmsMap, BmsField, FieldType, FieldAttribute, Color,
-    BmsEditor, EditorMode, CursorDirection, create_default_map,
+    BmsEditor, EditorMode, CursorDirection, ResizeDirection, create_default_map,
 };
 
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS

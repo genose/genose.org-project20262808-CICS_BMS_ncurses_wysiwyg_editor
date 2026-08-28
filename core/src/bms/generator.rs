@@ -219,14 +219,14 @@ pub fn render_bms_html(map: &BmsMap) -> String {
         for col in 0..map.size.1 {
             // Check if any field covers this cell
             let mut field_class = "empty";
-            let mut field_tooltip = "";
+            let mut field_tooltip = String::new();
             
             for field in &map.fields {
                 let (field_row, field_col) = field.pos;
                 let field_row = field_row as usize - 1;
                 let field_col = field_col as usize - 1;
                 
-                if row as usize == field_row && col as usize >= field_col && col as usize < field_col + field.length as usize {
+                if row as usize == field_row && col as usize >= field_col && (col as usize) < field_col + field.length as usize {
                     field_class = match field.field_type {
                         FieldType::Map => "map-def",
                         FieldType::Field => {

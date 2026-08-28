@@ -17,7 +17,7 @@ pub struct BmsField {
 }
 
 /// Represents a BMS map (DFHMSD)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BmsMap {
     pub name: String,
     pub mapset: String,
@@ -122,6 +122,7 @@ pub enum Color {
     Gray,
     LightGreen,
     Custom(u16), // For custom color codes
+    Unknown(String),
 }
 
 impl fmt::Display for Color {
@@ -142,28 +143,36 @@ impl fmt::Display for Color {
             Color::Gray => write!(f, "GRAY"),
             Color::LightGreen => write!(f, "LIGHTGREEN"),
             Color::Custom(code) => write!(f, "COLOR({})", code),
+            Color::Unknown(s) => write!(f, "{}", s),
         }
     }
 }
 
 impl Color {
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn from_str(s: &str) -> Self {
         match s.to_uppercase().as_str() {
-            "BLACK" => Some(Color::Black),
-            "BLUE" => Some(Color::Blue),
-            "GREEN" => Some(Color::Green),
-            "CYAN" => Some(Color::Cyan),
-            "RED" => Some(Color::Red),
-            "MAGENTA" => Some(Color::Magenta),
-            "YELLOW" => Some(Color::Yellow),
-            "WHITE" => Some(Color::White),
-            "TURQUOISE" => Some(Color::Turquoise),
-            "PINK" => Some(Color::Pink),
-            "ORANGE" => Some(Color::Orange),
-            "PURPLE" => Some(Color::Purple),
-            "GRAY" | "GREY" => Some(Color::Gray),
-            "LIGHTGREEN" => Some(Color::LightGreen),
-            _ => None,
+            "BLACK" => Color::Black,
+            "BLUE" => Color::Blue,
+            "GREEN" => Color::Green,
+            "CYAN" => Color::Cyan,
+            "RED" => Color::Red,
+            "MAGENTA" => Color::Magenta,
+            "YELLOW" => Color::Yellow,
+            "WHITE" => Color::White,
+            "TURQUOISE" => Color::Turquoise,
+            "PINK" => Color::Pink,
+            "ORANGE" => Color::Orange,
+            "PURPLE" => Color::Purple,
+            "GRAY" | "GREY" => Color::Gray,
+            "LIGHTGREEN" => Color::LightGreen,
+            s if s.starts_with("COLOR(") && s.ends_with(")") => {
+                if let Ok(code) = s.trim_start_matches("COLOR(").trim_end_matches(")").parse() {
+                    Color::Custom(code)
+                } else {
+                    Color::Unknown(s.to_string())
+                }
+            }
+            _ => Color::Unknown(s.to_string()),
         }
     }
 }
