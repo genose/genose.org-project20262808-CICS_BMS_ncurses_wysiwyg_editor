@@ -959,11 +959,21 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
 
 fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
     // Handle Shift+Enter for confirmation
-    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
-        if let Some(obj) = app.pending_object.take() {
+    if key.code == KeyCode::Enter && key.modifiers.contains(KeyModifiers::SHIFT) {
+        let obj = app.pending_object.take()
+            .or_else(|| {
+                // Fallback: try to get object from sidebar selection
+                app.sidebar_objects_selected.and_then(|idx| {
+                    InsertableObject::all().get(idx).cloned()
+                })
+            });
+        
+        if let Some(obj) = obj {
             let field = obj.create_field(app.pending_position);
             app.editor.map.fields.push(field);
             app.mode = AppMode::Edit;
+            app.pending_object = None;
+            app.sidebar_objects_selected = None;
             app.set_message(&format!("Inserted {}", obj.display()));
         }
         return;
@@ -973,6 +983,7 @@ fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
         KeyCode::Esc => {
             app.mode = AppMode::Edit;
             app.pending_object = None;
+            app.sidebar_objects_selected = None;
         }
         KeyCode::Up => {
             if app.pending_position.0 > 1 {
@@ -989,9 +1000,6 @@ fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
         }
         KeyCode::Right => {
             app.pending_position.1 += 1;
-        }
-        KeyCode::Enter => {
-            // Regular Enter just stays in mode (allows position adjustment)
         }
         _ => {}
     }
