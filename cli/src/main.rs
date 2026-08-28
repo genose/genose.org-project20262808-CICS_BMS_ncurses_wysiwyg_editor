@@ -438,9 +438,9 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
         
         // Color picker
         KeyCode::Char('C') => {
-            if app.editor.selected_field.is_some() {
+            if let Some(idx) = app.editor.selected_field {
                 app.mode = AppMode::ColorPicker;
-                app.selected_color = app.editor.map.fields[app.editor.selected_field.unwrap()].color;
+                app.selected_color = app.editor.map.fields[idx].color.clone();
             }
         }
         
@@ -523,7 +523,7 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
                     2 => app.editor.map.fields[idx].length += 1, // Length
                     3 => { // Color
                         app.mode = AppMode::ColorPicker;
-                        app.selected_color = app.editor.map.fields[idx].color;
+                        app.selected_color = app.editor.map.fields[idx].color.clone();
                         return;
                     }
                     4 => { // Attributes
@@ -568,7 +568,7 @@ fn handle_color_picker_mode(app: &mut App, key: event::KeyEvent) {
             app.selected_color = None;
         }
         KeyCode::Enter => {
-            if let Some(color) = app.selected_color {
+            if let Some(color) = app.selected_color.clone() {
                 if let Some(idx) = app.editor.selected_field {
                     app.editor.set_selected_field_color(Some(color));
                 }
@@ -598,7 +598,7 @@ fn handle_attribute_picker_mode(app: &mut App, key: event::KeyEvent) {
             app.selected_attribute = None;
         }
         KeyCode::Enter => {
-            if let Some(attr) = app.selected_attribute {
+            if let Some(attr) = app.selected_attribute.clone() {
                 if let Some(idx) = app.editor.selected_field {
                     app.editor.add_selected_field_attribute(attr);
                 }
@@ -626,7 +626,7 @@ fn handle_save_dialog_mode(app: &mut App, key: event::KeyEvent) {
             let path = PathBuf::from(&app.save_path);
             match fs::write(&path, app.editor.export_to_bms()) {
                 Ok(_) => {
-                    app.current_file = Some(path);
+                    app.current_file = Some(path.clone());
                     app.mode = AppMode::Edit;
                     app.set_message(&format!("Saved: {}", path.display()));
                 }
@@ -1018,7 +1018,7 @@ fn render_color_picker(f: &mut Frame, app: &App, area: Rect) {
     
     let mut lines = vec![Line::from(" Select: ".yellow())];
     for (color, name, key) in &colors {
-        let prefix = if Some(*color) == app.selected_color { "> " } else { "  " };
+        let prefix = if Some(color) == app.selected_color.as_ref() { "> " } else { "  " };
         lines.push(Line::from(format!("{} {} [{}]", prefix, name, key)));
     }
     lines.push(Line::from(""));
@@ -1064,7 +1064,7 @@ fn render_attribute_picker(f: &mut Frame, app: &App, area: Rect) {
     
     let mut lines = vec![Line::from(" Select: ".yellow())];
     for (attr, name, key) in &attrs {
-        let prefix = if Some(*attr) == app.selected_attribute { "> " } else { "  " };
+        let prefix = if Some(attr) == app.selected_attribute.as_ref() { "> " } else { "  " };
         lines.push(Line::from(format!("{} {} [{}]", prefix, name, key)));
     }
     lines.push(Line::from(""));
@@ -1107,7 +1107,7 @@ fn render_save_dialog(f: &mut Frame, app: &App, area: Rect) {
         .style(Style::default().fg(TuiColor::Yellow));
     f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
     
-    let path_text = Paragraph::new(&app.save_path)
+    let path_text = Paragraph::new(app.save_path.as_str())
         .style(Style::default().fg(TuiColor::White));
     f.render_widget(path_text, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
     
