@@ -79,6 +79,13 @@ fn parse_dfhmsd(input: &str) -> IResult<&str, BmsMap> {
         language: Some(lang_value.to_uppercase()),
         fields: vec![],
         physical,
+        symbolic: false,
+        terminal: None,
+        cursor_pos: None,
+        erase: None,
+        freekb: None,
+        alarm: None,
+        timetag: None,
     }))
 }
 

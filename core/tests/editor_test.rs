@@ -30,7 +30,7 @@ fn test_new_editor_from_map() {
         color: Some(Color::Yellow),
         initial: None,
         pic: None,
-        grp_name: None,
+        grp_name: None, ..Default::default()
     });
     
     let editor = BmsEditor::from_map(map);
@@ -654,7 +654,7 @@ fn test_export_import_map_to_json() {
         color: Some(Color::Green),
         initial: Some("DEFAULT VALUE".to_string()),
         pic: Some("X(20)".to_string()),
-        grp_name: None,
+        grp_name: None, ..Default::default()
     });
     
     // Export to JSON
@@ -727,7 +727,7 @@ fn test_mapset_json_serialization() {
         color: None,
         initial: None,
         pic: None,
-        grp_name: None,
+        grp_name: None, ..Default::default()
     });
     
     mapset.maps.insert("MAP1".to_string(), map1);

@@ -2,6 +2,103 @@ use std::collections::HashMap;
 use std::fmt;
 use serde::{Serialize, Deserialize};
 
+/// Justification type for BMS fields
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Justify {
+    Left,
+    Right,
+    Center,
+}
+
+impl fmt::Display for Justify {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Justify::Left => write!(f, "LEFT"),
+            Justify::Right => write!(f, "RIGHT"),
+            Justify::Center => write!(f, "CENTER"),
+        }
+    }
+}
+
+impl Justify {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_uppercase().as_str() {
+            "LEFT" => Some(Justify::Left),
+            "RIGHT" => Some(Justify::Right),
+            "CENTER" => Some(Justify::Center),
+            _ => None,
+        }
+    }
+}
+
+/// Special key types for BMS fields
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum KeyType {
+    FunctionKey(u8),
+    PAKey(u8),
+    ClearKey,
+    EnterKey,
+    TabKey,
+    BackTabKey,
+    Unknown(String),
+}
+
+impl fmt::Display for KeyType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            KeyType::FunctionKey(n) => write!(f, "PF{}", n),
+            KeyType::PAKey(n) => write!(f, "PA{}", n),
+            KeyType::ClearKey => write!(f, "CLEAR"),
+            KeyType::EnterKey => write!(f, "ENTER"),
+            KeyType::TabKey => write!(f, "TAB"),
+            KeyType::BackTabKey => write!(f, "BACKTAB"),
+            KeyType::Unknown(s) => write!(f, "{}", s),
+        }
+    }
+}
+
+/// Data type for COBOL fields
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DataType {
+    Alphanumeric,
+    Numeric,
+    NumericSigned,
+    NumericPacked,
+    NumericBinary,
+    NumericFloat,
+    Date,
+    Time,
+    DateTime,
+    Boolean,
+    Character,
+    Group,
+    Filler,
+    OccursDependingOn,
+    Redefines,
+}
+
+impl fmt::Display for DataType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DataType::Alphanumeric => write!(f, "ALPHANUMERIC"),
+            DataType::Numeric => write!(f, "NUMERIC"),
+            DataType::NumericSigned => write!(f, "NUMERIC_SIGNED"),
+            DataType::NumericPacked => write!(f, "PACKED_DECIMAL"),
+            DataType::NumericBinary => write!(f, "BINARY"),
+            DataType::NumericFloat => write!(f, "FLOAT"),
+            DataType::Date => write!(f, "DATE"),
+            DataType::Time => write!(f, "TIME"),
+            DataType::DateTime => write!(f, "DATETIME"),
+            DataType::Boolean => write!(f, "BOOLEAN"),
+            DataType::Character => write!(f, "CHARACTER"),
+            DataType::Group => write!(f, "GROUP"),
+            DataType::Filler => write!(f, "FILLER"),
+            DataType::OccursDependingOn => write!(f, "OCCURS_DEPENDING_ON"),
+            DataType::Redefines => write!(f, "REDEFINES"),
+        }
+    }
+}
+
 /// Represents a single BMS field (DFHMND, DFHMDF, etc.)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BmsField {
@@ -12,8 +109,27 @@ pub struct BmsField {
     pub attrb: Vec<FieldAttribute>,
     pub color: Option<Color>,
     pub initial: Option<String>,
-    pub pic: Option<String>,   // PIC clause (for numeric fields)
-    pub grp_name: Option<String>, // Group name (for DFHMND TYPE=GRP)
+    pub pic: Option<String>,
+    pub grp_name: Option<String>,
+    
+    // Extended CICS/BMS support
+    pub justification: Option<Justify>,
+    pub autoskip: Option<bool>,
+    pub fieldexit: Option<bool>,
+    pub blank_zero: Option<bool>,
+    pub repeat: Option<u16>,
+    pub fill_char: Option<char>,
+    pub format: Option<String>,
+    pub key_type: Option<KeyType>,
+    pub data_type: Option<DataType>,
+    pub occurs: Option<u16>,
+    pub depending_on: Option<String>,
+    pub redefines: Option<String>,
+    pub sign_leading: Option<bool>,
+    pub sign_trailing: Option<bool>,
+    pub decimal_point: Option<bool>,
+    pub synchronized: Option<bool>,
+    pub usage: Option<String>,
 }
 
 /// Represents a BMS map (DFHMSD)
@@ -21,10 +137,17 @@ pub struct BmsField {
 pub struct BmsMap {
     pub name: String,
     pub mapset: String,
-    pub size: (u16, u16),     // (lines, columns)
-    pub language: Option<String>, // LANG=COBOL/ASM/etc.
+    pub size: (u16, u16),
+    pub language: Option<String>,
     pub fields: Vec<BmsField>,
-    pub physical: bool,       // PHYSICAL=YES/NO
+    pub physical: bool,
+    pub symbolic: bool,
+    pub terminal: Option<String>,
+    pub cursor_pos: Option<(u16, u16)>,
+    pub erase: Option<bool>,
+    pub freekb: Option<bool>,
+    pub alarm: Option<bool>,
+    pub timetag: Option<bool>,
 }
 
 /// Represents a BMS mapset (collection of maps)
@@ -43,6 +166,35 @@ pub enum FieldType {
     Group,
     Attribute,
     Symbolic,
+    
+    // BMS statement types
+    DFHMSD,
+    DFHMDF,
+    DFHMDI,
+    DFHMDA,
+    DFHMND,
+    DFHMNT,
+    DFHMDC,
+    DFHMDL,
+    
+    // Physical vs Symbolic
+    PhysicalMap,
+    SymbolicMap,
+    MapSet,
+    
+    // Special field types
+    InputOnly,
+    OutputOnly,
+    InputOutput,
+    Hidden,
+    
+    // Data types
+    Alphanumeric,
+    Numeric,
+    Date,
+    Time,
+    Boolean,
+    
     Unknown(String),
 }
 
@@ -55,6 +207,26 @@ impl fmt::Display for FieldType {
             FieldType::Group => write!(f, "GRP"),
             FieldType::Attribute => write!(f, "ATTRB"),
             FieldType::Symbolic => write!(f, "SYMBOLIC"),
+            FieldType::DFHMSD => write!(f, "DFHMSD"),
+            FieldType::DFHMDF => write!(f, "DFHMDF"),
+            FieldType::DFHMDI => write!(f, "DFHMDI"),
+            FieldType::DFHMDA => write!(f, "DFHMDA"),
+            FieldType::DFHMND => write!(f, "DFHMND"),
+            FieldType::DFHMNT => write!(f, "DFHMNT"),
+            FieldType::DFHMDC => write!(f, "DFHMDC"),
+            FieldType::DFHMDL => write!(f, "DFHMDL"),
+            FieldType::PhysicalMap => write!(f, "PHYSICAL"),
+            FieldType::SymbolicMap => write!(f, "SYMBOLIC"),
+            FieldType::MapSet => write!(f, "MAPSET"),
+            FieldType::InputOnly => write!(f, "INPUT"),
+            FieldType::OutputOnly => write!(f, "OUTPUT"),
+            FieldType::InputOutput => write!(f, "INOUT"),
+            FieldType::Hidden => write!(f, "HIDDEN"),
+            FieldType::Alphanumeric => write!(f, "ALNUM"),
+            FieldType::Numeric => write!(f, "NUM"),
+            FieldType::Date => write!(f, "DATE"),
+            FieldType::Time => write!(f, "TIME"),
+            FieldType::Boolean => write!(f, "BOOL"),
             FieldType::Unknown(s) => write!(f, "{}", s),
         }
     }
@@ -63,21 +235,61 @@ impl fmt::Display for FieldType {
 /// Field attributes (from ATTRB=)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FieldAttribute {
-    Prot,    // PROT - Protected
-    Norm,    // NORM - Normal
-    Num,     // NUM - Numeric
-    Alph,    // ALPH - Alphabetic
-    AlphaNum, // ALNUM - Alphanumeric
-    Bool,    // BOOL - Boolean
-    Date,    // DATE
-    Time,    // TIME
-    Float,   // FLOAT
-    Signed,  // SIGN - Signed numeric
-    Intens,  // INTENS - High intensity
-    Blink,   // BLINK
-    Reverse, // REVERSE
-    Underline, // UNDERLINE
-    Dark,    // DARK
+    // Protection
+    Prot,
+    Unprot,
+    
+    // Intensity
+    Norm,
+    Intens,
+    Dark,
+    
+    // Data type attributes
+    Num,
+    Alph,
+    AlphaNum,
+    Bool,
+    Date,
+    Time,
+    Float,
+    Signed,
+    Packed,
+    Binary,
+    
+    // Display attributes
+    Blink,
+    Reverse,
+    Underline,
+    
+    // Justification
+    Left,
+    Right,
+    Center,
+    
+    // Special handling
+    AutoSkip,
+    NoAutoSkip,
+    FieldExit,
+    NoFieldExit,
+    
+    // Blank/Zero handling
+    Blank,
+    Zero,
+    
+    // Repeat/Fill
+    Repeat,
+    Fill,
+    
+    // Terminal control
+    Erase,
+    Reset,
+    Set,
+    
+    // Function keys
+    FunctionKey(u8),
+    PAKey(u8),
+    Clear,
+    
     Unknown(String),
 }
 
@@ -85,7 +297,10 @@ impl fmt::Display for FieldAttribute {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FieldAttribute::Prot => write!(f, "PROT"),
+            FieldAttribute::Unprot => write!(f, "UNPROT"),
             FieldAttribute::Norm => write!(f, "NORM"),
+            FieldAttribute::Intens => write!(f, "INTENS"),
+            FieldAttribute::Dark => write!(f, "DARK"),
             FieldAttribute::Num => write!(f, "NUM"),
             FieldAttribute::Alph => write!(f, "ALPH"),
             FieldAttribute::AlphaNum => write!(f, "ALNUM"),
@@ -94,11 +309,28 @@ impl fmt::Display for FieldAttribute {
             FieldAttribute::Time => write!(f, "TIME"),
             FieldAttribute::Float => write!(f, "FLOAT"),
             FieldAttribute::Signed => write!(f, "SIGN"),
-            FieldAttribute::Intens => write!(f, "INTENS"),
+            FieldAttribute::Packed => write!(f, "PACKED"),
+            FieldAttribute::Binary => write!(f, "BINARY"),
             FieldAttribute::Blink => write!(f, "BLINK"),
             FieldAttribute::Reverse => write!(f, "REVERSE"),
             FieldAttribute::Underline => write!(f, "UNDERLINE"),
-            FieldAttribute::Dark => write!(f, "DARK"),
+            FieldAttribute::Left => write!(f, "LEFT"),
+            FieldAttribute::Right => write!(f, "RIGHT"),
+            FieldAttribute::Center => write!(f, "CENTER"),
+            FieldAttribute::AutoSkip => write!(f, "AUTOSKIP"),
+            FieldAttribute::NoAutoSkip => write!(f, "NOAUTOSKIP"),
+            FieldAttribute::FieldExit => write!(f, "FIELDEXIT"),
+            FieldAttribute::NoFieldExit => write!(f, "NOFIELDEXIT"),
+            FieldAttribute::Blank => write!(f, "BLANK"),
+            FieldAttribute::Zero => write!(f, "ZERO"),
+            FieldAttribute::Repeat => write!(f, "REPEAT"),
+            FieldAttribute::Fill => write!(f, "FILL"),
+            FieldAttribute::Erase => write!(f, "ERASE"),
+            FieldAttribute::Reset => write!(f, "RESET"),
+            FieldAttribute::Set => write!(f, "SET"),
+            FieldAttribute::FunctionKey(n) => write!(f, "PF{}", n),
+            FieldAttribute::PAKey(n) => write!(f, "PA{}", n),
+            FieldAttribute::Clear => write!(f, "CLEAR"),
             FieldAttribute::Unknown(s) => write!(f, "{}", s),
         }
     }
@@ -121,7 +353,14 @@ pub enum Color {
     Purple,
     Gray,
     LightGreen,
-    Custom(u16), // For custom color codes
+    LightBlue,
+    LightCyan,
+    LightRed,
+    LightMagenta,
+    LightYellow,
+    Neutral,
+    Custom(u16),
+    Default,
     Unknown(String),
 }
 
@@ -142,7 +381,14 @@ impl fmt::Display for Color {
             Color::Purple => write!(f, "PURPLE"),
             Color::Gray => write!(f, "GRAY"),
             Color::LightGreen => write!(f, "LIGHTGREEN"),
+            Color::LightBlue => write!(f, "LIGHTBLUE"),
+            Color::LightCyan => write!(f, "LIGHTCYAN"),
+            Color::LightRed => write!(f, "LIGHTRED"),
+            Color::LightMagenta => write!(f, "LIGHTMAGENTA"),
+            Color::LightYellow => write!(f, "LIGHTYELLOW"),
+            Color::Neutral => write!(f, "NEUTRAL"),
             Color::Custom(code) => write!(f, "COLOR({})", code),
+            Color::Default => write!(f, "DEFAULT"),
             Color::Unknown(s) => write!(f, "{}", s),
         }
     }
@@ -165,6 +411,13 @@ impl Color {
             "PURPLE" => Color::Purple,
             "GRAY" | "GREY" => Color::Gray,
             "LIGHTGREEN" => Color::LightGreen,
+            "LIGHTBLUE" => Color::LightBlue,
+            "LIGHTCYAN" => Color::LightCyan,
+            "LIGHTRED" => Color::LightRed,
+            "LIGHTMAGENTA" => Color::LightMagenta,
+            "LIGHTYELLOW" => Color::LightYellow,
+            "NEUTRAL" => Color::Neutral,
+            "DEFAULT" => Color::Default,
             s if s.starts_with("COLOR(") && s.ends_with(")") => {
                 if let Ok(code) = s.trim_start_matches("COLOR(").trim_end_matches(")").parse() {
                     Color::Custom(code)
@@ -189,6 +442,23 @@ impl Default for BmsField {
             initial: None,
             pic: None,
             grp_name: None,
+            justification: None,
+            autoskip: None,
+            fieldexit: None,
+            blank_zero: None,
+            repeat: None,
+            fill_char: None,
+            format: None,
+            key_type: None,
+            data_type: None,
+            occurs: None,
+            depending_on: None,
+            redefines: None,
+            sign_leading: None,
+            sign_trailing: None,
+            decimal_point: None,
+            synchronized: None,
+            usage: None,
         }
     }
 }
@@ -202,6 +472,13 @@ impl BmsMap {
             language: Some("COBOL".to_string()),
             fields: vec![],
             physical: true,
+            symbolic: false,
+            terminal: None,
+            cursor_pos: None,
+            erase: None,
+            freekb: None,
+            alarm: None,
+            timetag: None,
         }
     }
     

@@ -163,17 +163,13 @@ impl BmsEditor {
     
     /// Ajouter un champ avec position et taille par defaut
     pub fn add_field_at_cursor(&mut self, length: u16) -> usize {
-        let field = BmsField {
-            name: format!("FIELD{}", self.map.fields.len() + 1),
-            field_type: FieldType::Field,
-            pos: self.cursor_pos,
-            length,
-            attrb: vec![FieldAttribute::Norm],
-            color: Some(Color::Yellow),
-            initial: None,
-            pic: None,
-            grp_name: None,
-        };
+        let mut field = BmsField::default();
+        field.name = format!("FIELD{}", self.map.fields.len() + 1);
+        field.field_type = FieldType::Field;
+        field.pos = self.cursor_pos;
+        field.length = length;
+        field.attrb = vec![FieldAttribute::Norm];
+        field.color = Some(Color::Yellow);
         self.add_field(field)
     }
     
@@ -587,6 +583,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             initial: Some("NEW BMS SCREEN".to_string()),
             pic: None,
             grp_name: None,
+            ..Default::default()
         },
         // Menu option 1
         BmsField {
@@ -599,6 +596,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             initial: Some("1.".to_string()),
             pic: None,
             grp_name: None,
+            ..Default::default()
         },
         BmsField {
             name: "OPTION1_TEXT".to_string(),
@@ -610,6 +608,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             initial: Some("Option 1".to_string()),
             pic: None,
             grp_name: None,
+            ..Default::default()
         },
         // Input field
         BmsField {
@@ -622,6 +621,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             initial: None,
             pic: None,
             grp_name: None,
+            ..Default::default()
         },
         // Status line
         BmsField {
@@ -634,6 +634,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             initial: Some("F1=Help F3=Exit F12=Save".to_string()),
             pic: None,
             grp_name: None,
+            ..Default::default()
         },
     ]
 }
