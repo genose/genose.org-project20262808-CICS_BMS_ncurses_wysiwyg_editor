@@ -585,23 +585,6 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                 app.mode = AppMode::EditProperties;
                 app.set_message("Edit properties - Shift+Enter to save");
             }
-        } else if app.mode == AppMode::InsertPosition {
-            // Shift+Enter in InsertPosition mode: confirm and insert
-            if let Some(obj) = app.pending_object.take() {
-                let field = obj.create_field(app.pending_position);
-                app.editor.map.fields.push(field);
-                app.mode = AppMode::Edit;
-                app.set_message(&format!("Inserted {}", obj.display()));
-            }
-        } else if app.mode == AppMode::EditProperties {
-            // Shift+Enter in EditProperties mode: save changes
-            if let Some(field) = app.edit_properties_field.take() {
-                if let Some(idx) = app.editor.selected_field {
-                    app.editor.map.fields[idx] = field;
-                    app.mode = AppMode::Edit;
-                    app.set_message("Properties saved");
-                }
-            }
         }
         return;
     }
@@ -966,6 +949,17 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
+    // Handle Shift+Enter for confirmation
+    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
+        if let Some(obj) = app.pending_object.take() {
+            let field = obj.create_field(app.pending_position);
+            app.editor.map.fields.push(field);
+            app.mode = AppMode::Edit;
+            app.set_message(&format!("Inserted {}", obj.display()));
+        }
+        return;
+    }
+    
     match key.code {
         KeyCode::Esc => {
             app.mode = AppMode::Edit;
@@ -988,14 +982,25 @@ fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
             app.pending_position.1 += 1;
         }
         KeyCode::Enter => {
-            // Regular Enter just updates position and stays in mode
-            // Shift+Enter is handled in handle_edit_mode
+            // Regular Enter just stays in mode (allows position adjustment)
         }
         _ => {}
     }
 }
 
 fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
+    // Handle Shift+Enter for saving
+    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
+        if let Some(field) = app.edit_properties_field.take() {
+            if let Some(idx) = app.editor.selected_field {
+                app.editor.map.fields[idx] = field;
+                app.mode = AppMode::Edit;
+                app.set_message("Properties saved");
+            }
+        }
+        return;
+    }
+    
     if let Some(field) = app.edit_properties_field.as_mut() {
         match key.code {
             KeyCode::Esc => {
