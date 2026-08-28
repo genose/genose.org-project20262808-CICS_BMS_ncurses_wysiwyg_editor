@@ -516,18 +516,16 @@ fn run_editor(editor: BmsEditor) -> Result<()> {
 }
 
 fn handle_input(app: &mut App, key: event::KeyEvent) {
-    // Handle Alt+Tab for panel toggle (Ctrl+Tab as fallback since Alt+Tab may be captured by OS)
-    if key.code == KeyCode::Tab {
-        if key.modifiers.contains(KeyModifiers::ALT) || key.modifiers.contains(KeyModifiers::CONTROL) {
-            app.active_panel.toggle();
-            app.sidebar_actions_selected = None;
-            app.sidebar_objects_selected = None;
-            app.set_message(match app.active_panel {
-                ActivePanel::Canvas => "Canvas mode [Alt+Tab/Ctrl+Tab]",
-                ActivePanel::Sidebar => "Sidebar mode [Alt+Tab/Ctrl+Tab]",
-            });
-            return;
-        }
+    // Handle Ctrl+Alt+P for panel toggle (VSCode compatible)
+    if key.modifiers.contains(KeyModifiers::CONTROL) && key.modifiers.contains(KeyModifiers::ALT) && key.code == KeyCode::Char('p') {
+        app.active_panel.toggle();
+        app.sidebar_actions_selected = None;
+        app.sidebar_objects_selected = None;
+        app.set_message(match app.active_panel {
+            ActivePanel::Canvas => "Canvas mode [Ctrl+Alt+P]",
+            ActivePanel::Sidebar => "Sidebar mode [Ctrl+Alt+P]",
+        });
+        return;
     }
     
     // Handle Ctrl keys in all modes
@@ -572,8 +570,8 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 }
                 return;
             }
-            KeyCode::Tab => {
-                // Already handled above with Alt+Tab
+            KeyCode::Char('p') => {
+                // Already handled above with Ctrl+Alt+P
                 return;
             }
             _ => {}
@@ -596,7 +594,7 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
-    // F9 no longer used - replaced by Alt+Tab/Ctrl+Tab in handle_input
+    // F9 no longer used - replaced by Ctrl+Alt+P in handle_input
     
     // Handle special actions (Shift+Enter when supported)
     if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
@@ -1452,8 +1450,8 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
     
     // Draw border
     let canvas_title = match app.active_panel {
-        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Alt+Tab:Toggle|Tab:Next|Shift+Tab:Prev]", app.editor.map.size.0, app.editor.map.size.1),
-        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Alt+Tab:Toggle|Tab:Next|Shift+Tab:Prev]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Ctrl+Alt+P:Toggle|Tab:Next|Shift+Tab:Prev]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Ctrl+Alt+P:Toggle|Tab:Next|Shift+Tab:Prev]", app.editor.map.size.0, app.editor.map.size.1),
     };
     
     // Couleur du cadre en fonction de l'activation
@@ -1591,8 +1589,8 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let title = match app.active_panel {
-        ActivePanel::Sidebar => " [>] Sidebar [Alt+Tab:Toggle|Tab:Switch]",
-        ActivePanel::Canvas => " Sidebar [Alt+Tab:Toggle|Tab:Switch]",
+        ActivePanel::Sidebar => " [>] Sidebar [Ctrl+Alt+P:Toggle|Tab:Switch]",
+        ActivePanel::Canvas => " Sidebar [Ctrl+Alt+P:Toggle|Tab:Switch]",
     };
     
     // Couleur du cadre en fonction de l'activation
@@ -1686,7 +1684,7 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     
     // Help hints
     lines.push(Line::from(""));
-    lines.push(Line::from("Alt+Tab/Ctrl+Tab: Toggle Canvas/Sidebar".dim()));
+    lines.push(Line::from("Ctrl+Alt+P: Toggle Canvas/Sidebar".dim()));
     lines.push(Line::from("Tab: Next field / Switch section".dim()));
     lines.push(Line::from("Shift+Tab: Previous field".dim()));
     
@@ -2042,7 +2040,7 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  j/k/Down/Up: Move cursor"),
         Line::from("  h/l/Left/Right: Move cursor"),
         Line::from("  Tab/Shift+Tab: Next/Prev field"),
-        Line::from("  Alt+Tab/Ctrl+Tab: Toggle Canvas/Sidebar"),
+        Line::from("  Ctrl+Alt+P: Toggle Canvas/Sidebar"),
         Line::from(""),
         Line::from(" Field Ops: ".yellow()),
         Line::from("  a: Add field (10)"),
