@@ -36,7 +36,7 @@ use std::{
 
 use cobol_bms_core::{
     parse_bms_file, generate_cobol, render_bms_text, FieldType, FieldAttribute,
-    BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection,
+    BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection, create_default_map,
 };
 use cobol_bms_core::model::Color as BmsColor;
 
@@ -692,6 +692,36 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 }
                 return;
             }
+            KeyCode::Char('d') | KeyCode::Char('D') => {
+                // Ctrl+D: Delete selected field
+                if app.mode == AppMode::Edit && app.editor.selected_field.is_some() {
+                    app.mode = AppMode::Confirm;
+                    app.confirm_action = ConfirmAction::DeleteField;
+                }
+                return;
+            }
+            KeyCode::Char('m') | KeyCode::Char('M') => {
+                // Ctrl+M: Move selected field
+                if app.mode == AppMode::Edit {
+                    if let Some(idx) = app.editor.selected_field {
+                        app.editor.drag_start = Some(app.editor.map.fields[idx].pos);
+                        app.editor.mode = EditorMode::MoveField;
+                        app.set_message("Move field - arrows to move, Enter to drop");
+                    }
+                }
+                return;
+            }
+            KeyCode::Char('r') | KeyCode::Char('R') => {
+                // Ctrl+R: Resize selected field
+                if app.mode == AppMode::Edit {
+                    if let Some(idx) = app.editor.selected_field {
+                        app.editor.drag_start = Some((app.editor.map.fields[idx].pos.0, app.editor.map.fields[idx].pos.1 + app.editor.map.fields[idx].length - 1));
+                        app.editor.mode = EditorMode::ResizeField { direction: ResizeDirection::Right };
+                        app.set_message("Resize field - Left/Right to resize");
+                    }
+                }
+                return;
+            }
             _ => {}
         }
     }
@@ -992,19 +1022,76 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
             }
         }
         
-        // Letters [a-z|A-Z] are INERT in Edit mode (only work in Properties/EditProperties)
-        // Navigation and special keys only
+        // Single-letter shortcuts (kept for workflow compatibility)
+        // Navigation and special keys
         KeyCode::Char('?') => app.mode = AppMode::Help,
         KeyCode::Char(' ') => app.mode = AppMode::Normal,
+        
+        // Legacy field add (a/A)
+        KeyCode::Char('a') => {
+            app.editor.add_field_at_cursor(10);
+            app.set_message("Added field [a]");
+        }
+        KeyCode::Char('A') => {
+            app.editor.add_field_at_cursor(20);
+            app.set_message("Added long field [A]");
+        }
+        
+        // New map commands
+        KeyCode::Char('n') => {
+            app.editor.new_map("NEWMAP", "DEFAULT", (24, 80));
+            app.current_file = None;
+            app.set_message("New map created");
+        }
+        KeyCode::Char('N') => {
+            let default_map = create_default_map("TEMPLATE", "DEFAULT");
+            app.editor = BmsEditor::from_map(default_map);
+            app.current_file = None;
+            app.set_message("Template map loaded");
+        }
+        
+        // Properties
+        KeyCode::Char('e') => {
+            if app.editor.selected_field.is_some() {
+                app.mode = AppMode::Properties;
+                app.property_index = 0;
+            }
+        }
+        KeyCode::Char('C') => {
+            if let Some(idx) = app.editor.selected_field {
+                app.mode = AppMode::ColorPicker;
+                app.selected_color = app.editor.map.fields[idx].color.clone();
+            }
+        }
+        KeyCode::Char('t') => {
+            if app.editor.selected_field.is_some() {
+                app.mode = AppMode::AttributePicker;
+                app.selected_attribute = None;
+            }
+        }
+        
+        // Clipboard
+        KeyCode::Char('c') => {
+            app.editor.copy_selected();
+            app.set_message("Copied");
+        }
+        KeyCode::Char('x') => {
+            if app.editor.cut_selected().is_some() {
+                app.set_message("Cut");
+            }
+        }
+        KeyCode::Char('v') => {
+            if app.editor.paste_at_cursor().is_some() {
+                app.set_message("Pasted");
+            }
+        }
         
         // Scroll with capital J/K
         KeyCode::Char('J') => app.scroll_down(),
         KeyCode::Char('K') => app.scroll_up(),
         
-        // g and p removed - use Ctrl+G and Ctrl+V instead
-        // This makes [a-z|A-Z] inert in Edit mode as requested
-        // Esc: Cancel current operation (handled in specific modes)
-        // Use Ctrl+Shift+Esc for quit with confirmation
+        // Other letters are inert in Edit mode
+        // Use Ctrl-based shortcuts for field operations (Ctrl+D, Ctrl+M, Ctrl+R)
         
         _ => {}
     }
@@ -2315,10 +2402,11 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  Key triggers displayed in message bar"),
         Line::from(""),
         Line::from(" Field Ops: ".yellow()),
-        Line::from("  Ctrl+A: Add object"),
-        Line::from("  d: Delete field"),
-        Line::from("  m: Move field"),
-        Line::from("  r: Resize field"),
+        Line::from("  a/A: Add field (10/20 chars) - legacy"),
+        Line::from("  Ctrl+A: Add object dialog"),
+        Line::from("  d: Delete field (or Ctrl+D)"),
+        Line::from("  m: Move field (or Ctrl+M)"),
+        Line::from("  r: Resize field (or Ctrl+R)"),
         Line::from(""),
         Line::from(" Properties: ".yellow()),
         Line::from("  e: Edit properties"),
@@ -2326,7 +2414,7 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  t: Change attributes"),
         Line::from(""),
         Line::from(" Clipboard: ".yellow()),
-        Line::from("  Ctrl+C: Copy"),
+        Line::from("  c: Copy (or Ctrl+C)"),
         Line::from("  x: Cut"),
         Line::from("  v: Paste"),
         Line::from(""),
@@ -2347,6 +2435,8 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from(""),
         Line::from(" Other: ".yellow()),
         Line::from("  ?: Help"),
+        Line::from(""),
+        Line::from(" Note: Both legacy (letter) and new (Ctrl+letter) shortcuts work".dim()),
     ]);
     
     let paragraph = Paragraph::new(help_text)
