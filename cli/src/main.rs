@@ -1328,6 +1328,11 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
         }
     }
     
+    // Help hints
+    lines.push(Line::from(""));
+    lines.push(Line::from("Shift+Tab: Toggle Canvas/Sidebar".dim()));
+    lines.push(Line::from("Tab: Switch Actions/Objects".dim()));
+    
     let text = Text::from(lines);
     let paragraph = Paragraph::new(text)
         .block(Block::default().borders(Borders::NONE));
