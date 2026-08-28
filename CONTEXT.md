@@ -45,6 +45,7 @@ Les developpeurs **COBOL/CICS** sur **mainframe IBM Z** font face a plusieurs de
 | **Creation depuis zero** | Creer des maps sans fichier existant | ✅ Implemente |
 | **Undo/Redo** | Historique des operations | ✅ Implemente |
 | **Clipboard** | Copier/Couper/Coller des champs | ✅ Implemente |
+| **Export/Import JSON** | Serialization des maps et de l'editeur | ✅ Implemente |
 
 ### Public Cible
 
@@ -115,7 +116,7 @@ Les developpeurs **COBOL/CICS** sur **mainframe IBM Z** font face a plusieurs de
 | TUI | [`ratatui`](https://github.com/ratatui-org/ratatui) + [`crossterm`](https://github.com/crossterm-rs/crossterm) | Moderne, cross-platform, actif |
 | Erreurs | [`thiserror`](https://github.com/dtolnay/thiserror) | Typage fort des erreurs |
 | CLI | [`clap`](https://github.com/clap-rs/clap) | Standard de l'ecosysteme Rust |
-| Serialization | [`serde`](https://github.com/serde-rs/serde) | Pour le JSON (futur) |
+| Serialization | [`serde`](https://github.com/serde-rs/serde) + [`serde_json`](https://github.com/serde-rs/json) | Pour le JSON ✅ Implemente |
 
 **Note**: `ratatui` est le fork actif de `tui-rs` (qui est en maintenance seulement).
 
@@ -185,7 +186,7 @@ pub enum EditOperation {
 
 **Ameliorations futures**:
 - Compression des operations (batch)
-- Serialization pour sauvegarder l'historique
+- Serialization pour sauvegarder l'historique ✅ Implemente via JSON
 
 ---
 
@@ -220,11 +221,10 @@ impl BmsEditor {
 
 **Limitation actuelle**:
 - Un seul champ dans le clipboard
-- Pas de format de serialization (JSON, etc.)
 
 **Ameliorations futures**:
 - Multiple fields dans le clipboard
-- Serialization pour echanger entre instances
+- Serialization pour echanger entre instances ✅ Implemente via JSON
 
 ---
 

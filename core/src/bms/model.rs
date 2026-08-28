@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::fmt;
+use serde::{Serialize, Deserialize};
 
 /// Represents a single BMS field (DFHMND, DFHMDF, etc.)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BmsField {
     pub name: String,
     pub field_type: FieldType,
@@ -16,7 +17,7 @@ pub struct BmsField {
 }
 
 /// Represents a BMS map (DFHMSD)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BmsMap {
     pub name: String,
     pub mapset: String,
@@ -27,14 +28,14 @@ pub struct BmsMap {
 }
 
 /// Represents a BMS mapset (collection of maps)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BmsMapSet {
     pub name: String,
     pub maps: HashMap<String, BmsMap>,
 }
 
 /// Field type (from DFHMND TYPE=)
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FieldType {
     Map,
     Field,
@@ -60,7 +61,7 @@ impl fmt::Display for FieldType {
 }
 
 /// Field attributes (from ATTRB=)
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FieldAttribute {
     Prot,    // PROT - Protected
     Norm,    // NORM - Normal
@@ -104,7 +105,7 @@ impl fmt::Display for FieldAttribute {
 }
 
 /// Color definitions
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Color {
     Black,
     Blue,
@@ -193,5 +194,34 @@ impl BmsMap {
             fields: vec![],
             physical: true,
         }
+    }
+    
+    /// Exporter la map au format JSON
+    pub fn to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string_pretty(self)
+    }
+    
+    /// Importer une map depuis du JSON
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(json)
+    }
+}
+
+impl BmsMapSet {
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_uppercase(),
+            maps: HashMap::new(),
+        }
+    }
+    
+    /// Exporter le mapset au format JSON
+    pub fn to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string_pretty(self)
+    }
+    
+    /// Importer un mapset depuis du JSON
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(json)
     }
 }

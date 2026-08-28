@@ -5,12 +5,14 @@
 //! - Ajouter/supprimer/modifier des champs
 //! - Deplacer/redimensionner des champs
 //! - Gerer les attributs (couleurs, types, etc.)
+//! - Exporter/Importer au format JSON
 
 use crate::bms::model::*;
 use std::cmp::{max, min};
+use serde::{Serialize, Deserialize};
 
 /// Represente une operation d'edition (pour undo/redo)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EditOperation {
     /// Ajout d'un champ
     AddField { field: BmsField, index: usize },
@@ -31,7 +33,7 @@ pub enum EditOperation {
 }
 
 /// Historique des operations pour undo/redo
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct EditHistory {
     pub undo_stack: Vec<EditOperation>,
     pub redo_stack: Vec<EditOperation>,
@@ -78,7 +80,7 @@ impl EditHistory {
 }
 
 /// Etat de l'editeur WYSIWYG
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BmsEditor {
     pub map: BmsMap,
     pub selected_field: Option<usize>,
@@ -90,7 +92,7 @@ pub struct BmsEditor {
 }
 
 /// Mode de l'editeur
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EditorMode {
     /// Mode navigation (selection de champs)
     Navigate,
@@ -107,7 +109,7 @@ pub enum EditorMode {
 }
 
 /// Direction de redimensionnement
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ResizeDirection {
     Left,
     Right,
@@ -536,10 +538,34 @@ impl BmsEditor {
         line.push_str("\n");
         line
     }
+    
+    /// Exporter la map au format JSON
+    pub fn export_to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string_pretty(&self.map)
+    }
+    
+    /// Importer une map depuis du JSON
+    pub fn import_from_json(&mut self, json: &str) -> Result<(), serde_json::Error> {
+        let map: BmsMap = serde_json::from_str(json)?;
+        let old_map = std::mem::replace(&mut self.map, map);
+        self.history.push(EditOperation::NewMap { old_map: Some(old_map), new_map: self.map.clone() });
+        self.selected_field = None;
+        Ok(())
+    }
+    
+    /// Exporter l'editeur complet (incluant l'historique) au format JSON
+    pub fn export_editor_to_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string_pretty(self)
+    }
+    
+    /// Importer l'editeur complet depuis du JSON
+    pub fn import_editor_from_json(json: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(json)
+    }
 }
 
 /// Direction du curseur
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CursorDirection {
     Up,
     Down,
