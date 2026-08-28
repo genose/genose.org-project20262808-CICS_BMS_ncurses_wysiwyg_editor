@@ -180,6 +180,62 @@ impl ActivePanel {
     }
 }
 
+/// Actions disponibles dans la sidebar
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SidebarAction {
+    Edit,
+    Delete,
+    Move,
+    Resize,
+    Color,
+    Attributes,
+    AddField,
+    AddLongField,
+}
+
+impl SidebarAction {
+    fn all() -> &'static [SidebarAction] {
+        &[
+            SidebarAction::Edit,
+            SidebarAction::Delete,
+            SidebarAction::Move,
+            SidebarAction::Resize,
+            SidebarAction::Color,
+            SidebarAction::Attributes,
+            SidebarAction::AddField,
+            SidebarAction::AddLongField,
+        ]
+    }
+
+    fn display(&self) -> &'static str {
+        match self {
+            SidebarAction::Edit => "e: Edit",
+            SidebarAction::Delete => "d: Delete",
+            SidebarAction::Move => "m: Move",
+            SidebarAction::Resize => "r: Resize",
+            SidebarAction::Color => "C: Color",
+            SidebarAction::Attributes => "t: Attrs",
+            SidebarAction::AddField => "a: Add field",
+            SidebarAction::AddLongField => "A: Add long",
+        }
+    }
+
+    #[allow(dead_code)]
+    fn from_key(key: char) -> Option<SidebarAction> {
+        match key {
+            'e' => Some(SidebarAction::Edit),
+            'd' => Some(SidebarAction::Delete),
+            'm' => Some(SidebarAction::Move),
+            'r' => Some(SidebarAction::Resize),
+            'C' => Some(SidebarAction::Color),
+            't' => Some(SidebarAction::Attributes),
+            'a' => Some(SidebarAction::AddField),
+            'A' => Some(SidebarAction::AddLongField),
+            _ => None,
+        }
+    }
+}
+
 /// Etat de l'application
 #[derive(Debug)]
 struct App {
@@ -192,6 +248,8 @@ struct App {
     exit: bool,
     // Panel actif pour la navigation
     active_panel: ActivePanel,
+    // Navigation sidebar
+    sidebar_selected: Option<usize>,
     // Pour le mode properties
     property_index: usize,
     // Pour le mode color picker
@@ -223,6 +281,7 @@ impl App {
             message_timeout: None,
             exit: false,
             active_panel: ActivePanel::Canvas,
+            sidebar_selected: None,
             property_index: 0,
             selected_color: None,
             selected_attribute: None,
@@ -370,37 +429,127 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
         // Navigation
         KeyCode::Char('j') | KeyCode::Down => {
-            app.editor.move_cursor(CursorDirection::Down, 1);
-            app.editor.select_field_at(app.editor.cursor_pos);
+            if app.active_panel == ActivePanel::Canvas {
+                app.editor.move_cursor(CursorDirection::Down, 1);
+                app.editor.select_field_at(app.editor.cursor_pos);
+            } else {
+                // Sidebar navigation
+                let actions = SidebarAction::all();
+                if let Some(current) = app.sidebar_selected {
+                    let next = (current + 1).min(actions.len().saturating_sub(1));
+                    app.sidebar_selected = Some(next);
+                } else if !actions.is_empty() {
+                    app.sidebar_selected = Some(0);
+                }
+            }
         }
         KeyCode::Char('k') | KeyCode::Up => {
-            app.editor.move_cursor(CursorDirection::Up, 1);
-            app.editor.select_field_at(app.editor.cursor_pos);
+            if app.active_panel == ActivePanel::Canvas {
+                app.editor.move_cursor(CursorDirection::Up, 1);
+                app.editor.select_field_at(app.editor.cursor_pos);
+            } else {
+                // Sidebar navigation
+                if let Some(current) = app.sidebar_selected {
+                    let prev = current.saturating_sub(1);
+                    app.sidebar_selected = if prev > 0 || current == 0 { Some(prev) } else { None };
+                } else {
+                    let actions = SidebarAction::all();
+                    if !actions.is_empty() {
+                        app.sidebar_selected = Some(actions.len() - 1);
+                    }
+                }
+            }
         }
         KeyCode::Char('h') | KeyCode::Left => {
-            app.editor.move_cursor(CursorDirection::Left, 1);
-            app.editor.select_field_at(app.editor.cursor_pos);
+            if app.active_panel == ActivePanel::Canvas {
+                app.editor.move_cursor(CursorDirection::Left, 1);
+                app.editor.select_field_at(app.editor.cursor_pos);
+            }
         }
         KeyCode::Char('l') | KeyCode::Right => {
-            app.editor.move_cursor(CursorDirection::Right, 1);
-            app.editor.select_field_at(app.editor.cursor_pos);
+            if app.active_panel == ActivePanel::Canvas {
+                app.editor.move_cursor(CursorDirection::Right, 1);
+                app.editor.select_field_at(app.editor.cursor_pos);
+            }
         }
         
         // Field selection
         KeyCode::Tab => {
-            app.editor.select_next_field();
-            if let Some(idx) = app.editor.selected_field {
-                let field = &app.editor.map.fields[idx];
-                app.editor.cursor_pos = field.pos;
+            if app.active_panel == ActivePanel::Canvas {
+                app.editor.select_next_field();
+                if let Some(idx) = app.editor.selected_field {
+                    let field = &app.editor.map.fields[idx];
+                    app.editor.cursor_pos = field.pos;
+                }
             }
         }
         // Toggle between Canvas and Sidebar navigation
         KeyCode::BackTab => {
             app.active_panel.toggle();
+            app.sidebar_selected = None;
             app.set_message(match app.active_panel {
                 ActivePanel::Canvas => "Canvas mode",
                 ActivePanel::Sidebar => "Sidebar mode",
             });
+        }
+        
+        // Execute selected sidebar action
+        KeyCode::Enter => {
+            if app.active_panel == ActivePanel::Sidebar {
+                if let Some(selected_idx) = app.sidebar_selected {
+                    let actions = SidebarAction::all();
+                    if selected_idx < actions.len() {
+                        match actions[selected_idx] {
+                            SidebarAction::Edit => {
+                                if app.editor.selected_field.is_some() {
+                                    app.mode = AppMode::Properties;
+                                    app.property_index = 0;
+                                }
+                            }
+                            SidebarAction::Delete => {
+                                if app.editor.selected_field.is_some() {
+                                    app.mode = AppMode::Confirm;
+                                    app.confirm_action = ConfirmAction::DeleteField;
+                                }
+                            }
+                            SidebarAction::Move => {
+                                if let Some(idx) = app.editor.selected_field {
+                                    app.editor.drag_start = Some(app.editor.map.fields[idx].pos);
+                                    app.editor.mode = EditorMode::MoveField;
+                                    app.set_message("Move field - arrows to move, Enter to drop");
+                                }
+                            }
+                            SidebarAction::Resize => {
+                                if let Some(idx) = app.editor.selected_field {
+                                    app.editor.drag_start = Some((app.editor.map.fields[idx].pos.0, app.editor.map.fields[idx].pos.1 + app.editor.map.fields[idx].length - 1));
+                                    app.editor.mode = EditorMode::ResizeField { direction: ResizeDirection::Right };
+                                    app.set_message("Resize field - Left/Right to resize");
+                                }
+                            }
+                            SidebarAction::Color => {
+                                if app.editor.selected_field.is_some() {
+                                    app.mode = AppMode::ColorPicker;
+                                    app.selected_color = None;
+                                }
+                            }
+                            SidebarAction::Attributes => {
+                                if app.editor.selected_field.is_some() {
+                                    app.mode = AppMode::AttributePicker;
+                                    app.selected_attribute = None;
+                                }
+                            }
+                            SidebarAction::AddField => {
+                                app.editor.add_field_at_cursor(10);
+                                app.set_message("Added field");
+                            }
+                            SidebarAction::AddLongField => {
+                                app.editor.add_field_at_cursor(20);
+                                app.set_message("Added long field");
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         // Field manipulation
@@ -796,9 +945,16 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
         ActivePanel::Sidebar => format!(" Canvas ({}x{}) ", app.editor.map.size.0, app.editor.map.size.1),
     };
     
+    // Couleur du cadre en fonction de l'activation
+    let border_color = match app.active_panel {
+        ActivePanel::Canvas => TuiColor::Yellow,
+        ActivePanel::Sidebar => TuiColor::White,
+    };
+    
     let canvas_block = Block::default()
         .title(canvas_title)
-        .borders(Borders::ALL);
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(border_color));
     f.render_widget(canvas_block, canvas_area);
     
     // Render grid
@@ -911,9 +1067,16 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
         ActivePanel::Canvas => " Sidebar ",
     };
     
+    // Couleur du cadre en fonction de l'activation
+    let border_color = match app.active_panel {
+        ActivePanel::Sidebar => TuiColor::Yellow,
+        ActivePanel::Canvas => TuiColor::White,
+    };
+    
     let block = Block::default()
         .title(title)
-        .borders(Borders::ALL);
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(border_color));
     f.render_widget(block, panel_area);
     
     let inner = Rect {
@@ -924,56 +1087,55 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     };
     
     // Field info
+    let mut lines: Vec<Line> = Vec::new();
+    
     if let Some(idx) = app.editor.selected_field {
         let field = &app.editor.map.fields[idx];
-        let lines = vec![
-            Line::from(" Selected Field "),
-            Line::from(""),
-            Line::from(format!("Name: {}", field.name)),
-            Line::from(format!("Pos: ({},{})", field.pos.0, field.pos.1)),
-            Line::from(format!("Len: {}", field.length)),
-            Line::from(""),
-            Line::from(" Actions: "),
-        ];
+        lines.push(Line::from(" Selected Field "));
+        lines.push(Line::from(""));
+        lines.push(Line::from(format!("Name: {}", field.name)));
+        lines.push(Line::from(format!("Pos: ({},{})", field.pos.0, field.pos.1)));
+        lines.push(Line::from(format!("Len: {}", field.length)));
+        lines.push(Line::from(""));
         
         let mut attrs_line = String::new();
         for attr in &field.attrb {
             attrs_line.push_str(&format!("{:?} ", attr));
         }
-        
-        let mut extended_lines: Vec<Line> = lines.into_iter().collect();
-        extended_lines.push(Line::from(attrs_line));
-        extended_lines.push(Line::from(""));
-        extended_lines.push(Line::from("e: Edit"));
-        extended_lines.push(Line::from("d: Delete"));
-        extended_lines.push(Line::from("m: Move"));
-        extended_lines.push(Line::from("r: Resize"));
-        extended_lines.push(Line::from("C: Color"));
-        extended_lines.push(Line::from("t: Attrs"));
-        
-        let text = Text::from(extended_lines);
-        let paragraph = Paragraph::new(text)
-            .block(Block::default().borders(Borders::NONE));
-        f.render_widget(paragraph, inner);
+        lines.push(Line::from(attrs_line));
+        lines.push(Line::from(""));
     } else {
-        // No field selected
-        let lines = vec![
-            Line::from(" No field selected ".dim()),
-            Line::from(""),
-            Line::from(" Actions: "),
-            Line::from("a: Add field"),
-            Line::from("A: Add long"),
-            Line::from("n: New map"),
-            Line::from("N: Template"),
-            Line::from("v: Paste"),
-            Line::from("g: Gen COBOL"),
-        ];
-        
-        let text = Text::from(lines);
-        let paragraph = Paragraph::new(text)
-            .block(Block::default().borders(Borders::NONE));
-        f.render_widget(paragraph, inner);
+        lines.push(Line::from(" No field selected ".dim()));
+        lines.push(Line::from(""));
     }
+    
+    lines.push(Line::from(" Actions: "));
+    
+    // Render sidebar actions with selection highlight
+    let actions = SidebarAction::all();
+    for (i, action) in actions.iter().enumerate() {
+        let display_text = action.display();
+        let style = if app.active_panel == ActivePanel::Sidebar && app.sidebar_selected == Some(i) {
+            Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
+        } else {
+            Style::default().fg(TuiColor::White)
+        };
+        lines.push(Line::from(Span::styled(display_text, style)));
+    }
+    
+    // Additional actions not in SidebarAction enum
+    if app.editor.selected_field.is_none() {
+        lines.push(Line::from(""));
+        lines.push(Line::from("n: New map"));
+        lines.push(Line::from("N: Template"));
+        lines.push(Line::from("v: Paste"));
+        lines.push(Line::from("g: Gen COBOL"));
+    }
+    
+    let text = Text::from(lines);
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, inner);
 }
 
 fn render_properties_panel(f: &mut Frame, app: &App, area: Rect) {
