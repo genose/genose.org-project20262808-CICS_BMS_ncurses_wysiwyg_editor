@@ -564,14 +564,23 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
     // Handle Shift+Enter for special actions
     if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
         if app.active_panel == ActivePanel::Sidebar && app.sidebar_section == SidebarSection::Objects {
-            // Shift+Enter in Objects sidebar: insert object at cursor position
+            // Shift+Enter in Objects sidebar: insert object at cursor position directly
+            if let Some(selected_idx) = app.sidebar_objects_selected {
+                let objects = InsertableObject::all();
+                if selected_idx < objects.len() {
+                    let obj = objects[selected_idx];
+                    let field = obj.create_field(app.editor.cursor_pos);
+                    app.editor.map.fields.push(field);
+                    app.set_message(&format!("Inserted {}", obj.display()));
+                }
+            }
+            // Also handle pending object (from Enter then Shift+Enter)
             if let Some(obj) = app.pending_object.take() {
                 if let Some(pos_idx) = app.sidebar_objects_selected {
                     let objects = InsertableObject::all();
                     if pos_idx < objects.len() {
                         let field = obj.create_field(app.pending_position);
                         app.editor.map.fields.push(field);
-                        app.mode = AppMode::Edit;
                         app.set_message(&format!("Inserted {}", obj.display()));
                     }
                 }
