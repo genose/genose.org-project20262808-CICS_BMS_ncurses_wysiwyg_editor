@@ -75,6 +75,7 @@ fn parse_dfhmsd(input: &str) -> IResult<&str, BmsMap> {
         mapset: mapset_value.to_uppercase(),
         size: (24, 80),
         language: Some(lang_value.to_uppercase()),
+        map_type: FieldType::Map,
         fields: vec![],
         physical,
         symbolic: false,

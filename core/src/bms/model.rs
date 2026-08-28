@@ -139,6 +139,7 @@ pub struct BmsMap {
     pub mapset: String,
     pub size: (u16, u16),
     pub language: Option<String>,
+    pub map_type: FieldType,
     pub fields: Vec<BmsField>,
     pub physical: bool,
     pub symbolic: bool,
@@ -158,8 +159,9 @@ pub struct BmsMapSet {
 }
 
 /// Field type (from DFHMND TYPE=)
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum FieldType {
+    #[default]
     Map,
     Field,
     Literal,
@@ -470,6 +472,7 @@ impl BmsMap {
             mapset: mapset.to_uppercase(),
             size: (24, 80),
             language: Some("COBOL".to_string()),
+            map_type: FieldType::Map,
             fields: vec![],
             physical: true,
             symbolic: false,

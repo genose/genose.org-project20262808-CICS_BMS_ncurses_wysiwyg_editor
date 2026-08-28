@@ -156,6 +156,8 @@ enum AppMode {
     InsertPosition,
     /// Mode edit properties (edition interactive des proprietes)
     EditProperties,
+    /// Mode map type picker
+    MapTypePicker,
     /// Mode color picker
     ColorPicker,
     /// Mode attribute picker
@@ -196,6 +198,7 @@ enum SidebarAction {
     AddField,
     AddLongField,
     PreviewBms,
+    MapType,
 }
 
 impl SidebarAction {
@@ -210,6 +213,7 @@ impl SidebarAction {
             SidebarAction::AddField,
             SidebarAction::AddLongField,
             SidebarAction::PreviewBms,
+            SidebarAction::MapType,
         ]
     }
 
@@ -224,6 +228,7 @@ impl SidebarAction {
             SidebarAction::AddField => "a: Add field",
             SidebarAction::AddLongField => "A: Add long",
             SidebarAction::PreviewBms => "p: Preview BMS",
+            SidebarAction::MapType => "T: Map Type",
         }
     }
 
@@ -239,6 +244,7 @@ impl SidebarAction {
             'a' => Some(SidebarAction::AddField),
             'A' => Some(SidebarAction::AddLongField),
             'p' => Some(SidebarAction::PreviewBms),
+            'T' => Some(SidebarAction::MapType),
             _ => None,
         }
     }
@@ -377,6 +383,8 @@ struct App {
     sidebar_objects_selected: Option<usize>,
     // Affichage canvas: grid ou text BMS
     show_bms_text: bool,
+    // Pour le mode map type picker
+    selected_map_type: Option<FieldType>,
     // Pour le mode properties
     property_index: usize,
     // Pour le mode insert position
@@ -418,6 +426,7 @@ impl App {
             sidebar_actions_selected: None,
             sidebar_objects_selected: None,
             show_bms_text: false,
+            selected_map_type: None,
             property_index: 0,
             pending_object: None,
             pending_position: (0, 0),
@@ -558,6 +567,7 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         AppMode::Properties => handle_properties_mode(app, key),
         AppMode::InsertPosition => handle_insert_position_mode(app, key),
         AppMode::EditProperties => handle_edit_properties_mode(app, key),
+        AppMode::MapTypePicker => handle_map_type_picker_mode(app, key),
         AppMode::ColorPicker => handle_color_picker_mode(app, key),
         AppMode::AttributePicker => handle_attribute_picker_mode(app, key),
         AppMode::SaveDialog => handle_save_dialog_mode(app, key),
@@ -764,6 +774,10 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                                     SidebarAction::AddLongField => {
                                         app.editor.add_field_at_cursor(20);
                                         app.set_message("Added long field");
+                                    }
+                                    SidebarAction::MapType => {
+                                        app.mode = AppMode::MapTypePicker;
+                                        app.set_message("Select map type");
                                     }
                                     SidebarAction::PreviewBms => {
                                         app.show_bms_text = !app.show_bms_text;
@@ -1117,6 +1131,83 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
     }
 }
 
+fn handle_map_type_picker_mode(app: &mut App, key: event::KeyEvent) {
+    use cobol_bms_core::FieldType;
+    
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = AppMode::Edit;
+            app.selected_map_type = None;
+        }
+        KeyCode::Enter => {
+            if let Some(map_type) = app.selected_map_type.clone() {
+                app.editor.map.map_type = map_type.clone();
+                app.mode = AppMode::Edit;
+                app.selected_map_type = None;
+                app.set_message(&format!("Map type set to: {:?}", map_type));
+            }
+        }
+        KeyCode::Up => {
+            let all_types = get_scrollable_map_types();
+            if !all_types.is_empty() {
+                let new_selection = if let Some(current) = &app.selected_map_type {
+                    if let Some(pos) = all_types.iter().position(|t| t == current) {
+                        if pos > 0 {
+                            Some(all_types[pos - 1].clone())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    Some(all_types[all_types.len() - 1].clone())
+                };
+                if let Some(new_type) = new_selection {
+                    app.selected_map_type = Some(new_type);
+                }
+            }
+        }
+        KeyCode::Down => {
+            let all_types = get_scrollable_map_types();
+            if !all_types.is_empty() {
+                let new_selection = if let Some(current) = &app.selected_map_type {
+                    if let Some(pos) = all_types.iter().position(|t| t == current) {
+                        if pos + 1 < all_types.len() {
+                            Some(all_types[pos + 1].clone())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    Some(all_types[0].clone())
+                };
+                if let Some(new_type) = new_selection {
+                    app.selected_map_type = Some(new_type);
+                }
+            }
+        }
+        KeyCode::Char('M') => app.selected_map_type = Some(FieldType::Map),
+        KeyCode::Char('S') => app.selected_map_type = Some(FieldType::DFHMSD),
+        KeyCode::Char('D') => app.selected_map_type = Some(FieldType::DFHMDF),
+        KeyCode::Char('I') => app.selected_map_type = Some(FieldType::DFHMDI),
+        _ => {}
+    }
+}
+
+/// Return scrollable map types
+fn get_scrollable_map_types() -> &'static [FieldType] {
+    use cobol_bms_core::FieldType;
+    &[
+        FieldType::Map,
+        FieldType::DFHMSD,
+        FieldType::DFHMDF,
+        FieldType::DFHMDI,
+    ]
+}
+
 fn handle_color_picker_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
         KeyCode::Esc => {
@@ -1268,6 +1359,7 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::Properties => " PROPERTIES ",
         AppMode::InsertPosition => " INSERT POSITION ",
         AppMode::EditProperties => " EDIT PROPERTIES ",
+        AppMode::MapTypePicker => " MAP TYPE ",
         AppMode::ColorPicker => " COLOR PICKER ",
         AppMode::AttributePicker => " ATTRIBUTES ",
         AppMode::SaveDialog => " SAVE FILE ",
@@ -1302,6 +1394,10 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::EditProperties => {
             render_canvas(f, app, content_area);
             render_edit_properties_panel(f, app, content_area);
+        }
+        AppMode::MapTypePicker => {
+            render_canvas(f, app, content_area);
+            render_map_type_picker(f, app, content_area);
         }
         AppMode::ColorPicker => {
             render_canvas(f, app, content_area);
@@ -1722,6 +1818,62 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
     }
 }
 
+fn render_map_type_picker(f: &mut Frame, app: &App, area: Rect) {
+    use cobol_bms_core::FieldType;
+    
+    let panel_width = 25;
+    let panel_area = Rect {
+        x: area.x + area.width - panel_width,
+        y: area.y,
+        width: panel_width,
+        height: 12,
+    };
+    
+    let block = Block::default()
+        .title(" Map Type ")
+        .borders(Borders::ALL);
+    f.render_widget(block, panel_area);
+    
+    let inner = Rect {
+        x: panel_area.x + 1,
+        y: panel_area.y + 1,
+        width: panel_area.width.saturating_sub(2),
+        height: panel_area.height.saturating_sub(2),
+    };
+    
+    let map_types = [
+        (FieldType::Map, "Standard MAP", "M"),
+        (FieldType::DFHMSD, "Scrollable Data (DFHMSD)", "S"),
+        (FieldType::DFHMDF, "Scrollable Formatted (DFHMDF)", "D"),
+        (FieldType::DFHMDI, "Scrollable Input (DFHMDI)", "I"),
+    ];
+    
+    let mut lines = vec![Line::from(" Select Map Type ".yellow())];
+    for (map_type, name, key) in &map_types {
+        let selected_type = app.selected_map_type.as_ref();
+        let is_selected = selected_type == Some(map_type);
+        let prefix = if is_selected { "> " } else { "  " };
+        let style = if is_selected {
+            Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
+        } else {
+            Style::default().fg(TuiColor::White)
+        };
+        lines.push(Line::from(Span::styled(format!("{} {} [{}]", prefix, name, key), style)));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from("Enter: Select".dim()));
+    lines.push(Line::from("Esc: Cancel".dim()));
+    
+    // Show current map type
+    lines.push(Line::from(""));
+    lines.push(Line::from(format!("Current: {:?}", app.editor.map.map_type)).dim());
+    
+    let text = Text::from(lines);
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, inner);
+}
+
 fn render_color_picker(f: &mut Frame, app: &App, area: Rect) {
     let panel_width = 28;
     let panel_area = Rect {
@@ -1961,6 +2113,7 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         AppMode::Properties => "PROPERTIES",
         AppMode::InsertPosition => "INSERT_POS",
         AppMode::EditProperties => "EDIT_PROPS",
+        AppMode::MapTypePicker => "MAP_TYPE",
         AppMode::ColorPicker => "COLOR",
         AppMode::AttributePicker => "ATTRS",
         AppMode::SaveDialog => "SAVE",
