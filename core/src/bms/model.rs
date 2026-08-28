@@ -17,7 +17,7 @@ pub struct BmsField {
 }
 
 /// Represents a BMS map (DFHMSD)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct BmsMap {
     pub name: String,
     pub mapset: String,

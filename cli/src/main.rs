@@ -22,10 +22,11 @@ use ratatui::{
     Terminal,
     widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation},
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::{Style, Stylize},
     text::{Line, Span, Text},
     Frame,
 };
+use ratatui::style::Color as TuiColor;
 use std::{
     fs,
     io::{self, stdout, Write},
@@ -34,9 +35,10 @@ use std::{
 };
 
 use cobol_bms_core::{
-    parse_bms_file, generate_cobol, render_bms_text, BmsMap, BmsField, FieldType, FieldAttribute, Color,
+    parse_bms_file, generate_cobol, render_bms_text, BmsMap, BmsField, FieldType, FieldAttribute,
     BmsEditor, EditorMode, CursorDirection, ResizeDirection, create_default_map,
 };
+use cobol_bms_core::model::Color as BmsColor;
 
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
 #[derive(Parser, Debug)]
@@ -103,7 +105,7 @@ fn main() -> Result<()> {
             
             let output_path = output.unwrap_or_else(|| {
                 let mut path = file.clone();
-                let new_name = path.file_name().unwrap().to_string().replace(".bms", ".cbl");
+                let new_name = path.file_name().unwrap().to_string_lossy().replace(".bms", ".cbl");
                 path.set_file_name(new_name);
                 path
             });
@@ -175,7 +177,7 @@ struct App {
     // Pour le mode properties
     property_index: usize,
     // Pour le mode color picker
-    selected_color: Option<Color>,
+    selected_color: Option<BmsColor>,
     // Pour le mode attribute picker
     selected_attribute: Option<FieldAttribute>,
     // Pour le mode save
@@ -226,6 +228,16 @@ impl App {
     fn clear_message(&mut self) {
         self.message = None;
         self.message_timeout = None;
+    }
+    
+    fn scroll_up(&mut self) {
+        if self.scroll > 0 {
+            self.scroll -= 1;
+        }
+    }
+    
+    fn scroll_down(&mut self) {
+        self.scroll += 1;
     }
     
     fn tick_message(&mut self) {
@@ -299,7 +311,7 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 if app.mode == AppMode::Edit {
                     app.mode = AppMode::SaveDialog;
                     app.save_path = app.current_file.as_ref()
-                        .map(|p| p.to_string())
+                        .map(|p| p.to_string_lossy().into_owned())
                         .unwrap_or_else(|| "new_map.bms".to_string());
                 }
                 return;
@@ -564,16 +576,16 @@ fn handle_color_picker_mode(app: &mut App, key: event::KeyEvent) {
             app.mode = AppMode::Edit;
             app.selected_color = None;
         }
-        KeyCode::Char('b') => app.selected_color = Some(Color::Blue),
-        KeyCode::Char('g') => app.selected_color = Some(Color::Green),
-        KeyCode::Char('r') => app.selected_color = Some(Color::Red),
-        KeyCode::Char('y') => app.selected_color = Some(Color::Yellow),
-        KeyCode::Char('w') => app.selected_color = Some(Color::White),
-        KeyCode::Char('c') => app.selected_color = Some(Color::Cyan),
-        KeyCode::Char('m') => app.selected_color = Some(Color::Magenta),
-        KeyCode::Char('k') => app.selected_color = Some(Color::Black),
-        KeyCode::Char('o') => app.selected_color = Some(Color::Orange),
-        KeyCode::Char('p') => app.selected_color = Some(Color::Pink),
+        KeyCode::Char('b') => app.selected_color = Some(BmsColor::Blue),
+        KeyCode::Char('g') => app.selected_color = Some(BmsColor::Green),
+        KeyCode::Char('r') => app.selected_color = Some(BmsColor::Red),
+        KeyCode::Char('y') => app.selected_color = Some(BmsColor::Yellow),
+        KeyCode::Char('w') => app.selected_color = Some(BmsColor::White),
+        KeyCode::Char('c') => app.selected_color = Some(BmsColor::Cyan),
+        KeyCode::Char('m') => app.selected_color = Some(BmsColor::Magenta),
+        KeyCode::Char('k') => app.selected_color = Some(BmsColor::Black),
+        KeyCode::Char('o') => app.selected_color = Some(BmsColor::Orange),
+        KeyCode::Char('p') => app.selected_color = Some(BmsColor::Pink),
         KeyCode::Char(' ') => app.selected_color = None,
         _ => {}
     }
@@ -710,7 +722,7 @@ fn ui(f: &mut Frame, app: &App) {
         .title(header_title)
         .title_alignment(ratatui::layout::Alignment::Center)
         .borders(Borders::TOP)
-        .style(Style::default().bg(Color::Blue).fg(Color::White));
+        .style(Style::default().bg(TuiColor::Blue).fg(TuiColor::White));
     f.render_widget(header, main_layout[0]);
     
     // Main content area
@@ -785,7 +797,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
     let end_row = (start_row + visible_rows).min(map.size.0 as usize);
     
     for grid_row in start_row..end_row {
-        let mut line = String::new();
+        let mut spans = Vec::<Span>::new();
         
         for col in 1..=visible_cols {
             let mut c = ' ';
@@ -816,27 +828,27 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                     };
                     
                     if Some(idx) == app.editor.selected_field {
-                        style = style.fg(Color::Black).bg(Color::Yellow);
+                        style = style.fg(TuiColor::Black).bg(TuiColor::Yellow);
                     } else {
                         match field.color {
-                            Some(Color::Blue) => style = style.fg(Color::Blue),
-                            Some(Color::Green) => style = style.fg(Color::Green),
-                            Some(Color::Red) => style = style.fg(Color::Red),
-                            Some(Color::Yellow) => style = style.fg(Color::Yellow),
-                            Some(Color::Cyan) => style = style.fg(Color::Cyan),
-                            Some(Color::Magenta) => style = style.fg(Color::Magenta),
-                            _ => style = style.fg(Color::White),
+                            Some(BmsColor::Blue) => style = style.fg(TuiColor::Blue),
+                            Some(BmsColor::Green) => style = style.fg(TuiColor::Green),
+                            Some(BmsColor::Red) => style = style.fg(TuiColor::Red),
+                            Some(BmsColor::Yellow) => style = style.fg(TuiColor::Yellow),
+                            Some(BmsColor::Cyan) => style = style.fg(TuiColor::Cyan),
+                            Some(BmsColor::Magenta) => style = style.fg(TuiColor::Magenta),
+                            _ => style = style.fg(TuiColor::White),
                         }
                     }
                     break;
                 }
             }
             
-            line.push(c);
+            spans.push(Span::styled(c.to_string(), style));
         }
         
+        let line = Line::from(spans);
         let paragraph = Paragraph::new(line)
-            .style(style)
             .block(Block::default().borders(Borders::NONE));
         f.render_widget(paragraph, Rect {
             x: area.x,
@@ -848,14 +860,15 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
     
     // Add scrollbar if needed
     if map.size.0 > visible_rows as u16 {
-        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-            .begin_symbol(Some("UP"))
-            .end_symbol(Some("DN"))
-            .track_symbol(Some("|"))
-            .thumb_symbol(Some("#"))
-            .position(app.scroll)
-            .range(0, map.size.0.saturating_sub(visible_rows as u16));
-        f.render_widget(scrollbar, area);
+        // TODO: Fix scrollbar for current ratatui version
+        // let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+        //     .begin_symbol(Some("UP"))
+        //     .end_symbol(Some("DN"))
+        //     .track_symbol(Some("|"))
+        //     .thumb_symbol(Some("#"))
+        //     .position(app.scroll)
+        //     .range(0, map.size.0.saturating_sub(visible_rows as u16));
+        // f.render_widget(scrollbar, area);
     }
 }
 
@@ -883,13 +896,13 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     if let Some(idx) = app.editor.selected_field {
         let field = &app.editor.map.fields[idx];
         let lines = vec![
-            Line::from(" Selected Field ".underline()),
+            Line::from(" Selected Field "),
             Line::from(""),
             Line::from(format!("Name: {}", field.name)),
             Line::from(format!("Pos: ({},{})", field.pos.0, field.pos.1)),
             Line::from(format!("Len: {}", field.length)),
             Line::from(""),
-            Line::from(" Actions: ".underline()),
+            Line::from(" Actions: "),
         ];
         
         let mut attrs_line = String::new();
@@ -916,7 +929,7 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
         let lines = vec![
             Line::from(" No field selected ".dim()),
             Line::from(""),
-            Line::from(" Actions: ".underline()),
+            Line::from(" Actions: "),
             Line::from("a: Add field"),
             Line::from("A: Add long"),
             Line::from("n: New map"),
@@ -991,16 +1004,16 @@ fn render_color_picker(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(block, panel_area);
     
     let colors = vec![
-        (Color::Black, "Black", "K"),
-        (Color::Blue, "Blue", "B"),
-        (Color::Green, "Green", "G"),
-        (Color::Cyan, "Cyan", "C"),
-        (Color::Red, "Red", "R"),
-        (Color::Magenta, "Magenta", "M"),
-        (Color::Yellow, "Yellow", "Y"),
-        (Color::White, "White", "W"),
-        (Color::Orange, "Orange", "O"),
-        (Color::Pink, "Pink", "P"),
+        (BmsColor::Black, "Black", "K"),
+        (BmsColor::Blue, "Blue", "B"),
+        (BmsColor::Green, "Green", "G"),
+        (BmsColor::Cyan, "Cyan", "C"),
+        (BmsColor::Red, "Red", "R"),
+        (BmsColor::Magenta, "Magenta", "M"),
+        (BmsColor::Yellow, "Yellow", "Y"),
+        (BmsColor::White, "White", "W"),
+        (BmsColor::Orange, "Orange", "O"),
+        (BmsColor::Pink, "Pink", "P"),
     ];
     
     let mut lines = vec![Line::from(" Select: ".yellow())];
@@ -1091,15 +1104,15 @@ fn render_save_dialog(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let prompt = Paragraph::new("File path: ")
-        .style(Style::default().fg(Color::Yellow));
+        .style(Style::default().fg(TuiColor::Yellow));
     f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
     
     let path_text = Paragraph::new(&app.save_path)
-        .style(Style::default().fg(Color::White));
+        .style(Style::default().fg(TuiColor::White));
     f.render_widget(path_text, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
     
     let help = Paragraph::new("Enter: Save | Esc: Cancel")
-        .style(Style::default().fg(Color::Cyan));
+        .style(Style::default().fg(TuiColor::Cyan));
     f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
 }
 
@@ -1120,39 +1133,39 @@ fn render_help(f: &mut Frame, app: &App, area: Rect) {
     let help_text = Text::from(vec![
         Line::from(" WYSIWYG Editor - Help ".bold()),
         Line::from(""),
-        Line::from(" Navigation: ".yellow().underline()),
+        Line::from(" Navigation: ".yellow()),
         Line::from("  j/k/Down/Up: Move cursor"),
         Line::from("  h/l/Left/Right: Move cursor"),
         Line::from("  Tab/Shift+Tab: Next/Prev field"),
         Line::from(""),
-        Line::from(" Field Ops: ".yellow().underline()),
+        Line::from(" Field Ops: ".yellow()),
         Line::from("  a: Add field (10)"),
         Line::from("  A: Add field (20)"),
         Line::from("  d: Delete field"),
         Line::from("  m: Move field"),
         Line::from("  r: Resize field"),
         Line::from(""),
-        Line::from(" Properties: ".yellow().underline()),
+        Line::from(" Properties: ".yellow()),
         Line::from("  e: Edit properties"),
         Line::from("  C: Change color"),
         Line::from("  t: Change attributes"),
         Line::from(""),
-        Line::from(" Clipboard: ".yellow().underline()),
+        Line::from(" Clipboard: ".yellow()),
         Line::from("  Ctrl+C: Copy"),
         Line::from("  x: Cut"),
         Line::from("  v: Paste"),
         Line::from(""),
-        Line::from(" File: ".yellow().underline()),
+        Line::from(" File: ".yellow()),
         Line::from("  n: New map"),
         Line::from("  N: Template"),
         Line::from("  Ctrl+S: Save"),
         Line::from("  g: Generate COBOL"),
         Line::from(""),
-        Line::from(" Undo/Redo: ".yellow().underline()),
+        Line::from(" Undo/Redo: ".yellow()),
         Line::from("  Ctrl+Z: Undo"),
         Line::from("  Ctrl+Y: Redo"),
         Line::from(""),
-        Line::from(" Other: ".yellow().underline()),
+        Line::from(" Other: ".yellow()),
         Line::from("  ?: Help"),
         Line::from("  Ctrl+Q: Quit"),
     ]);
@@ -1191,11 +1204,11 @@ fn render_confirm(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let prompt = Paragraph::new(message)
-        .style(Style::default().fg(Color::Yellow));
+        .style(Style::default().fg(TuiColor::Yellow));
     f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
     
     let help = Paragraph::new("Y/Enter: Yes | N/Esc: No")
-        .style(Style::default().fg(Color::Cyan));
+        .style(Style::default().fg(TuiColor::Cyan));
     f.render_widget(help, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
 }
 
@@ -1222,14 +1235,14 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let mode = Paragraph::new(format!(" MODE: {}", mode_text))
-        .style(Style::default().fg(Color::Green).bold())
+        .style(Style::default().fg(TuiColor::Green).bold())
         .block(Block::default().borders(Borders::NONE));
     f.render_widget(mode, status_layout[0]);
     
     // Message
     let message_text = app.message.as_deref().unwrap_or("");
     let message = Paragraph::new(message_text)
-        .style(Style::default().fg(Color::Red))
+        .style(Style::default().fg(TuiColor::Red))
         .block(Block::default().borders(Borders::NONE));
     f.render_widget(message, status_layout[1]);
     
@@ -1242,7 +1255,7 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     
     let modified = if app.is_modified() { "[MODIFIED]" } else { "" };
     let file = Paragraph::new(format!("{}{}", file_info, modified))
-        .style(Style::default().fg(Color::Cyan))
+        .style(Style::default().fg(TuiColor::Cyan))
         .alignment(ratatui::layout::Alignment::Right)
         .block(Block::default().borders(Borders::NONE));
     f.render_widget(file, status_layout[2]);
