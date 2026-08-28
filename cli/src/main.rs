@@ -1086,9 +1086,32 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
             }
         }
         
+        // Generate COBOL (legacy)
+        KeyCode::Char('g') => {
+            let cobol = generate_cobol(&app.editor.map);
+            let path = app.current_file.as_ref()
+                .map(|p| p.with_extension("cbl"))
+                .unwrap_or_else(|| PathBuf::from("output.cbl"));
+            if let Err(e) = fs::write(&path, cobol) {
+                app.set_message(&format!("Failed: {}", e));
+            } else {
+                app.set_message(&format!("Generated: {}", path.display()));
+            }
+        }
+        
         // Scroll with capital J/K
         KeyCode::Char('J') => app.scroll_down(),
         KeyCode::Char('K') => app.scroll_up(),
+        
+        // Exit
+        KeyCode::Esc => {
+            if app.is_modified() {
+                app.mode = AppMode::Confirm;
+                app.confirm_action = ConfirmAction::QuitWithoutSave;
+            } else {
+                app.exit = true;
+            }
+        }
         
         // Other letters are inert in Edit mode
         // Use Ctrl-based shortcuts for field operations (Ctrl+D, Ctrl+M, Ctrl+R)
@@ -2423,13 +2446,14 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  N: Template"),
         Line::from("  Ctrl+S: Save"),
         Line::from("  Ctrl+O: Open file"),
-        Line::from("  Ctrl+G: Generate COBOL"),
+        Line::from("  g: Generate COBOL (or Ctrl+G)"),
         Line::from(""),
         Line::from(" Undo/Redo: ".yellow()),
         Line::from("  Ctrl+Z: Undo"),
         Line::from("  Ctrl+Y: Redo"),
         Line::from(""),
         Line::from(" Exit: ".yellow()),
+        Line::from("  Esc: Quit with confirm"),
         Line::from("  Ctrl+Q: Quit with confirm"),
         Line::from("  Ctrl+Shift+Esc: Quit with confirm"),
         Line::from(""),
