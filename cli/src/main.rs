@@ -578,8 +578,8 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
-    // Handle Alt+Tab for panel toggle
-    if key.modifiers.contains(KeyModifiers::ALT) && key.code == KeyCode::Tab {
+    // Handle Ctrl+Tab for panel toggle
+    if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Tab {
         app.active_panel.toggle();
         app.sidebar_actions_selected = None;
         app.sidebar_objects_selected = None;
@@ -1678,7 +1678,7 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     
     // Help hints
     lines.push(Line::from(""));
-    lines.push(Line::from("Alt+Tab: Toggle Canvas/Sidebar".dim()));
+    lines.push(Line::from("Ctrl+Tab: Toggle Canvas/Sidebar".dim()));
     lines.push(Line::from("Tab: Next field / Switch section".dim()));
     lines.push(Line::from("Shift+Tab: Previous field".dim()));
     
