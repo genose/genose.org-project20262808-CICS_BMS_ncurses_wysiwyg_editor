@@ -409,6 +409,9 @@ struct App {
     save_path: String,
     // Pour le mode confirm
     confirm_action: ConfirmAction,
+    // Debug key events
+    debug_keys: bool,
+    last_key_event: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -444,6 +447,8 @@ impl App {
             selected_attribute: None,
             save_path: String::new(),
             confirm_action: ConfirmAction::QuitWithoutSave,
+            debug_keys: false,
+            last_key_event: None,
         }
     }
     
@@ -524,16 +529,70 @@ fn run_editor(editor: BmsEditor) -> Result<()> {
 }
 
 fn handle_input(app: &mut App, key: event::KeyEvent) {
-    // Handle Ctrl+Alt+P for panel toggle (VSCode compatible)
-    if key.modifiers.contains(KeyModifiers::CONTROL) && key.modifiers.contains(KeyModifiers::ALT) && key.code == KeyCode::Char('p') {
-        app.active_panel.toggle();
-        app.sidebar_actions_selected = None;
-        app.sidebar_objects_selected = None;
-        app.set_message(match app.active_panel {
-            ActivePanel::Canvas => "Canvas mode [Ctrl+Alt+P]",
-            ActivePanel::Sidebar => "Sidebar mode [Ctrl+Alt+P]",
-        });
-        return;
+    // Debug key capture - store last event if debug mode is on
+    if app.debug_keys {
+        let mods = if key.modifiers.is_empty() {
+            String::new()
+        } else {
+            let mut parts = Vec::new();
+            if key.modifiers.contains(KeyModifiers::CONTROL) { parts.push("Ctrl"); }
+            if key.modifiers.contains(KeyModifiers::ALT) { parts.push("Alt"); }
+            if key.modifiers.contains(KeyModifiers::SHIFT) { parts.push("Shift"); }
+            format!("+{}", parts.join("+"))
+        };
+        let key_name = match key.code {
+            KeyCode::Char(c) => format!("{}", c),
+            KeyCode::Up => "Up".to_string(),
+            KeyCode::Down => "Down".to_string(),
+            KeyCode::Left => "Left".to_string(),
+            KeyCode::Right => "Right".to_string(),
+            KeyCode::Esc => "Esc".to_string(),
+            KeyCode::Enter => "Enter".to_string(),
+            KeyCode::Tab => "Tab".to_string(),
+            KeyCode::BackTab => "BackTab".to_string(),
+            KeyCode::F(n) => format!("F{}", n),
+            _ => format!("{:?}", key.code),
+        };
+        app.last_key_event = Some(format!("{}{}", mods, key_name));
+    }
+    
+    // Handle Ctrl+Alt+O for panel toggle (changed from P due to VSCode conflicts)
+    // Also supports Ctrl+Alt+P for backward compatibility
+    if key.modifiers.contains(KeyModifiers::CONTROL) && key.modifiers.contains(KeyModifiers::ALT) {
+        match key.code {
+            KeyCode::Char('o') | KeyCode::Char('O') => {
+                app.active_panel.toggle();
+                app.sidebar_actions_selected = None;
+                app.sidebar_objects_selected = None;
+                app.set_message(match app.active_panel {
+                    ActivePanel::Canvas => "Canvas mode [Ctrl+Alt+O]",
+                    ActivePanel::Sidebar => "Sidebar mode [Ctrl+Alt+O]",
+                });
+                return;
+            }
+            KeyCode::Char('p') | KeyCode::Char('P') => {
+                // Backward compatibility with old shortcut
+                app.active_panel.toggle();
+                app.sidebar_actions_selected = None;
+                app.sidebar_objects_selected = None;
+                app.set_message(match app.active_panel {
+                    ActivePanel::Canvas => "Canvas mode [Ctrl+Alt+P]",
+                    ActivePanel::Sidebar => "Sidebar mode [Ctrl+Alt+P]",
+                });
+                return;
+            }
+            KeyCode::Char('d') | KeyCode::Char('D') => {
+                // Toggle debug key mode
+                app.debug_keys = !app.debug_keys;
+                app.set_message(if app.debug_keys {
+                    "Debug mode ON - Press keys to see events"
+                } else {
+                    "Debug mode OFF"
+                });
+                return;
+            }
+            _ => {}
+        }
     }
     
     // Handle Ctrl keys in all modes
@@ -1506,8 +1565,8 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
     
     // Draw border
     let canvas_title = match app.active_panel {
-        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Ctrl+Alt+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav]", app.editor.map.size.0, app.editor.map.size.1),
-        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Ctrl+Alt+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Ctrl+Alt+O:Toggle|Ctrl+Alt+D:Debug|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Ctrl+Alt+O:Toggle|Ctrl+Alt+D:Debug|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav]", app.editor.map.size.0, app.editor.map.size.1),
     };
     
     // Couleur du cadre en fonction de l'activation
@@ -1740,7 +1799,9 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     
     // Help hints
     lines.push(Line::from(""));
-    lines.push(Line::from("Ctrl+Alt+P: Toggle Canvas/Sidebar".dim()));
+    lines.push(Line::from("Ctrl+Alt+O: Toggle Canvas/Sidebar".dim()));
+    lines.push(Line::from("Ctrl+Alt+D: Toggle Debug mode".dim()));
+    lines.push(Line::from("Ctrl+Alt+P: Toggle (legacy)".dim()));
     lines.push(Line::from("Tab: Next field / Switch section".dim()));
     lines.push(Line::from("Shift+Tab: Previous field".dim()));
     lines.push(Line::from("Alt/Ctrl+Up/Down: Fast scroll (5 lines)".dim()));
@@ -2100,7 +2161,9 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  Alt/Ctrl+Up/Down: Move cursor (5 lines)"),
         Line::from("  Alt/Ctrl+Left/Right: Prev/Next field"),
         Line::from("  Tab/Shift+Tab: Next/Prev field"),
-        Line::from("  Ctrl+Alt+P: Toggle Canvas/Sidebar"),
+        Line::from("  Ctrl+Alt+O: Toggle Canvas/Sidebar"),
+        Line::from("  Ctrl+Alt+D: Toggle Debug mode"),
+        Line::from("  Ctrl+Alt+P: Toggle (legacy)"),
         Line::from(""),
         Line::from(" Field Ops: ".yellow()),
         Line::from("  a: Add field (10)"),
@@ -2222,7 +2285,12 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     
     let modified = if app.is_modified() { "[MODIFIED]" } else { "" };
     let vscode_indicator = if is_vscode_terminal() { "[VSCode]" } else { "" };
-    let file = Paragraph::new(format!("{}{}{}", file_info, modified, vscode_indicator))
+    let debug_info = if app.debug_keys {
+        app.last_key_event.as_deref().map(|k| format!(" | LastKey:{}", k)).unwrap_or_default()
+    } else {
+        String::new()
+    };
+    let file = Paragraph::new(format!("{}{}{}{}", file_info, modified, vscode_indicator, debug_info))
         .style(Style::default().fg(TuiColor::Cyan))
         .alignment(ratatui::layout::Alignment::Right)
         .block(Block::default().borders(Borders::NONE));
