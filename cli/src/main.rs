@@ -973,31 +973,35 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
-    // Handle Shift+Enter for confirmation
-    if key.code == KeyCode::Enter && key.modifiers.contains(KeyModifiers::SHIFT) {
-        let obj = if let Some(obj) = app.pending_object.take() {
-            Some(obj)
-        } else if app.active_panel == ActivePanel::Sidebar {
-            // Fallback: try to get object from sidebar selection
-            app.sidebar_objects_selected.and_then(|idx| {
-                InsertableObject::all().get(idx).cloned()
-            })
-        } else {
-            None
-        };
-        
-        if let Some(obj) = obj {
-            let field = obj.create_field(app.pending_position);
-            app.editor.map.fields.push(field);
-            app.mode = AppMode::Edit;
-            app.pending_object = None;
-            app.sidebar_objects_selected = None;
-            app.active_panel = ActivePanel::Canvas;
-            app.set_message(&format!("Inserted {}", obj.display()));
-        } else {
-            app.set_message("No object selected!");
+    // Handle Enter (Shift+Enter or regular Enter) for confirmation
+    if key.code == KeyCode::Enter {
+        // For now, accept both Shift+Enter and regular Enter
+        let allow_regular_enter = true;
+        if allow_regular_enter || key.modifiers.contains(KeyModifiers::SHIFT) {
+            let obj = if let Some(obj) = app.pending_object.take() {
+                Some(obj)
+            } else if app.active_panel == ActivePanel::Sidebar {
+                // Fallback: try to get object from sidebar selection
+                app.sidebar_objects_selected.and_then(|idx| {
+                    InsertableObject::all().get(idx).cloned()
+                })
+            } else {
+                None
+            };
+            
+            if let Some(obj) = obj {
+                let field = obj.create_field(app.pending_position);
+                app.editor.map.fields.push(field);
+                app.mode = AppMode::Edit;
+                app.pending_object = None;
+                app.sidebar_objects_selected = None;
+                app.active_panel = ActivePanel::Canvas;
+                app.set_message(&format!("Inserted {}", obj.display()));
+            } else {
+                app.set_message("No object selected!");
+            }
+            return;
         }
-        return;
     }
     
     match key.code {
