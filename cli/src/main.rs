@@ -516,6 +516,20 @@ fn run_editor(editor: BmsEditor) -> Result<()> {
 }
 
 fn handle_input(app: &mut App, key: event::KeyEvent) {
+    // Handle Alt+Tab for panel toggle (Ctrl+Tab as fallback since Alt+Tab may be captured by OS)
+    if key.code == KeyCode::Tab {
+        if key.modifiers.contains(KeyModifiers::ALT) || key.modifiers.contains(KeyModifiers::CONTROL) {
+            app.active_panel.toggle();
+            app.sidebar_actions_selected = None;
+            app.sidebar_objects_selected = None;
+            app.set_message(match app.active_panel {
+                ActivePanel::Canvas => "Canvas mode [Alt+Tab/Ctrl+Tab]",
+                ActivePanel::Sidebar => "Sidebar mode [Alt+Tab/Ctrl+Tab]",
+            });
+            return;
+        }
+    }
+    
     // Handle Ctrl keys in all modes
     if key.modifiers.contains(KeyModifiers::CONTROL) {
         match key.code {
@@ -558,6 +572,10 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 }
                 return;
             }
+            KeyCode::Tab => {
+                // Already handled above with Alt+Tab
+                return;
+            }
             _ => {}
         }
     }
@@ -578,17 +596,7 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
-    // Handle F9 for panel toggle (Ctrl+Tab and Alt+Tab captured by VS Code)
-    if key.code == KeyCode::F(9) {
-        app.active_panel.toggle();
-        app.sidebar_actions_selected = None;
-        app.sidebar_objects_selected = None;
-        app.set_message(match app.active_panel {
-            ActivePanel::Canvas => "Canvas mode",
-            ActivePanel::Sidebar => "Sidebar mode",
-        });
-        return;
-    }
+    // F9 no longer used - replaced by Alt+Tab/Ctrl+Tab in handle_input
     
     // Handle special actions (Shift+Enter when supported)
     if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
@@ -1444,8 +1452,8 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
     
     // Draw border
     let canvas_title = match app.active_panel {
-        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) ", app.editor.map.size.0, app.editor.map.size.1),
-        ActivePanel::Sidebar => format!(" Canvas ({}x{}) ", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Alt+Tab:Toggle|Tab:Next|Shift+Tab:Prev]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Alt+Tab:Toggle|Tab:Next|Shift+Tab:Prev]", app.editor.map.size.0, app.editor.map.size.1),
     };
     
     // Couleur du cadre en fonction de l'activation
@@ -1583,8 +1591,8 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let title = match app.active_panel {
-        ActivePanel::Sidebar => " [>] Sidebar ",
-        ActivePanel::Canvas => " Sidebar ",
+        ActivePanel::Sidebar => " [>] Sidebar [Alt+Tab:Toggle|Tab:Switch]",
+        ActivePanel::Canvas => " Sidebar [Alt+Tab:Toggle|Tab:Switch]",
     };
     
     // Couleur du cadre en fonction de l'activation
@@ -1678,7 +1686,7 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     
     // Help hints
     lines.push(Line::from(""));
-    lines.push(Line::from("F9: Toggle Canvas/Sidebar".dim()));
+    lines.push(Line::from("Alt+Tab/Ctrl+Tab: Toggle Canvas/Sidebar".dim()));
     lines.push(Line::from("Tab: Next field / Switch section".dim()));
     lines.push(Line::from("Shift+Tab: Previous field".dim()));
     
@@ -1698,7 +1706,7 @@ fn render_properties_panel(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Properties ")
+        .title(" Properties [Read-only|Esc:Close] ")
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
@@ -1742,7 +1750,7 @@ fn render_insert_position_dialog(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Insert Position ")
+        .title(" Insert Position [Arrows:Move|Enter:Confirm|Esc:Cancel]")
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
@@ -1784,7 +1792,7 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Edit Properties ")
+        .title(" Edit Properties [Up/Down:Nav|+/-:Modify|Enter:Save|Esc:Cancel]")
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
@@ -1842,7 +1850,7 @@ fn render_map_type_picker(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Map Type ")
+        .title(" Map Type [Up/Down:Nav|M/S/D/I:Select|Enter:Ok|Esc:Cancel]")
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
@@ -1896,7 +1904,7 @@ fn render_color_picker(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Colors ")
+        .title(" Colors [B/G/R/Y/C/M/W/K/O/P:Select|Space:None|Enter:Apply|Esc:Cancel] ")
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
@@ -2034,6 +2042,7 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  j/k/Down/Up: Move cursor"),
         Line::from("  h/l/Left/Right: Move cursor"),
         Line::from("  Tab/Shift+Tab: Next/Prev field"),
+        Line::from("  Alt+Tab/Ctrl+Tab: Toggle Canvas/Sidebar"),
         Line::from(""),
         Line::from(" Field Ops: ".yellow()),
         Line::from("  a: Add field (10)"),
