@@ -36,7 +36,7 @@ use std::{
 
 use cobol_bms_core::{
     parse_bms_file, generate_cobol, render_bms_text, FieldType, FieldAttribute,
-    BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection, create_default_map,
+    BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection,
 };
 use cobol_bms_core::model::Color as BmsColor;
 
@@ -172,6 +172,10 @@ enum AppMode {
     AttributePicker,
     /// Mode save dialog
     SaveDialog,
+    /// Mode open dialog
+    OpenDialog,
+    /// Mode add object dialog
+    AddObjectDialog,
     /// Mode help
     Help,
     /// Mode confirm (pour suppression, etc.)
@@ -407,6 +411,10 @@ struct App {
     selected_attribute: Option<FieldAttribute>,
     // Pour le mode save
     save_path: String,
+    // Pour le mode open
+    open_path: String,
+    // Pour le mode add object
+    selected_object_for_add: Option<InsertableObject>,
     // Pour le mode confirm
     confirm_action: ConfirmAction,
 }
@@ -443,7 +451,17 @@ impl App {
             selected_color: None,
             selected_attribute: None,
             save_path: String::new(),
+            open_path: String::new(),
+            selected_object_for_add: None,
             confirm_action: ConfirmAction::QuitWithoutSave,
+        }
+    }
+
+    // Initialize first object for add dialog
+    fn init_add_object_dialog(&mut self) {
+        let objects = InsertableObject::all();
+        if !objects.is_empty() {
+            self.selected_object_for_add = Some(objects[0]);
         }
     }
     
@@ -558,28 +576,16 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         app.set_message(&format!("Key: {}", key_desc));
     }
     
-    // Handle Ctrl+Alt+O for panel toggle (changed from P due to VSCode conflicts)
-    // Also supports Ctrl+Alt+P for backward compatibility
-    if key.modifiers.contains(KeyModifiers::CONTROL) && key.modifiers.contains(KeyModifiers::ALT) {
+    // Handle Ctrl+P for panel toggle (simplified from Ctrl+Alt+O/P)
+    if key.modifiers.contains(KeyModifiers::CONTROL) && !key.modifiers.contains(KeyModifiers::ALT) {
         match key.code {
-            KeyCode::Char('o') | KeyCode::Char('O') => {
-                app.active_panel.toggle();
-                app.sidebar_actions_selected = None;
-                app.sidebar_objects_selected = None;
-                app.set_message(match app.active_panel {
-                    ActivePanel::Canvas => "Canvas mode [Ctrl+Alt+O]",
-                    ActivePanel::Sidebar => "Sidebar mode [Ctrl+Alt+O]",
-                });
-                return;
-            }
             KeyCode::Char('p') | KeyCode::Char('P') => {
-                // Backward compatibility with old shortcut
                 app.active_panel.toggle();
                 app.sidebar_actions_selected = None;
                 app.sidebar_objects_selected = None;
                 app.set_message(match app.active_panel {
-                    ActivePanel::Canvas => "Canvas mode [Ctrl+Alt+P]",
-                    ActivePanel::Sidebar => "Sidebar mode [Ctrl+Alt+P]",
+                    ActivePanel::Canvas => "Canvas mode [Ctrl+P]",
+                    ActivePanel::Sidebar => "Sidebar mode [Ctrl+P]",
                 });
                 return;
             }
@@ -587,8 +593,32 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         }
     }
     
+    // Handle Ctrl+Shift+Esc for confirm exit with save prompt
+    if key.modifiers.contains(KeyModifiers::CONTROL) && key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Esc {
+        if app.is_modified() {
+            app.mode = AppMode::Confirm;
+            app.confirm_action = ConfirmAction::QuitWithoutSave;
+        } else {
+            app.exit = true;
+        }
+        return;
+    }
+    
+    // Handle Ctrl+Shift+P for toggle preview
+    if key.modifiers.contains(KeyModifiers::CONTROL) && key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Char('p') {
+        if app.mode == AppMode::Edit {
+            app.show_bms_text = !app.show_bms_text;
+            app.set_message(if app.show_bms_text {
+                "BMS text preview ON [Ctrl+Shift+P]"
+            } else {
+                "BMS text preview OFF [Ctrl+Shift+P]"
+            });
+        }
+        return;
+    }
+    
     // Handle Ctrl keys in all modes
-    if key.modifiers.contains(KeyModifiers::CONTROL) {
+    if key.modifiers.contains(KeyModifiers::CONTROL) && !key.modifiers.contains(KeyModifiers::ALT) {
         match key.code {
             KeyCode::Char('c') => {
                 if app.mode == AppMode::Edit {
@@ -629,8 +659,37 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 }
                 return;
             }
-            KeyCode::Char('p') => {
-                // Already handled above with Ctrl+Alt+P
+            KeyCode::Char('g') | KeyCode::Char('G') => {
+                // Ctrl+G: Generate COBOL
+                if app.mode == AppMode::Edit {
+                    let cobol = generate_cobol(&app.editor.map);
+                    let path = app.current_file.as_ref()
+                        .map(|p| p.with_extension("cbl"))
+                        .unwrap_or_else(|| PathBuf::from("output.cbl"));
+                    if let Err(e) = fs::write(&path, cobol) {
+                        app.set_message(&format!("Failed: {}", e));
+                    } else {
+                        app.set_message(&format!("Generated: {} [Ctrl+G]", path.display()));
+                    }
+                }
+                return;
+            }
+            KeyCode::Char('o') | KeyCode::Char('O') => {
+                // Ctrl+O: Open file dialog
+                if app.mode == AppMode::Edit {
+                    app.mode = AppMode::OpenDialog;
+                    app.save_path = String::new(); // Reuse save_path for open path
+                    app.set_message("Open file - Enter path");
+                }
+                return;
+            }
+            KeyCode::Char('a') | KeyCode::Char('A') => {
+                // Ctrl+A: Add object dialog
+                if app.mode == AppMode::Edit {
+                    app.mode = AppMode::AddObjectDialog;
+                    app.init_add_object_dialog();
+                    app.set_message("Select object type");
+                }
                 return;
             }
             _ => {}
@@ -646,6 +705,8 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         AppMode::ColorPicker => handle_color_picker_mode(app, key),
         AppMode::AttributePicker => handle_attribute_picker_mode(app, key),
         AppMode::SaveDialog => handle_save_dialog_mode(app, key),
+        AppMode::OpenDialog => handle_open_dialog_mode(app, key),
+        AppMode::AddObjectDialog => handle_add_object_dialog_mode(app, key),
         AppMode::Help => handle_help_mode(app, key),
         AppMode::Confirm => handle_confirm_mode(app, key),
         AppMode::Normal => handle_normal_mode(app, key),
@@ -931,123 +992,19 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
             }
         }
         
-        // Field manipulation
-        KeyCode::Char('a') => {
-            app.editor.add_field_at_cursor(10);
-            app.set_message("Added field");
-        }
-        KeyCode::Char('A') => {
-            app.editor.add_field_at_cursor(20);
-            app.set_message("Added long field");
-        }
-        KeyCode::Char('d') => {
-            if app.editor.selected_field.is_some() {
-                app.mode = AppMode::Confirm;
-                app.confirm_action = ConfirmAction::DeleteField;
-            }
-        }
-        KeyCode::Char('m') => {
-            if let Some(idx) = app.editor.selected_field {
-                app.editor.drag_start = Some(app.editor.map.fields[idx].pos);
-                app.editor.mode = EditorMode::MoveField;
-                app.set_message("Move field - arrows to move, Enter to drop");
-            }
-        }
-        KeyCode::Char('r') => {
-            if let Some(idx) = app.editor.selected_field {
-                app.editor.drag_start = Some((app.editor.map.fields[idx].pos.0, app.editor.map.fields[idx].pos.1 + app.editor.map.fields[idx].length - 1));
-                app.editor.mode = EditorMode::ResizeField { direction: ResizeDirection::Right };
-                app.set_message("Resize field - Left/Right to resize");
-            }
-        }
+        // Letters [a-z|A-Z] are INERT in Edit mode (only work in Properties/EditProperties)
+        // Navigation and special keys only
+        KeyCode::Char('?') => app.mode = AppMode::Help,
+        KeyCode::Char(' ') => app.mode = AppMode::Normal,
         
-        // Properties
-        KeyCode::Char('e') => {
-            if app.editor.selected_field.is_some() {
-                app.mode = AppMode::Properties;
-                app.property_index = 0;
-            }
-        }
-        
-        // Clipboard
-        KeyCode::Char('c') => {
-            app.editor.copy_selected();
-            app.set_message("Copied");
-        }
-        KeyCode::Char('x') => {
-            if app.editor.cut_selected().is_some() {
-                app.set_message("Cut");
-            }
-        }
-        KeyCode::Char('v') => {
-            if app.editor.paste_at_cursor().is_some() {
-                app.set_message("Pasted");
-            }
-        }
-        
-        // Color picker
-        KeyCode::Char('C') => {
-            if let Some(idx) = app.editor.selected_field {
-                app.mode = AppMode::ColorPicker;
-                app.selected_color = app.editor.map.fields[idx].color.clone();
-            }
-        }
-        
-        // Attribute picker
-        KeyCode::Char('t') => {
-            if app.editor.selected_field.is_some() {
-                app.mode = AppMode::AttributePicker;
-                app.selected_attribute = None;
-            }
-        }
-        
-        // New map
-        KeyCode::Char('n') => {
-            app.editor.new_map("NEWMAP", "DEFAULT", (24, 80));
-            app.current_file = None;
-            app.set_message("New map created");
-        }
-        
-        // Default map
-        KeyCode::Char('N') => {
-            let default_map = create_default_map("TEMPLATE", "DEFAULT");
-            app.editor = BmsEditor::from_map(default_map);
-            app.current_file = None;
-            app.set_message("Template map loaded");
-        }
-        
-        // Scroll
+        // Scroll with capital J/K
         KeyCode::Char('J') => app.scroll_down(),
         KeyCode::Char('K') => app.scroll_up(),
         
-        // Help
-        KeyCode::Char('?') => app.mode = AppMode::Help,
-        
-        // Generate COBOL
-        KeyCode::Char('g') => {
-            let cobol = generate_cobol(&app.editor.map);
-            let path = app.current_file.as_ref()
-                .map(|p| p.with_extension("cbl"))
-                .unwrap_or_else(|| PathBuf::from("output.cbl"));
-            if let Err(e) = fs::write(&path, cobol) {
-                app.set_message(&format!("Failed: {}", e));
-            } else {
-                app.set_message(&format!("Generated: {}", path.display()));
-            }
-        }
-        
-        // Mode normal (preview only)
-        KeyCode::Char(' ') => app.mode = AppMode::Normal,
-        
-        // Exit
-        KeyCode::Esc => {
-            if app.is_modified() {
-                app.mode = AppMode::Confirm;
-                app.confirm_action = ConfirmAction::QuitWithoutSave;
-            } else {
-                app.exit = true;
-            }
-        }
+        // g and p removed - use Ctrl+G and Ctrl+V instead
+        // This makes [a-z|A-Z] inert in Edit mode as requested
+        // Esc: Cancel current operation (handled in specific modes)
+        // Use Ctrl+Shift+Esc for quit with confirmation
         
         _ => {}
     }
@@ -1416,6 +1373,89 @@ fn handle_save_dialog_mode(app: &mut App, key: event::KeyEvent) {
     }
 }
 
+fn handle_open_dialog_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = AppMode::Edit;
+            app.open_path.clear();
+        }
+        KeyCode::Enter => {
+            let path = PathBuf::from(&app.open_path);
+            if path.exists() {
+                match parse_bms_file(path.to_str().unwrap()) {
+                    Ok(map) => {
+                        app.editor = BmsEditor::from_map(map);
+                        app.current_file = Some(path.clone());
+                        app.mode = AppMode::Edit;
+                        app.open_path.clear();
+                        app.set_message(&format!("Opened: {}", path.display()));
+                    }
+                    Err(e) => {
+                        app.set_message(&format!("Failed to open: {}", e));
+                    }
+                }
+            } else {
+                app.set_message("File does not exist");
+            }
+        }
+        KeyCode::Backspace => {
+            app.open_path.pop();
+        }
+        KeyCode::Char(c) => {
+            app.open_path.push(c);
+        }
+        _ => {}
+    }
+}
+
+fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = AppMode::Edit;
+            app.selected_object_for_add = None;
+        }
+        KeyCode::Enter => {
+            if let Some(obj) = app.selected_object_for_add {
+                // Add object at cursor position
+                let field = obj.create_field(app.editor.cursor_pos);
+                app.editor.map.fields.push(field);
+                app.mode = AppMode::Edit;
+                app.selected_object_for_add = None;
+                app.set_message(&format!("Inserted {}", obj.display()));
+            }
+        }
+        KeyCode::Up => {
+            let objects = InsertableObject::all();
+            if let Some(current_idx) = app.selected_object_for_add.and_then(|obj| {
+                objects.iter().position(|&o| o == obj)
+            }) {
+                if current_idx > 0 {
+                    app.selected_object_for_add = Some(objects[current_idx - 1]);
+                } else {
+                    app.selected_object_for_add = Some(objects[objects.len() - 1]);
+                }
+            } else if !objects.is_empty() {
+                app.selected_object_for_add = Some(objects[objects.len() - 1]);
+            }
+        }
+        KeyCode::Down => {
+            let objects = InsertableObject::all();
+            if let Some(current_idx) = app.selected_object_for_add.and_then(|obj| {
+                objects.iter().position(|&o| o == obj)
+            }) {
+                if current_idx + 1 < objects.len() {
+                    app.selected_object_for_add = Some(objects[current_idx + 1]);
+                } else {
+                    app.selected_object_for_add = Some(objects[0]);
+                }
+            } else if !objects.is_empty() {
+                app.selected_object_for_add = Some(objects[0]);
+            }
+        }
+        _ => {}
+    }
+}
+
 fn handle_help_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
         KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
@@ -1487,6 +1527,8 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::ColorPicker => " COLOR PICKER ",
         AppMode::AttributePicker => " ATTRIBUTES ",
         AppMode::SaveDialog => " SAVE FILE ",
+        AppMode::OpenDialog => " OPEN FILE ",
+        AppMode::AddObjectDialog => " ADD OBJECT ",
         AppMode::Help => " HELP ",
         AppMode::Confirm => " CONFIRM ",
         AppMode::Normal => " PREVIEW ",
@@ -1534,6 +1576,14 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::SaveDialog => {
             render_save_dialog(f, app, content_area);
         }
+        AppMode::OpenDialog => {
+            render_canvas(f, app, content_area);
+            render_open_dialog(f, app, content_area);
+        }
+        AppMode::AddObjectDialog => {
+            render_canvas(f, app, content_area);
+            render_add_object_dialog(f, app, content_area);
+        }
         AppMode::Help => {
             render_help(f, app, content_area);
         }
@@ -1557,8 +1607,8 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
     
     // Draw border
     let canvas_title = match app.active_panel {
-        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Ctrl+Alt+O:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav]", app.editor.map.size.0, app.editor.map.size.1),
-        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Ctrl+Alt+O:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Ctrl+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav|Ctrl+Shift+P:Preview]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Ctrl+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav|Ctrl+Shift+P:Preview]", app.editor.map.size.0, app.editor.map.size.1),
     };
     
     // Couleur du cadre en fonction de l'activation
@@ -1591,6 +1641,20 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
 fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
     let map = &app.editor.map;
     
+    // Build list of fields to display (including preview field)
+    let mut fields_to_render: Vec<(BmsField, bool)> = map.fields.iter().map(|f| (f.clone(), false)).collect();
+    
+    // Add preview field for InsertPosition mode
+    if let Some(obj) = app.pending_object {
+        let preview_field = obj.create_field(app.pending_position);
+        fields_to_render.push((preview_field, true));
+    }
+    
+    // Add preview field for EditProperties mode
+    if let Some(edit_field) = &app.edit_properties_field {
+        fields_to_render.push((edit_field.clone(), true));
+    }
+    
     // Create a grid based on the visible area
     let visible_rows = area.height as usize;
     let visible_cols = area.width as usize;
@@ -1604,9 +1668,10 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
         for col in 1..=visible_cols {
             let mut c = ' ';
             let mut style = Style::default();
+            let mut is_selected = false;
             
             // Check if any field covers this cell
-            for (idx, field) in map.fields.iter().enumerate() {
+            for (field, is_preview) in &fields_to_render {
                 let (field_row, field_col) = field.pos;
                 let field_row = field_row as usize;
                 let field_col = field_col as usize;
@@ -1629,7 +1694,19 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                         _ => 'X',
                     };
                     
-                    if Some(idx) == app.editor.selected_field {
+                    // Check if this is the selected field (only for non-preview fields)
+                    if !is_preview {
+                        if let Some(selected_idx) = app.editor.selected_field {
+                            if map.fields.get(selected_idx).map_or(false, |f| f.pos == field.pos) {
+                                is_selected = true;
+                            }
+                        }
+                    }
+                    
+                    // Use special style for preview fields (blinking or different color)
+                    if *is_preview {
+                        style = style.fg(TuiColor::Cyan).bg(TuiColor::DarkGray);
+                    } else if is_selected {
                         style = style.fg(TuiColor::Black).bg(TuiColor::Yellow);
                     } else {
                         match field.color {
@@ -1791,12 +1868,12 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     
     // Help hints
     lines.push(Line::from(""));
-    lines.push(Line::from("Ctrl+Alt+O: Toggle Canvas/Sidebar".dim()));
-    lines.push(Line::from("Ctrl+Alt+P: Toggle (legacy)".dim()));
+    lines.push(Line::from("Ctrl+P: Toggle Canvas/Sidebar".dim()));
     lines.push(Line::from("Tab: Next field / Switch section".dim()));
     lines.push(Line::from("Shift+Tab: Previous field".dim()));
     lines.push(Line::from("Alt/Ctrl+Up/Down: Fast scroll (5 lines)".dim()));
     lines.push(Line::from("Alt/Ctrl+Left/Right: Prev/Next field".dim()));
+    lines.push(Line::from("Ctrl+Shift+P: Toggle preview".dim()));
     
     let text = Text::from(lines);
     let paragraph = Paragraph::new(text)
@@ -1858,7 +1935,7 @@ fn render_insert_position_dialog(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Insert Position [Arrows:Move|Enter:Confirm|Esc:Cancel]")
+        .title(" Insert Position [Arrows:Move|Enter:Confirm|Esc:Cancel|Live Preview]")
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
@@ -1900,7 +1977,7 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Edit Properties [Up/Down:Nav|+/-:Modify|Enter:Save|Esc:Cancel]")
+        .title(" Edit Properties [Up/Down:Nav|+/-:Modify|Enter:Save|Esc:Cancel|Live Preview]")
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
@@ -2129,6 +2206,87 @@ fn render_save_dialog(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
 }
 
+fn render_open_dialog(f: &mut Frame, app: &App, area: Rect) {
+    let dialog_width = 40;
+    let dialog_height = 5;
+    let dialog_area = Rect {
+        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
+        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
+        width: dialog_width,
+        height: dialog_height,
+    };
+    
+    let block = Block::default()
+        .title(" Open File ")
+        .borders(Borders::ALL);
+    f.render_widget(block, dialog_area);
+    
+    let inner = Rect {
+        x: dialog_area.x + 1,
+        y: dialog_area.y + 1,
+        width: dialog_area.width.saturating_sub(2),
+        height: dialog_area.height.saturating_sub(2),
+    };
+    
+    let prompt = Paragraph::new("File path: ")
+        .style(Style::default().fg(TuiColor::Yellow));
+    f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
+    
+    let path_text = Paragraph::new(app.open_path.as_str())
+        .style(Style::default().fg(TuiColor::White));
+    f.render_widget(path_text, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
+    
+    let help = Paragraph::new("Enter: Open | Esc: Cancel")
+        .style(Style::default().fg(TuiColor::Cyan));
+    f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
+}
+
+fn render_add_object_dialog(f: &mut Frame, app: &App, area: Rect) {
+    let panel_width = 30;
+    let panel_area = Rect {
+        x: area.x + area.width - panel_width,
+        y: area.y,
+        width: panel_width,
+        height: area.height.min(15),
+    };
+    
+    let block = Block::default()
+        .title(" Add Object [Up/Down:Nav|Enter:Select|Esc:Cancel] ")
+        .borders(Borders::ALL);
+    f.render_widget(block, panel_area);
+    
+    let inner = Rect {
+        x: panel_area.x + 1,
+        y: panel_area.y + 1,
+        width: panel_area.width.saturating_sub(2),
+        height: panel_area.height.saturating_sub(2),
+    };
+    
+    let objects = InsertableObject::all();
+    let mut lines = vec![Line::from(" Select Object Type ".yellow())];
+    
+    for (_i, obj) in objects.iter().enumerate() {
+        let display_text = obj.display();
+        let is_selected = app.selected_object_for_add == Some(*obj);
+        let prefix = if is_selected { "> " } else { "  " };
+        let style = if is_selected {
+            Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
+        } else {
+            Style::default().fg(TuiColor::White)
+        };
+        lines.push(Line::from(Span::styled(format!("{} {}", prefix, display_text), style)));
+    }
+    
+    lines.push(Line::from(""));
+    lines.push(Line::from("Enter: Select".dim()));
+    lines.push(Line::from("Esc: Cancel".dim()));
+    
+    let text = Text::from(lines);
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, inner);
+}
+
 fn render_help(f: &mut Frame, _app: &App, area: Rect) {
     let help_area = area;
     let block = Block::default()
@@ -2152,13 +2310,12 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  Alt/Ctrl+Up/Down: Move cursor (5 lines)"),
         Line::from("  Alt/Ctrl+Left/Right: Prev/Next field"),
         Line::from("  Tab/Shift+Tab: Next/Prev field"),
-        Line::from("  Ctrl+Alt+O: Toggle Canvas/Sidebar"),
-        Line::from("  Ctrl+Alt+P: Toggle (legacy)"),
+        Line::from("  Ctrl+P: Toggle Canvas/Sidebar"),
+        Line::from("  Ctrl+Shift+P: Toggle preview"),
         Line::from("  Key triggers displayed in message bar"),
         Line::from(""),
         Line::from(" Field Ops: ".yellow()),
-        Line::from("  a: Add field (10)"),
-        Line::from("  A: Add field (20)"),
+        Line::from("  Ctrl+A: Add object"),
         Line::from("  d: Delete field"),
         Line::from("  m: Move field"),
         Line::from("  r: Resize field"),
@@ -2177,15 +2334,19 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  n: New map"),
         Line::from("  N: Template"),
         Line::from("  Ctrl+S: Save"),
-        Line::from("  g: Generate COBOL"),
+        Line::from("  Ctrl+O: Open file"),
+        Line::from("  Ctrl+G: Generate COBOL"),
         Line::from(""),
         Line::from(" Undo/Redo: ".yellow()),
         Line::from("  Ctrl+Z: Undo"),
         Line::from("  Ctrl+Y: Redo"),
         Line::from(""),
+        Line::from(" Exit: ".yellow()),
+        Line::from("  Ctrl+Q: Quit with confirm"),
+        Line::from("  Ctrl+Shift+Esc: Quit with confirm"),
+        Line::from(""),
         Line::from(" Other: ".yellow()),
         Line::from("  ?: Help"),
-        Line::from("  Ctrl+Q: Quit"),
     ]);
     
     let paragraph = Paragraph::new(help_text)
@@ -2250,6 +2411,8 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         AppMode::ColorPicker => "COLOR",
         AppMode::AttributePicker => "ATTRS",
         AppMode::SaveDialog => "SAVE",
+        AppMode::OpenDialog => "OPEN",
+        AppMode::AddObjectDialog => "ADD_OBJ",
         AppMode::Help => "HELP",
         AppMode::Confirm => "CONFIRM",
         AppMode::Normal => "PREVIEW",
