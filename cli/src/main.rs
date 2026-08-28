@@ -164,6 +164,22 @@ enum AppMode {
     Confirm,
 }
 
+/// Panel actif pour la navigation (Canvas ou Sidebar)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ActivePanel {
+    Canvas,
+    Sidebar,
+}
+
+impl ActivePanel {
+    fn toggle(&mut self) {
+        *self = match self {
+            ActivePanel::Canvas => ActivePanel::Sidebar,
+            ActivePanel::Sidebar => ActivePanel::Canvas,
+        };
+    }
+}
+
 /// Etat de l'application
 #[derive(Debug)]
 struct App {
@@ -174,6 +190,8 @@ struct App {
     message: Option<String>,
     message_timeout: Option<usize>,
     exit: bool,
+    // Panel actif pour la navigation
+    active_panel: ActivePanel,
     // Pour le mode properties
     property_index: usize,
     // Pour le mode color picker
@@ -204,6 +222,7 @@ impl App {
             message: None,
             message_timeout: None,
             exit: false,
+            active_panel: ActivePanel::Canvas,
             property_index: 0,
             selected_color: None,
             selected_attribute: None,
@@ -375,12 +394,13 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                 app.editor.cursor_pos = field.pos;
             }
         }
+        // Toggle between Canvas and Sidebar navigation
         KeyCode::BackTab => {
-            app.editor.select_prev_field();
-            if let Some(idx) = app.editor.selected_field {
-                let field = &app.editor.map.fields[idx];
-                app.editor.cursor_pos = field.pos;
-            }
+            app.active_panel.toggle();
+            app.set_message(match app.active_panel {
+                ActivePanel::Canvas => "Canvas mode",
+                ActivePanel::Sidebar => "Sidebar mode",
+            });
         }
         
         // Field manipulation
@@ -771,8 +791,13 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
     };
     
     // Draw border
+    let canvas_title = match app.active_panel {
+        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) ", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Sidebar => format!(" Canvas ({}x{}) ", app.editor.map.size.0, app.editor.map.size.1),
+    };
+    
     let canvas_block = Block::default()
-        .title(format!(" Canvas ({}x{}) ", app.editor.map.size.0, app.editor.map.size.1))
+        .title(canvas_title)
         .borders(Borders::ALL);
     f.render_widget(canvas_block, canvas_area);
     
@@ -881,8 +906,13 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
         height: area.height,
     };
     
+    let title = match app.active_panel {
+        ActivePanel::Sidebar => " [>] Sidebar ",
+        ActivePanel::Canvas => " Sidebar ",
+    };
+    
     let block = Block::default()
-        .title(" Sidebar ")
+        .title(title)
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
