@@ -152,6 +152,10 @@ enum AppMode {
     Edit,
     /// Mode properties (edition des proprietes)
     Properties,
+    /// Mode insert position (pour choisir position avant insertion)
+    InsertPosition,
+    /// Mode edit properties (edition interactive des proprietes)
+    EditProperties,
     /// Mode color picker
     ColorPicker,
     /// Mode attribute picker
@@ -369,6 +373,12 @@ struct App {
     sidebar_objects_selected: Option<usize>,
     // Pour le mode properties
     property_index: usize,
+    // Pour le mode insert position
+    pending_object: Option<InsertableObject>,
+    pending_position: (u16, u16),
+    // Pour le mode edit properties
+    edit_properties_field: Option<BmsField>,
+    edit_properties_index: usize,
     // Pour le mode color picker
     selected_color: Option<BmsColor>,
     // Pour le mode attribute picker
@@ -402,6 +412,10 @@ impl App {
             sidebar_actions_selected: None,
             sidebar_objects_selected: None,
             property_index: 0,
+            pending_object: None,
+            pending_position: (0, 0),
+            edit_properties_field: None,
+            edit_properties_index: 0,
             selected_color: None,
             selected_attribute: None,
             save_path: String::new(),
@@ -535,6 +549,8 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
     match app.mode {
         AppMode::Edit => handle_edit_mode(app, key),
         AppMode::Properties => handle_properties_mode(app, key),
+        AppMode::InsertPosition => handle_insert_position_mode(app, key),
+        AppMode::EditProperties => handle_edit_properties_mode(app, key),
         AppMode::ColorPicker => handle_color_picker_mode(app, key),
         AppMode::AttributePicker => handle_attribute_picker_mode(app, key),
         AppMode::SaveDialog => handle_save_dialog_mode(app, key),
@@ -545,6 +561,51 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
 }
 
 fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
+    // Handle Shift+Enter for special actions
+    if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
+        if app.active_panel == ActivePanel::Sidebar && app.sidebar_section == SidebarSection::Objects {
+            // Shift+Enter in Objects sidebar: insert object at cursor position
+            if let Some(obj) = app.pending_object.take() {
+                if let Some(pos_idx) = app.sidebar_objects_selected {
+                    let objects = InsertableObject::all();
+                    if pos_idx < objects.len() {
+                        let field = obj.create_field(app.pending_position);
+                        app.editor.map.fields.push(field);
+                        app.mode = AppMode::Edit;
+                        app.set_message(&format!("Inserted {}", obj.display()));
+                    }
+                }
+            }
+        } else if app.active_panel == ActivePanel::Canvas {
+            // Shift+Enter on selected field in Canvas: open EditProperties
+            if let Some(idx) = app.editor.selected_field {
+                let field = app.editor.map.fields[idx].clone();
+                app.edit_properties_field = Some(field);
+                app.edit_properties_index = 0;
+                app.mode = AppMode::EditProperties;
+                app.set_message("Edit properties - Shift+Enter to save");
+            }
+        } else if app.mode == AppMode::InsertPosition {
+            // Shift+Enter in InsertPosition mode: confirm and insert
+            if let Some(obj) = app.pending_object.take() {
+                let field = obj.create_field(app.pending_position);
+                app.editor.map.fields.push(field);
+                app.mode = AppMode::Edit;
+                app.set_message(&format!("Inserted {}", obj.display()));
+            }
+        } else if app.mode == AppMode::EditProperties {
+            // Shift+Enter in EditProperties mode: save changes
+            if let Some(field) = app.edit_properties_field.take() {
+                if let Some(idx) = app.editor.selected_field {
+                    app.editor.map.fields[idx] = field;
+                    app.mode = AppMode::Edit;
+                    app.set_message("Properties saved");
+                }
+            }
+        }
+        return;
+    }
+    
     match key.code {
         // Navigation
         KeyCode::Char('j') | KeyCode::Down => {
@@ -714,9 +775,10 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                             let objects = InsertableObject::all();
                             if selected_idx < objects.len() {
                                 let obj = objects[selected_idx];
-                                let field = obj.create_field(app.editor.cursor_pos);
-                                app.editor.map.fields.push(field);
-                                app.set_message(&format!("Inserted {}", obj.display()));
+                                app.pending_object = Some(obj);
+                                app.pending_position = app.editor.cursor_pos;
+                                app.mode = AppMode::InsertPosition;
+                                app.set_message("Set position with arrows, Shift+Enter to confirm");
                             }
                         }
                     }
@@ -903,6 +965,115 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
     }
 }
 
+fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = AppMode::Edit;
+            app.pending_object = None;
+        }
+        KeyCode::Up => {
+            if app.pending_position.0 > 1 {
+                app.pending_position.0 -= 1;
+            }
+        }
+        KeyCode::Down => {
+            app.pending_position.0 += 1;
+        }
+        KeyCode::Left => {
+            if app.pending_position.1 > 1 {
+                app.pending_position.1 -= 1;
+            }
+        }
+        KeyCode::Right => {
+            app.pending_position.1 += 1;
+        }
+        KeyCode::Enter => {
+            // Regular Enter just updates position and stays in mode
+            // Shift+Enter is handled in handle_edit_mode
+        }
+        _ => {}
+    }
+}
+
+fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
+    if let Some(field) = app.edit_properties_field.as_mut() {
+        match key.code {
+            KeyCode::Esc => {
+                app.mode = AppMode::Edit;
+                app.edit_properties_field = None;
+            }
+            KeyCode::Up => {
+                if app.edit_properties_index > 0 {
+                    app.edit_properties_index -= 1;
+                }
+            }
+            KeyCode::Down => {
+                app.edit_properties_index += 1;
+            }
+            KeyCode::Char('+') | KeyCode::Right => {
+                match app.edit_properties_index {
+                    0 => field.pos.1 += 1, // Column
+                    1 => field.pos.0 += 1, // Row
+                    2 => field.length += 1, // Length
+                    3 => { // Value/Initial
+                        field.initial = Some(field.initial.clone().unwrap_or_default() + "+");
+                    }
+                    4 => { // Type
+                        field.field_type = match field.field_type {
+                            FieldType::Field => FieldType::Literal,
+                            FieldType::Literal => FieldType::Group,
+                            FieldType::Group => FieldType::Map,
+                            FieldType::Map => FieldType::Field,
+                            _ => field.field_type.clone(),
+                        };
+                    }
+                    _ => {}
+                }
+            }
+            KeyCode::Char('-') | KeyCode::Left => {
+                match app.edit_properties_index {
+                    0 => {
+                        if field.pos.1 > 1 {
+                            field.pos.1 -= 1;
+                        }
+                    }
+                    1 => {
+                        if field.pos.0 > 1 {
+                            field.pos.0 -= 1;
+                        }
+                    }
+                    2 => {
+                        if field.length > 1 {
+                            field.length -= 1;
+                        }
+                    }
+                    3 => {
+                        if let Some(val) = field.initial.as_mut() {
+                            val.pop();
+                        }
+                    }
+                    4 => {
+                        field.field_type = match field.field_type {
+                            FieldType::Field => FieldType::Map,
+                            FieldType::Literal => FieldType::Field,
+                            FieldType::Group => FieldType::Literal,
+                            FieldType::Map => FieldType::Group,
+                            _ => field.field_type.clone(),
+                        };
+                    }
+                    _ => {}
+                }
+            }
+            KeyCode::Enter => {
+                // Regular Enter exits without saving
+                app.mode = AppMode::Edit;
+                app.edit_properties_field = None;
+            }
+            _ => {}
+        }
+    }
+}
+
 fn handle_color_picker_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
         KeyCode::Esc => {
@@ -1052,6 +1223,8 @@ fn ui(f: &mut Frame, app: &App) {
     let header_title = match app.mode {
         AppMode::Edit => " WYSIWYG EDITOR ",
         AppMode::Properties => " PROPERTIES ",
+        AppMode::InsertPosition => " INSERT POSITION ",
+        AppMode::EditProperties => " EDIT PROPERTIES ",
         AppMode::ColorPicker => " COLOR PICKER ",
         AppMode::AttributePicker => " ATTRIBUTES ",
         AppMode::SaveDialog => " SAVE FILE ",
@@ -1078,6 +1251,14 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::Properties => {
             render_canvas(f, app, content_area);
             render_properties_panel(f, app, content_area);
+        }
+        AppMode::InsertPosition => {
+            render_canvas(f, app, content_area);
+            render_insert_position_dialog(f, app, content_area);
+        }
+        AppMode::EditProperties => {
+            render_canvas(f, app, content_area);
+            render_edit_properties_panel(f, app, content_area);
         }
         AppMode::ColorPicker => {
             render_canvas(f, app, content_area);
@@ -1383,6 +1564,104 @@ fn render_properties_panel(f: &mut Frame, app: &App, area: Rect) {
     }
 }
 
+fn render_insert_position_dialog(f: &mut Frame, app: &App, area: Rect) {
+    let panel_width = 30;
+    let panel_area = Rect {
+        x: area.x + area.width - panel_width,
+        y: area.y,
+        width: panel_width,
+        height: 10,
+    };
+    
+    let block = Block::default()
+        .title(" Insert Position ")
+        .borders(Borders::ALL);
+    f.render_widget(block, panel_area);
+    
+    let inner = Rect {
+        x: panel_area.x + 1,
+        y: panel_area.y + 1,
+        width: panel_area.width.saturating_sub(2),
+        height: panel_area.height.saturating_sub(2),
+    };
+    
+    let obj_name = app.pending_object.map(|o| o.display()).unwrap_or("Object");
+    let (row, col) = app.pending_position;
+    
+    let lines = vec![
+        Line::from(format!("Object: {}", obj_name)),
+        Line::from(""),
+        Line::from("Position:".yellow()),
+        Line::from(format!("  Row: {}", row)),
+        Line::from(format!("  Col: {}", col)),
+        Line::from(""),
+        Line::from("Arrows: Move".dim()),
+        Line::from("Shift+Enter: Confirm".dim()),
+        Line::from("Esc: Cancel".dim()),
+    ];
+    
+    let text = Text::from(lines);
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, inner);
+}
+
+fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
+    let panel_width = area.width.min(35);
+    let panel_area = Rect {
+        x: area.x + area.width - panel_width,
+        y: area.y,
+        width: panel_width,
+        height: area.height.min(18),
+    };
+    
+    let block = Block::default()
+        .title(" Edit Properties ")
+        .borders(Borders::ALL);
+    f.render_widget(block, panel_area);
+    
+    let inner = Rect {
+        x: panel_area.x + 1,
+        y: panel_area.y + 1,
+        width: panel_area.width.saturating_sub(2),
+        height: panel_area.height.saturating_sub(2),
+    };
+    
+    if let Some(field) = &app.edit_properties_field {
+        let mut lines = vec![
+            Line::from("> Position ".yellow()),
+            Line::from(format!("  Row: {} ", field.pos.0)),
+            Line::from(format!("  Col: {} ", field.pos.1)),
+            Line::from(""),
+            Line::from("> Size ".yellow()),
+            Line::from(format!("  Length: {} ", field.length)),
+            Line::from(""),
+            Line::from("> Value ".yellow()),
+            Line::from(format!("  Initial: {} ", field.initial.as_deref().unwrap_or(""))),
+            Line::from(""),
+            Line::from("> Type ".yellow()),
+            Line::from(format!("  {:?}", field.field_type)),
+            Line::from(""),
+            Line::from("Up/Down: Navigate".dim()),
+            Line::from(r#"+/- : Modify"#.dim()),
+            Line::from("Shift+Enter: Save".dim()),
+            Line::from("Esc: Cancel".dim()),
+        ];
+        
+        // Highlight current property
+        if app.edit_properties_index < lines.len() {
+            if let Some(line) = lines.get_mut(app.edit_properties_index) {
+                *line = Line::from(Span::styled(line.spans[0].content.clone(), Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)));
+            }
+        }
+        
+        let text = Text::from(lines);
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().borders(Borders::NONE));
+        f.render_widget(paragraph, inner);
+    }
+}
+
 fn render_color_picker(f: &mut Frame, app: &App, area: Rect) {
     let panel_width = 28;
     let panel_area = Rect {
@@ -1620,6 +1899,8 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     let mode_text = match app.mode {
         AppMode::Edit => "EDIT",
         AppMode::Properties => "PROPERTIES",
+        AppMode::InsertPosition => "INSERT_POS",
+        AppMode::EditProperties => "EDIT_PROPS",
         AppMode::ColorPicker => "COLOR",
         AppMode::AttributePicker => "ATTRS",
         AppMode::SaveDialog => "SAVE",
