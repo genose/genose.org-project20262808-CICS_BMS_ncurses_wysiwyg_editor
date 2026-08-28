@@ -1,0 +1,90 @@
+{
+  "scopeName": "source.bms",
+  "fileTypes": ["bms", "BMS"],
+  "name": "BMS",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#statements"
+    },
+    {
+      "include": "#keywords"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "match": \"^\\s*\\*.*$\",
+          "name": "comment.line.bms"
+        }
+      ]
+    },
+    "statements": {
+      "patterns": [
+        {
+          "match": \"^\\s*(DFHMSD)\",
+          "name": "entity.name.type.map.bms"
+        },
+        {
+          "match": \"^\\s*(DFHMDI)\",
+          "name": "entity.name.type.dimension.bms"
+        },
+        {
+          "match": \"^\\s*(DFHMND)\",
+          "name": "entity.name.type.field.bms"
+        },
+        {
+          "match": \"^\\s*(DFHMDF)\",
+          "name": "entity.name.type.formatted-field.bms"
+        },
+        {
+          "match": \"^\\s*(DFHMSD|DFHMDI|DFHMND|DFHMDF|DFHMNDM|DFHMDFM)\",
+          "name": "punctuation.definition.entity.bms"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "match": \"\\b(TYPE|MAPSET|SIZE|POS|LENGTH|ATTRB|COLOR|INITIAL|PIC|PHYSICAL|LANG|FORMAT)\\b\"),
+          "name": "keyword.other.bms"
+        },
+        {
+          "match": \"\\b(PROT|NORM|NUM|ALPH|ALNUM|BOOL|DATE|TIME|FLOAT|SIGN|INTENS|BLINK|REVERSE|UNDERLINE|DARK)\\b\"),
+          "name": "keyword.attribute.bms"
+        },
+        {
+          "match": \"\\b(BLACK|BLUE|GREEN|CYAN|RED|MAGENTA|YELLOW|WHITE|TURQUOISE|PINK|ORANGE|PURPLE|GRAY|LIGHTGREEN)\\b\"),
+          "name": "keyword.color.bms"
+        },
+        {
+          "match": \"\\b(YES|NO)\\b\"),
+          "name": "keyword.boolean.bms"
+        }
+      ]
+    },
+    "attributes": {
+      "patterns": [
+        {
+          "match": \"ATTRB=\\\([^)]+\\)\"),
+          "name": "meta.attribute.bms"
+        },
+        {
+          "match": \"POS=\\\([^)]+\\)\"),
+          "name": "meta.position.bms"
+        },
+        {
+          "match": \"SIZE=\\\([^)]+\\)\"),
+          "name": "meta.size.bms"
+        },
+        {
+          "match": \"COLOR=\\w+\"),
+          "name": "meta.color.bms"
+        }
+      ]
+    }
+  }
+}

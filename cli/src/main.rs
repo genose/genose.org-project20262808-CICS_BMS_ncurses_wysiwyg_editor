@@ -1,0 +1,1259 @@
+//! COBOL BMS WYSIWYG Editor - CLI Interface
+//!
+//! Interface TUI complete pour l'edition visuelle des maps BMS CICS
+//! 
+//! Fonctionnalites:
+//! - Creation de maps BMS depuis zero
+//! - Edition interactive (ajout/suppression/deplacement de champs)
+//! - Modification des proprietes (couleurs, attributs, etc.)
+//! - Preview en temps reel
+//! - Generation de code COBOL
+//! - Undo/Redo
+
+use anyhow::{Context, Result};
+use clap::{Parser, Subcommand};
+use crossterm::{
+    event::{self, Event, KeyCode, KeyModifiers},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use ratatui::{
+    backend::CrosstermBackend,
+    Terminal,
+    widgets::{Block, Borders, Paragraph, Scrollbar, ScrollbarOrientation},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Style, Stylize},
+    text::{Line, Span, Text},
+    Frame,
+};
+use std::{
+    fs,
+    io::{self, stdout, Write},
+    path::PathBuf,
+    time::Duration,
+};
+
+use cobol_bms_core::bms::{
+    parse_bms_file, generate_cobol, render_bms_text, BmsMap, BmsField, FieldType, FieldAttribute, Color,
+    BmsEditor, EditorMode, CursorDirection, create_default_map,
+};
+
+/// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
+#[derive(Parser, Debug)]
+#[command(name = "cobol-bms")]
+#[command(author = "genose.org")]
+#[command(version = "0.1.0")]
+#[command(about = "COBOL CICS/BMS WYSIWYG Editor - Creation et edition d'ecrans BMS", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+    /// Preview d'une map BMS (affichage texte)
+    Preview {
+        /// Chemin vers le fichier BMS
+        file: PathBuf,
+    },
+    /// Generer du code COBOL depuis une map BMS
+    Generate {
+        /// Chemin vers le fichier BMS
+        file: PathBuf,
+        /// Fichier de sortie (par defaut: <input>.cbl)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Creer une nouvelle map BMS vide
+    New {
+        /// Nom de la map
+        #[arg(short, long, default_value = "NEWMAP")]
+        name: String,
+        /// Nom du mapset
+        #[arg(short, long, default_value = "DEFAULT")]
+        mapset: String,
+        /// Largeur (colonnes)
+        #[arg(short, long, default_value = "80")]
+        width: u16,
+        /// Hauteur (lignes)
+        #[arg(short, long, default_value = "24")]
+        height: u16,
+        /// Ouvrir dans l'editeur TUI
+        #[arg(short, long)]
+        edit: bool,
+    },
+    /// Editeur WYSIWYG interactif
+    Edit {
+        /// Fichier BMS a editer (optionnel)
+        file: Option<PathBuf>,
+    },
+}
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+    
+    match cli.command {
+        Commands::Preview { file } => {
+            let map = parse_bms_file(file.to_str().unwrap())?;
+            println!("{}", render_bms_text(&map));
+        }
+        Commands::Generate { file, output } => {
+            let map = parse_bms_file(file.to_str().unwrap())?;
+            let cobol = generate_cobol(&map);
+            
+            let output_path = output.unwrap_or_else(|| {
+                let mut path = file.clone();
+                let new_name = path.file_name().unwrap().to_string().replace(".bms", ".cbl");
+                path.set_file_name(new_name);
+                path
+            });
+            
+            fs::write(&output_path, cobol)
+                .with_context(|| format!("Failed to write to: {}", output_path.display()))?;
+            println!("Generated COBOL: {}", output_path.display());
+        }
+        Commands::New { name, mapset, width, height, edit } => {
+            let mut editor = BmsEditor::new();
+            editor.new_map(&name, &mapset, (height, width));
+            
+            if edit {
+                run_editor(editor)?;
+            } else {
+                let bms = editor.export_to_bms();
+                let path = PathBuf::from(format!("{}.bms", name));
+                fs::write(&path, bms)?;
+                println!("Created new BMS file: {}", path.display());
+            }
+        }
+        Commands::Edit { file } => {
+            let editor = if let Some(path) = file {
+                let map = parse_bms_file(path.to_str().unwrap())?;
+                BmsEditor::from_map(map)
+            } else {
+                BmsEditor::new()
+            };
+            run_editor(editor)?;
+        }
+    }
+    
+    Ok(())
+}
+
+// ==================== EDITEUR WYSIWYG ====================
+
+/// Mode global de l'application
+#[derive(Debug, Clone, PartialEq)]
+enum AppMode {
+    /// Mode normal (navigation)
+    Normal,
+    /// Mode edition (WYSIWYG)
+    Edit,
+    /// Mode properties (edition des proprietes)
+    Properties,
+    /// Mode color picker
+    ColorPicker,
+    /// Mode attribute picker
+    AttributePicker,
+    /// Mode save dialog
+    SaveDialog,
+    /// Mode help
+    Help,
+    /// Mode confirm (pour suppression, etc.)
+    Confirm,
+}
+
+/// Etat de l'application
+#[derive(Debug)]
+struct App {
+    editor: BmsEditor,
+    mode: AppMode,
+    current_file: Option<PathBuf>,
+    scroll: u16,
+    message: Option<String>,
+    message_timeout: Option<usize>,
+    exit: bool,
+    // Pour le mode properties
+    property_index: usize,
+    // Pour le mode color picker
+    selected_color: Option<Color>,
+    // Pour le mode attribute picker
+    selected_attribute: Option<FieldAttribute>,
+    // Pour le mode save
+    save_path: String,
+    // Pour le mode confirm
+    confirm_action: ConfirmAction,
+}
+
+#[derive(Debug, Clone)]
+enum ConfirmAction {
+    QuitWithoutSave,
+    DeleteField,
+    ClearMap,
+}
+
+impl App {
+    fn new(editor: BmsEditor) -> Self {
+        Self {
+            editor,
+            mode: AppMode::Edit,
+            current_file: None,
+            scroll: 0,
+            message: None,
+            message_timeout: None,
+            exit: false,
+            property_index: 0,
+            selected_color: None,
+            selected_attribute: None,
+            save_path: String::new(),
+            confirm_action: ConfirmAction::QuitWithoutSave,
+        }
+    }
+    
+    fn is_modified(&self) -> bool {
+        self.current_file.is_none() || 
+        (self.current_file.as_ref().and_then(|p| {
+            fs::read_to_string(p).ok().and_then(|content| {
+                parse_bms_file(p.to_str().unwrap()).ok()
+            })
+        }).map_or(true, |original| original != self.editor.map))
+    }
+    
+    fn set_message(&mut self, msg: &str) {
+        self.message = Some(msg.to_string());
+        self.message_timeout = Some(60);
+    }
+    
+    fn clear_message(&mut self) {
+        self.message = None;
+        self.message_timeout = None;
+    }
+    
+    fn tick_message(&mut self) {
+        if let Some(timeout) = self.message_timeout {
+            if timeout == 0 {
+                self.clear_message();
+            } else {
+                self.message_timeout = Some(timeout - 1);
+            }
+        }
+    }
+}
+
+/// Execution de l'editeur
+fn run_editor(mut editor: BmsEditor) -> Result<()> {
+    // Setup terminal
+    enable_raw_mode()?;
+    let mut stdout = stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    
+    // Create app
+    let mut app = App::new(editor);
+    
+    // Main loop
+    loop {
+        if app.exit {
+            break;
+        }
+        
+        terminal.draw(|f| ui(f, &app))?;
+        
+        // Handle input
+        if event::poll(Duration::from_millis(50))? {
+            if let Event::Key(key) = event::read()? {
+                handle_input(&mut app, key);
+            }
+        }
+        
+        app.tick_message();
+    }
+    
+    // Cleanup
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    Ok(())
+}
+
+fn handle_input(app: &mut App, key: event::KeyEvent) {
+    // Handle Ctrl keys in all modes
+    if key.modifiers.contains(KeyModifiers::CONTROL) {
+        match key.code {
+            KeyCode::Char('c') => {
+                if app.mode == AppMode::Edit {
+                    app.editor.copy_selected();
+                    app.set_message("Copied");
+                }
+                return;
+            }
+            KeyCode::Char('q') => {
+                if app.is_modified() {
+                    app.mode = AppMode::Confirm;
+                    app.confirm_action = ConfirmAction::QuitWithoutSave;
+                } else {
+                    app.exit = true;
+                }
+                return;
+            }
+            KeyCode::Char('s') => {
+                if app.mode == AppMode::Edit {
+                    app.mode = AppMode::SaveDialog;
+                    app.save_path = app.current_file.as_ref()
+                        .map(|p| p.to_string())
+                        .unwrap_or_else(|| "new_map.bms".to_string());
+                }
+                return;
+            }
+            KeyCode::Char('z') => {
+                if app.mode == AppMode::Edit {
+                    app.editor.undo();
+                    app.set_message("Undo");
+                }
+                return;
+            }
+            KeyCode::Char('y') => {
+                if app.mode == AppMode::Edit {
+                    app.editor.redo();
+                    app.set_message("Redo");
+                }
+                return;
+            }
+            _ => {}
+        }
+    }
+    
+    match app.mode {
+        AppMode::Edit => handle_edit_mode(app, key),
+        AppMode::Properties => handle_properties_mode(app, key),
+        AppMode::ColorPicker => handle_color_picker_mode(app, key),
+        AppMode::AttributePicker => handle_attribute_picker_mode(app, key),
+        AppMode::SaveDialog => handle_save_dialog_mode(app, key),
+        AppMode::Help => handle_help_mode(app, key),
+        AppMode::Confirm => handle_confirm_mode(app, key),
+        AppMode::Normal => handle_normal_mode(app, key),
+    }
+}
+
+fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        // Navigation
+        KeyCode::Char('j') | KeyCode::Down => {
+            app.editor.move_cursor(CursorDirection::Down, 1);
+            app.editor.select_field_at(app.editor.cursor_pos);
+        }
+        KeyCode::Char('k') | KeyCode::Up => {
+            app.editor.move_cursor(CursorDirection::Up, 1);
+            app.editor.select_field_at(app.editor.cursor_pos);
+        }
+        KeyCode::Char('h') | KeyCode::Left => {
+            app.editor.move_cursor(CursorDirection::Left, 1);
+            app.editor.select_field_at(app.editor.cursor_pos);
+        }
+        KeyCode::Char('l') | KeyCode::Right => {
+            app.editor.move_cursor(CursorDirection::Right, 1);
+            app.editor.select_field_at(app.editor.cursor_pos);
+        }
+        
+        // Field selection
+        KeyCode::Tab => {
+            app.editor.select_next_field();
+            if let Some(idx) = app.editor.selected_field {
+                let field = &app.editor.map.fields[idx];
+                app.editor.cursor_pos = field.pos;
+            }
+        }
+        KeyCode::BackTab => {
+            app.editor.select_prev_field();
+            if let Some(idx) = app.editor.selected_field {
+                let field = &app.editor.map.fields[idx];
+                app.editor.cursor_pos = field.pos;
+            }
+        }
+        
+        // Field manipulation
+        KeyCode::Char('a') => {
+            app.editor.add_field_at_cursor(10);
+            app.set_message("Added field");
+        }
+        KeyCode::Char('A') => {
+            app.editor.add_field_at_cursor(20);
+            app.set_message("Added long field");
+        }
+        KeyCode::Char('d') => {
+            if app.editor.selected_field.is_some() {
+                app.mode = AppMode::Confirm;
+                app.confirm_action = ConfirmAction::DeleteField;
+            }
+        }
+        KeyCode::Char('m') => {
+            if let Some(idx) = app.editor.selected_field {
+                app.editor.drag_start = Some(app.editor.map.fields[idx].pos);
+                app.editor.mode = EditorMode::MoveField;
+                app.set_message("Move field - arrows to move, Enter to drop");
+            }
+        }
+        KeyCode::Char('r') => {
+            if let Some(idx) = app.editor.selected_field {
+                app.editor.drag_start = Some((app.editor.map.fields[idx].pos.0, app.editor.map.fields[idx].pos.1 + app.editor.map.fields[idx].length - 1));
+                app.editor.mode = EditorMode::ResizeField { direction: ResizeDirection::Right };
+                app.set_message("Resize field - Left/Right to resize");
+            }
+        }
+        
+        // Properties
+        KeyCode::Char('e') => {
+            if app.editor.selected_field.is_some() {
+                app.mode = AppMode::Properties;
+                app.property_index = 0;
+            }
+        }
+        
+        // Clipboard
+        KeyCode::Char('c') => {
+            app.editor.copy_selected();
+            app.set_message("Copied");
+        }
+        KeyCode::Char('x') => {
+            if app.editor.cut_selected().is_some() {
+                app.set_message("Cut");
+            }
+        }
+        KeyCode::Char('v') => {
+            if app.editor.paste_at_cursor().is_some() {
+                app.set_message("Pasted");
+            }
+        }
+        
+        // Color picker
+        KeyCode::Char('C') => {
+            if app.editor.selected_field.is_some() {
+                app.mode = AppMode::ColorPicker;
+                app.selected_color = app.editor.map.fields[app.editor.selected_field.unwrap()].color;
+            }
+        }
+        
+        // Attribute picker
+        KeyCode::Char('t') => {
+            if app.editor.selected_field.is_some() {
+                app.mode = AppMode::AttributePicker;
+                app.selected_attribute = None;
+            }
+        }
+        
+        // New map
+        KeyCode::Char('n') => {
+            app.editor.new_map("NEWMAP", "DEFAULT", (24, 80));
+            app.current_file = None;
+            app.set_message("New map created");
+        }
+        
+        // Default map
+        KeyCode::Char('N') => {
+            let default_map = create_default_map("TEMPLATE", "DEFAULT");
+            app.editor = BmsEditor::from_map(default_map);
+            app.current_file = None;
+            app.set_message("Template map loaded");
+        }
+        
+        // Scroll
+        KeyCode::Char('J') => app.scroll_down(),
+        KeyCode::Char('K') => app.scroll_up(),
+        
+        // Help
+        KeyCode::Char('?') => app.mode = AppMode::Help,
+        
+        // Generate COBOL
+        KeyCode::Char('g') => {
+            let cobol = generate_cobol(&app.editor.map);
+            let path = app.current_file.as_ref()
+                .map(|p| p.with_extension("cbl"))
+                .unwrap_or_else(|| PathBuf::from("output.cbl"));
+            if let Err(e) = fs::write(&path, cobol) {
+                app.set_message(&format!("Failed: {}", e));
+            } else {
+                app.set_message(&format!("Generated: {}", path.display()));
+            }
+        }
+        
+        // Mode normal (preview only)
+        KeyCode::Char(' ') => app.mode = AppMode::Normal,
+        
+        // Exit
+        KeyCode::Esc => {
+            if app.is_modified() {
+                app.mode = AppMode::Confirm;
+                app.confirm_action = ConfirmAction::QuitWithoutSave;
+            } else {
+                app.exit = true;
+            }
+        }
+        
+        _ => {}
+    }
+}
+
+fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => app.mode = AppMode::Edit,
+        KeyCode::Up => {
+            if app.property_index > 0 {
+                app.property_index -= 1;
+            }
+        }
+        KeyCode::Down => {
+            app.property_index += 1;
+        }
+        KeyCode::Char('+') | KeyCode::Right => {
+            if let Some(idx) = app.editor.selected_field {
+                match app.property_index {
+                    0 => app.editor.map.fields[idx].pos.1 += 1, // Column
+                    1 => app.editor.map.fields[idx].pos.0 += 1, // Row
+                    2 => app.editor.map.fields[idx].length += 1, // Length
+                    3 => { // Color
+                        app.mode = AppMode::ColorPicker;
+                        app.selected_color = app.editor.map.fields[idx].color;
+                        return;
+                    }
+                    4 => { // Attributes
+                        app.mode = AppMode::AttributePicker;
+                        return;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        KeyCode::Char('-') | KeyCode::Left => {
+            if let Some(idx) = app.editor.selected_field {
+                match app.property_index {
+                    0 => { // Column
+                        if app.editor.map.fields[idx].pos.1 > 1 {
+                            app.editor.map.fields[idx].pos.1 -= 1;
+                        }
+                    }
+                    1 => { // Row
+                        if app.editor.map.fields[idx].pos.0 > 1 {
+                            app.editor.map.fields[idx].pos.0 -= 1;
+                        }
+                    }
+                    2 => { // Length
+                        if app.editor.map.fields[idx].length > 1 {
+                            app.editor.map.fields[idx].length -= 1;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+        KeyCode::Enter => app.mode = AppMode::Edit,
+        _ => {}
+    }
+}
+
+fn handle_color_picker_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = AppMode::Edit;
+            app.selected_color = None;
+        }
+        KeyCode::Enter => {
+            if let Some(color) = app.selected_color {
+                if let Some(idx) = app.editor.selected_field {
+                    app.editor.set_selected_field_color(Some(color));
+                }
+            }
+            app.mode = AppMode::Edit;
+            app.selected_color = None;
+        }
+        KeyCode::Char('b') => app.selected_color = Some(Color::Blue),
+        KeyCode::Char('g') => app.selected_color = Some(Color::Green),
+        KeyCode::Char('r') => app.selected_color = Some(Color::Red),
+        KeyCode::Char('y') => app.selected_color = Some(Color::Yellow),
+        KeyCode::Char('w') => app.selected_color = Some(Color::White),
+        KeyCode::Char('c') => app.selected_color = Some(Color::Cyan),
+        KeyCode::Char('m') => app.selected_color = Some(Color::Magenta),
+        KeyCode::Char('k') => app.selected_color = Some(Color::Black),
+        KeyCode::Char('o') => app.selected_color = Some(Color::Orange),
+        KeyCode::Char('p') => app.selected_color = Some(Color::Pink),
+        KeyCode::Char(' ') => app.selected_color = None,
+        _ => {}
+    }
+}
+
+fn handle_attribute_picker_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = AppMode::Edit;
+            app.selected_attribute = None;
+        }
+        KeyCode::Enter => {
+            if let Some(attr) = app.selected_attribute {
+                if let Some(idx) = app.editor.selected_field {
+                    app.editor.add_selected_field_attribute(attr);
+                }
+            }
+            app.mode = AppMode::Edit;
+            app.selected_attribute = None;
+        }
+        KeyCode::Char('p') => app.selected_attribute = Some(FieldAttribute::Prot),
+        KeyCode::Char('n') => app.selected_attribute = Some(FieldAttribute::Norm),
+        KeyCode::Char('u') => app.selected_attribute = Some(FieldAttribute::Num),
+        KeyCode::Char('a') => app.selected_attribute = Some(FieldAttribute::Alph),
+        KeyCode::Char('l') => app.selected_attribute = Some(FieldAttribute::AlphaNum),
+        KeyCode::Char('i') => app.selected_attribute = Some(FieldAttribute::Intens),
+        KeyCode::Char('b') => app.selected_attribute = Some(FieldAttribute::Blink),
+        KeyCode::Char('v') => app.selected_attribute = Some(FieldAttribute::Reverse),
+        KeyCode::Char('d') => app.selected_attribute = Some(FieldAttribute::Dark),
+        _ => {}
+    }
+}
+
+fn handle_save_dialog_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => app.mode = AppMode::Edit,
+        KeyCode::Enter => {
+            let path = PathBuf::from(&app.save_path);
+            match fs::write(&path, app.editor.export_to_bms()) {
+                Ok(_) => {
+                    app.current_file = Some(path);
+                    app.mode = AppMode::Edit;
+                    app.set_message(&format!("Saved: {}", path.display()));
+                }
+                Err(e) => {
+                    app.set_message(&format!("Failed: {}", e));
+                }
+            }
+        }
+        KeyCode::Backspace => {
+            app.save_path.pop();
+        }
+        KeyCode::Char(c) => {
+            app.save_path.push(c);
+        }
+        _ => {}
+    }
+}
+
+fn handle_help_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
+        _ => {}
+    }
+}
+
+fn handle_confirm_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Char('y') | KeyCode::Enter => {
+            match app.confirm_action {
+                ConfirmAction::QuitWithoutSave => app.exit = true,
+                ConfirmAction::DeleteField => {
+                    if app.editor.remove_selected_field().is_some() {
+                        app.set_message("Field deleted");
+                    }
+                    app.mode = AppMode::Edit;
+                }
+                ConfirmAction::ClearMap => {
+                    app.editor.map.fields.clear();
+                    app.editor.selected_field = None;
+                    app.set_message("Map cleared");
+                    app.mode = AppMode::Edit;
+                }
+            }
+        }
+        KeyCode::Char('n') | KeyCode::Esc => app.mode = AppMode::Edit,
+        _ => {}
+    }
+}
+
+fn handle_normal_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Char('e') | KeyCode::Esc => app.mode = AppMode::Edit,
+        KeyCode::Char('q') => {
+            if app.is_modified() {
+                app.mode = AppMode::Confirm;
+                app.confirm_action = ConfirmAction::QuitWithoutSave;
+            } else {
+                app.exit = true;
+            }
+        }
+        _ => handle_edit_mode(app, key),
+    }
+}
+
+// ==================== UI ====================
+
+fn ui(f: &mut Frame, app: &App) {
+    let size = f.size();
+    
+    // Main layout
+    let main_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(1),    // Header
+            Constraint::Min(1),       // Canvas + Sidebar
+            Constraint::Length(2),    // Status bar
+        ])
+        .split(size);
+    
+    // Header
+    let header_title = match app.mode {
+        AppMode::Edit => " WYSIWYG EDITOR ",
+        AppMode::Properties => " PROPERTIES ",
+        AppMode::ColorPicker => " COLOR PICKER ",
+        AppMode::AttributePicker => " ATTRIBUTES ",
+        AppMode::SaveDialog => " SAVE FILE ",
+        AppMode::Help => " HELP ",
+        AppMode::Confirm => " CONFIRM ",
+        AppMode::Normal => " PREVIEW ",
+    };
+    
+    let header = Block::default()
+        .title(header_title)
+        .title_alignment(ratatui::layout::Alignment::Center)
+        .borders(Borders::TOP)
+        .style(Style::default().bg(Color::Blue).fg(Color::White));
+    f.render_widget(header, main_layout[0]);
+    
+    // Main content area
+    let content_area = main_layout[1];
+    
+    match app.mode {
+        AppMode::Edit | AppMode::Normal => {
+            render_canvas(f, app, content_area);
+            render_sidebar(f, app, content_area);
+        }
+        AppMode::Properties => {
+            render_canvas(f, app, content_area);
+            render_properties_panel(f, app, content_area);
+        }
+        AppMode::ColorPicker => {
+            render_canvas(f, app, content_area);
+            render_color_picker(f, app, content_area);
+        }
+        AppMode::AttributePicker => {
+            render_canvas(f, app, content_area);
+            render_attribute_picker(f, app, content_area);
+        }
+        AppMode::SaveDialog => {
+            render_save_dialog(f, app, content_area);
+        }
+        AppMode::Help => {
+            render_help(f, app, content_area);
+        }
+        AppMode::Confirm => {
+            render_confirm(f, app, content_area);
+        }
+    }
+    
+    // Status bar
+    render_status_bar(f, app, main_layout[2]);
+}
+
+fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
+    let canvas_width = area.width.saturating_sub(25);
+    let canvas_area = Rect {
+        x: area.x,
+        y: area.y,
+        width: canvas_width,
+        height: area.height,
+    };
+    
+    // Draw border
+    let canvas_block = Block::default()
+        .title(format!(" Canvas ({}x{}) ", app.editor.map.size.0, app.editor.map.size.1))
+        .borders(Borders::ALL);
+    f.render_widget(canvas_block, canvas_area);
+    
+    // Render grid
+    let grid_area = Rect {
+        x: canvas_area.x + 1,
+        y: canvas_area.y + 1,
+        width: canvas_area.width.saturating_sub(2),
+        height: canvas_area.height.saturating_sub(2),
+    };
+    
+    render_bms_grid(f, app, grid_area);
+}
+
+fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
+    let map = &app.editor.map;
+    
+    // Create a grid based on the visible area
+    let visible_rows = area.height as usize;
+    let visible_cols = area.width as usize;
+    
+    let start_row = app.scroll as usize;
+    let end_row = (start_row + visible_rows).min(map.size.0 as usize);
+    
+    for grid_row in start_row..end_row {
+        let mut line = String::new();
+        
+        for col in 1..=visible_cols {
+            let mut c = ' ';
+            let mut style = Style::default();
+            
+            // Check if any field covers this cell
+            for (idx, field) in map.fields.iter().enumerate() {
+                let (field_row, field_col) = field.pos;
+                let field_row = field_row as usize;
+                let field_col = field_col as usize;
+                let field_end_col = field_col + field.length as usize - 1;
+                
+                if grid_row + 1 == field_row && col >= field_col && col <= field_end_col {
+                    c = match field.field_type {
+                        FieldType::Map => '#',
+                        FieldType::Field => {
+                            if field.attrb.contains(&FieldAttribute::Prot) {
+                                'P'
+                            } else if field.attrb.contains(&FieldAttribute::Num) {
+                                '0'
+                            } else {
+                                'F'
+                            }
+                        }
+                        FieldType::Literal => 'L',
+                        FieldType::Group => 'G',
+                        _ => 'X',
+                    };
+                    
+                    if Some(idx) == app.editor.selected_field {
+                        style = style.fg(Color::Black).bg(Color::Yellow);
+                    } else {
+                        match field.color {
+                            Some(Color::Blue) => style = style.fg(Color::Blue),
+                            Some(Color::Green) => style = style.fg(Color::Green),
+                            Some(Color::Red) => style = style.fg(Color::Red),
+                            Some(Color::Yellow) => style = style.fg(Color::Yellow),
+                            Some(Color::Cyan) => style = style.fg(Color::Cyan),
+                            Some(Color::Magenta) => style = style.fg(Color::Magenta),
+                            _ => style = style.fg(Color::White),
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            line.push(c);
+        }
+        
+        let paragraph = Paragraph::new(line)
+            .style(style)
+            .block(Block::default().borders(Borders::NONE));
+        f.render_widget(paragraph, Rect {
+            x: area.x,
+            y: area.y + (grid_row as u16 - start_row as u16),
+            width: area.width,
+            height: 1,
+        });
+    }
+    
+    // Add scrollbar if needed
+    if map.size.0 > visible_rows as u16 {
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("UP"))
+            .end_symbol(Some("DN"))
+            .track_symbol(Some("|"))
+            .thumb_symbol(Some("#"))
+            .position(app.scroll)
+            .range(0, map.size.0.saturating_sub(visible_rows as u16));
+        f.render_widget(scrollbar, area);
+    }
+}
+
+fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
+    let panel_area = Rect {
+        x: area.x + area.width - 24,
+        y: area.y,
+        width: 24,
+        height: area.height,
+    };
+    
+    let block = Block::default()
+        .title(" Sidebar ")
+        .borders(Borders::ALL);
+    f.render_widget(block, panel_area);
+    
+    let inner = Rect {
+        x: panel_area.x + 1,
+        y: panel_area.y + 1,
+        width: panel_area.width.saturating_sub(2),
+        height: panel_area.height.saturating_sub(2),
+    };
+    
+    // Field info
+    if let Some(idx) = app.editor.selected_field {
+        let field = &app.editor.map.fields[idx];
+        let lines = vec![
+            Line::from(" Selected Field ".underline()),
+            Line::from(""),
+            Line::from(format!("Name: {}", field.name)),
+            Line::from(format!("Pos: ({},{})", field.pos.0, field.pos.1)),
+            Line::from(format!("Len: {}", field.length)),
+            Line::from(""),
+            Line::from(" Actions: ".underline()),
+        ];
+        
+        let mut attrs_line = String::new();
+        for attr in &field.attrb {
+            attrs_line.push_str(&format!("{:?} ", attr));
+        }
+        
+        let mut extended_lines: Vec<Line> = lines.into_iter().collect();
+        extended_lines.push(Line::from(attrs_line));
+        extended_lines.push(Line::from(""));
+        extended_lines.push(Line::from("e: Edit"));
+        extended_lines.push(Line::from("d: Delete"));
+        extended_lines.push(Line::from("m: Move"));
+        extended_lines.push(Line::from("r: Resize"));
+        extended_lines.push(Line::from("C: Color"));
+        extended_lines.push(Line::from("t: Attrs"));
+        
+        let text = Text::from(extended_lines);
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().borders(Borders::NONE));
+        f.render_widget(paragraph, inner);
+    } else {
+        // No field selected
+        let lines = vec![
+            Line::from(" No field selected ".dim()),
+            Line::from(""),
+            Line::from(" Actions: ".underline()),
+            Line::from("a: Add field"),
+            Line::from("A: Add long"),
+            Line::from("n: New map"),
+            Line::from("N: Template"),
+            Line::from("v: Paste"),
+            Line::from("g: Gen COBOL"),
+        ];
+        
+        let text = Text::from(lines);
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().borders(Borders::NONE));
+        f.render_widget(paragraph, inner);
+    }
+}
+
+fn render_properties_panel(f: &mut Frame, app: &App, area: Rect) {
+    let panel_width = area.width.min(35);
+    let panel_area = Rect {
+        x: area.x + area.width - panel_width,
+        y: area.y,
+        width: panel_width,
+        height: area.height.min(15),
+    };
+    
+    let block = Block::default()
+        .title(" Properties ")
+        .borders(Borders::ALL);
+    f.render_widget(block, panel_area);
+    
+    if let Some(idx) = app.editor.selected_field {
+        let field = &app.editor.map.fields[idx];
+        let lines = vec![
+            Line::from("> Position ".yellow()),
+            Line::from(format!("  Row: {} ", field.pos.0)),
+            Line::from(format!("  Col: {} ", field.pos.1)),
+            Line::from(""),
+            Line::from(" Size ".yellow()),
+            Line::from(format!("  Length: {} ", field.length)),
+            Line::from(""),
+            Line::from(" Appearance ".yellow()),
+            Line::from(format!("  Color: {:?}", field.color)),
+            Line::from(format!("  Attrs: {:?}", field.attrb)),
+            Line::from(""),
+            Line::from(" Type ".yellow()),
+            Line::from(format!("  {:?}", field.field_type)),
+        ];
+        
+        let text = Text::from(lines);
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().borders(Borders::NONE));
+        f.render_widget(paragraph, Rect {
+            x: panel_area.x + 1,
+            y: panel_area.y + 1,
+            width: panel_area.width.saturating_sub(2),
+            height: panel_area.height.saturating_sub(2),
+        });
+    }
+}
+
+fn render_color_picker(f: &mut Frame, app: &App, area: Rect) {
+    let panel_width = 28;
+    let panel_area = Rect {
+        x: area.x + area.width - panel_width,
+        y: area.y,
+        width: panel_width,
+        height: 13,
+    };
+    
+    let block = Block::default()
+        .title(" Colors ")
+        .borders(Borders::ALL);
+    f.render_widget(block, panel_area);
+    
+    let colors = vec![
+        (Color::Black, "Black", "K"),
+        (Color::Blue, "Blue", "B"),
+        (Color::Green, "Green", "G"),
+        (Color::Cyan, "Cyan", "C"),
+        (Color::Red, "Red", "R"),
+        (Color::Magenta, "Magenta", "M"),
+        (Color::Yellow, "Yellow", "Y"),
+        (Color::White, "White", "W"),
+        (Color::Orange, "Orange", "O"),
+        (Color::Pink, "Pink", "P"),
+    ];
+    
+    let mut lines = vec![Line::from(" Select: ".yellow())];
+    for (color, name, key) in &colors {
+        let prefix = if Some(*color) == app.selected_color { "> " } else { "  " };
+        lines.push(Line::from(format!("{} {} [{}]", prefix, name, key)));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from("Space: None".to_string()));
+    lines.push(Line::from("Enter: Apply".to_string()));
+    
+    let text = Text::from(lines);
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, Rect {
+        x: panel_area.x + 1,
+        y: panel_area.y + 1,
+        width: panel_area.width.saturating_sub(2),
+        height: panel_area.height.saturating_sub(2),
+    });
+}
+
+fn render_attribute_picker(f: &mut Frame, app: &App, area: Rect) {
+    let panel_width = 30;
+    let panel_area = Rect {
+        x: area.x + area.width - panel_width,
+        y: area.y,
+        width: panel_width,
+        height: 14,
+    };
+    
+    let block = Block::default()
+        .title(" Attributes ")
+        .borders(Borders::ALL);
+    f.render_widget(block, panel_area);
+    
+    let attrs = vec![
+        (FieldAttribute::Prot, "PROT", "P"),
+        (FieldAttribute::Norm, "NORM", "N"),
+        (FieldAttribute::Num, "NUM", "U"),
+        (FieldAttribute::Alph, "ALPH", "A"),
+        (FieldAttribute::AlphaNum, "ALNUM", "L"),
+        (FieldAttribute::Intens, "INTENS", "I"),
+        (FieldAttribute::Blink, "BLINK", "B"),
+        (FieldAttribute::Reverse, "REVERSE", "V"),
+        (FieldAttribute::Dark, "DARK", "D"),
+    ];
+    
+    let mut lines = vec![Line::from(" Select: ".yellow())];
+    for (attr, name, key) in &attrs {
+        let prefix = if Some(*attr) == app.selected_attribute { "> " } else { "  " };
+        lines.push(Line::from(format!("{} {} [{}]", prefix, name, key)));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from("Enter: Add attribute".to_string()));
+    
+    let text = Text::from(lines);
+    let paragraph = Paragraph::new(text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, Rect {
+        x: panel_area.x + 1,
+        y: panel_area.y + 1,
+        width: panel_area.width.saturating_sub(2),
+        height: panel_area.height.saturating_sub(2),
+    });
+}
+
+fn render_save_dialog(f: &mut Frame, app: &App, area: Rect) {
+    let dialog_width = 40;
+    let dialog_height = 5;
+    let dialog_area = Rect {
+        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
+        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
+        width: dialog_width,
+        height: dialog_height,
+    };
+    
+    let block = Block::default()
+        .title(" Save File ")
+        .borders(Borders::ALL);
+    f.render_widget(block, dialog_area);
+    
+    let inner = Rect {
+        x: dialog_area.x + 1,
+        y: dialog_area.y + 1,
+        width: dialog_area.width.saturating_sub(2),
+        height: dialog_area.height.saturating_sub(2),
+    };
+    
+    let prompt = Paragraph::new("File path: ")
+        .style(Style::default().fg(Color::Yellow));
+    f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
+    
+    let path_text = Paragraph::new(&app.save_path)
+        .style(Style::default().fg(Color::White));
+    f.render_widget(path_text, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
+    
+    let help = Paragraph::new("Enter: Save | Esc: Cancel")
+        .style(Style::default().fg(Color::Cyan));
+    f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
+}
+
+fn render_help(f: &mut Frame, app: &App, area: Rect) {
+    let help_area = area;
+    let block = Block::default()
+        .title(" Help ")
+        .borders(Borders::ALL);
+    f.render_widget(block, help_area);
+    
+    let inner = Rect {
+        x: help_area.x + 1,
+        y: help_area.y + 1,
+        width: help_area.width.saturating_sub(2),
+        height: help_area.height.saturating_sub(2),
+    };
+    
+    let help_text = Text::from(vec![
+        Line::from(" WYSIWYG Editor - Help ".bold()),
+        Line::from(""),
+        Line::from(" Navigation: ".yellow().underline()),
+        Line::from("  j/k/Down/Up: Move cursor"),
+        Line::from("  h/l/Left/Right: Move cursor"),
+        Line::from("  Tab/Shift+Tab: Next/Prev field"),
+        Line::from(""),
+        Line::from(" Field Ops: ".yellow().underline()),
+        Line::from("  a: Add field (10)"),
+        Line::from("  A: Add field (20)"),
+        Line::from("  d: Delete field"),
+        Line::from("  m: Move field"),
+        Line::from("  r: Resize field"),
+        Line::from(""),
+        Line::from(" Properties: ".yellow().underline()),
+        Line::from("  e: Edit properties"),
+        Line::from("  C: Change color"),
+        Line::from("  t: Change attributes"),
+        Line::from(""),
+        Line::from(" Clipboard: ".yellow().underline()),
+        Line::from("  Ctrl+C: Copy"),
+        Line::from("  x: Cut"),
+        Line::from("  v: Paste"),
+        Line::from(""),
+        Line::from(" File: ".yellow().underline()),
+        Line::from("  n: New map"),
+        Line::from("  N: Template"),
+        Line::from("  Ctrl+S: Save"),
+        Line::from("  g: Generate COBOL"),
+        Line::from(""),
+        Line::from(" Undo/Redo: ".yellow().underline()),
+        Line::from("  Ctrl+Z: Undo"),
+        Line::from("  Ctrl+Y: Redo"),
+        Line::from(""),
+        Line::from(" Other: ".yellow().underline()),
+        Line::from("  ?: Help"),
+        Line::from("  Ctrl+Q: Quit"),
+    ]);
+    
+    let paragraph = Paragraph::new(help_text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, inner);
+}
+
+fn render_confirm(f: &mut Frame, app: &App, area: Rect) {
+    let dialog_width = 40;
+    let dialog_height = 5;
+    let dialog_area = Rect {
+        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
+        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
+        width: dialog_width,
+        height: dialog_height,
+    };
+    
+    let block = Block::default()
+        .title(" Confirm ")
+        .borders(Borders::ALL);
+    f.render_widget(block, dialog_area);
+    
+    let inner = Rect {
+        x: dialog_area.x + 1,
+        y: dialog_area.y + 1,
+        width: dialog_area.width.saturating_sub(2),
+        height: dialog_area.height.saturating_sub(2),
+    };
+    
+    let message = match app.confirm_action {
+        ConfirmAction::QuitWithoutSave => "Quit without saving?",
+        ConfirmAction::DeleteField => "Delete selected field?",
+        ConfirmAction::ClearMap => "Clear all fields?",
+    };
+    
+    let prompt = Paragraph::new(message)
+        .style(Style::default().fg(Color::Yellow));
+    f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
+    
+    let help = Paragraph::new("Y/Enter: Yes | N/Esc: No")
+        .style(Style::default().fg(Color::Cyan));
+    f.render_widget(help, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
+}
+
+fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
+    let status_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(30),
+            Constraint::Percentage(40),
+            Constraint::Percentage(30),
+        ])
+        .split(area);
+    
+    // Mode
+    let mode_text = match app.mode {
+        AppMode::Edit => "EDIT",
+        AppMode::Properties => "PROPERTIES",
+        AppMode::ColorPicker => "COLOR",
+        AppMode::AttributePicker => "ATTRS",
+        AppMode::SaveDialog => "SAVE",
+        AppMode::Help => "HELP",
+        AppMode::Confirm => "CONFIRM",
+        AppMode::Normal => "PREVIEW",
+    };
+    
+    let mode = Paragraph::new(format!(" MODE: {}", mode_text))
+        .style(Style::default().fg(Color::Green).bold())
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(mode, status_layout[0]);
+    
+    // Message
+    let message_text = app.message.as_deref().unwrap_or("");
+    let message = Paragraph::new(message_text)
+        .style(Style::default().fg(Color::Red))
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(message, status_layout[1]);
+    
+    // File info
+    let file_info = if let Some(ref path) = app.current_file {
+        format!(" {} ", path.file_name().unwrap_or_default().to_string_lossy())
+    } else {
+        " NEW MAP ".to_string()
+    };
+    
+    let modified = if app.is_modified() { "[MODIFIED]" } else { "" };
+    let file = Paragraph::new(format!("{}{}", file_info, modified))
+        .style(Style::default().fg(Color::Cyan))
+        .alignment(ratatui::layout::Alignment::Right)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(file, status_layout[2]);
+}
+
+fn app_scroll_up(app: &mut App) {
+    if app.scroll > 0 {
+        app.scroll -= 1;
+    }
+}
+
+fn app_scroll_down(app: &mut App) {
+    app.scroll += 1;
+}

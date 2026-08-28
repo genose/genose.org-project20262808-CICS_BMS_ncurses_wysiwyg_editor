@@ -1,0 +1,84 @@
+{
+  "name": "cobol-bms-tools",
+  "displayName": "COBOL BMS Tools",
+  "description": "Tools for editing and previewing COBOL CICS/BMS maps with syntax highlighting and visualization",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:cobol-bms-tools.previewBMS",
+    "onLanguage:bms"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [{
+      "id": "bms",
+      "aliases": ["BMS", "bms", "cics-bms"],
+      "extensions": [".bms", ".BMS"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "bms",
+      "scopeName": "source.bms",
+      "path": "./syntaxes/bms.tmLanguage.json"
+    }],
+    "commands": [{
+      "command": "cobol-bms-tools.previewBMS",
+      "title": "Preview BMS Map"
+    }, {
+      "command": "cobol-bms-tools.generateCobol",
+      "title": "Generate COBOL from BMS"
+    }],
+    "menus": {
+      "editor/context": [{
+        "command": "cobol-bms-tools.previewBMS",
+        "group": "navigation",
+        "when": "editorLangId == bms"
+      }, {
+        "command": "cobol-bms-tools.generateCobol",
+        "group": "navigation",
+        "when": "editorLangId == bms"
+      }]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.7",
+    "@types/vscode": "^1.75.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.0",
+    "@typescript-eslint/parser": "^5.30.0",
+    "eslint": "^8.19.0",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^8.0.0",
+    "vscode-languageserver-textdocument": "^1.0.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/genose.org/genose.org-project20262808-CICS_BMS_ncurses_wysiwyg_editor.git"
+  },
+  "keywords": [
+    "cobol",
+    "cics",
+    "bms",
+    "mainframe",
+    "map",
+    "screen"
+  ],
+  "author": "genose.org",
+  "license": "MIT"
+}

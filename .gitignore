@@ -1,0 +1,31 @@
+# Rust
+/target/
+*.rs.bk
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# VSCode Extension
+vscode-extension/out/
+vscode-extension/node_modules/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

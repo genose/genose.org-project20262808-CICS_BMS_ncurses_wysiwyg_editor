@@ -1,0 +1,150 @@
+body {
+    font-family: 'Consolas', 'Courier New', monospace;
+    margin: 0;
+    padding: 10px;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    overflow: hidden;
+}
+
+.bms-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.header {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 16px;
+    color: #569cd6;
+}
+
+.header p {
+    margin: 5px 0 0 0;
+    font-size: 12px;
+    color: #9cdcfe;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-template-rows: repeat(var(--rows), 1fr);
+    gap: 1px;
+    background-color: #252526;
+    border: 1px solid #3e3e42;
+    flex-grow: 1;
+    overflow: auto;
+}
+
+.cell {
+    width: 100%;
+    height: 100%;
+    min-width: 12px;
+    min-height: 12px;
+    border: 1px solid #2d2d30;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    overflow: hidden;
+}
+
+/* Field types */
+.cell.field {
+    background-color: #003757;
+    color: #ffffff;
+}
+
+.cell.field-prot {
+    background-color: #004b72;
+    color: #ffffff;
+}
+
+.cell.field-num {
+    background-color: #005a40;
+    color: #ffffff;
+}
+
+.cell.literal {
+    background-color: #6a4000;
+    color: #ffffff;
+}
+
+.cell.group {
+    background-color: #3e3e3e;
+    color: #ffffff;
+}
+
+.cell.map-def {
+    background-color: #4b0082;
+    color: #ffffff;
+}
+
+.cell.empty {
+    background-color: #1e1e1e;
+    border-color: #2d2d30;
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #333;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 11px;
+    color: #d4d4d4;
+}
+
+.legend-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 5px;
+    border: 1px solid #3e3e42;
+}
+
+.legend-color.field { background-color: #003757; }
+.legend-color.field-prot { background-color: #004b72; }
+.legend-color.field-num { background-color: #005a40; }
+.legend-color.literal { background-color: #6a4000; }
+.legend-color.group { background-color: #3e3e3e; }
+.legend-color.map-def { background-color: #4b0082; }
+.legend-color.empty { background-color: #1e1e1e; }
+
+/* Tooltip */
+[title] {
+    cursor: help;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #252526;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #5a5a5a;
+}

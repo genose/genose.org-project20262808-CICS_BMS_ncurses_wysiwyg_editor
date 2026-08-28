@@ -1,0 +1,20 @@
+[package]
+name = "cobol-bms-cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["genose.org"]
+description = "CLI interface for COBOL BMS editor with ncurses-like TUI"
+license = "MIT"
+
+[[bin]]
+name = "cobol-bms"
+path = "src/main.rs"
+
+[dependencies]
+cobol-bms-core = { path = "../core" }
+ratatui = "0.25"
+crossterm = { version = "0.27", features = ["event-stream"] }
+anyhow = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
