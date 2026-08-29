@@ -945,6 +945,8 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 if app.mode == AppMode::Edit && app.editor.selected_field.is_some() {
                     app.mode = AppMode::Confirm;
                     app.confirm_action = ConfirmAction::DeleteField;
+                } else if app.mode == AppMode::Edit {
+                    app.set_message("Error: No field selected to delete (use arrows to select)");
                 }
                 return;
             }
@@ -955,6 +957,8 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                         app.editor.drag_start = Some(app.editor.map.fields[idx].pos);
                         app.editor.mode = EditorMode::MoveField;
                         app.set_message("Move field - arrows to move, Enter to drop");
+                    } else {
+                        app.set_message("Error: No field selected to move (use arrows to select)");
                     }
                 }
                 return;
@@ -966,6 +970,8 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                         app.editor.drag_start = Some((app.editor.map.fields[idx].pos.0, app.editor.map.fields[idx].pos.1 + app.editor.map.fields[idx].length - 1));
                         app.editor.mode = EditorMode::ResizeField { direction: ResizeDirection::Right };
                         app.set_message("Resize field - Left/Right to resize");
+                    } else {
+                        app.set_message("Error: No field selected to resize (use arrows to select)");
                     }
                 }
                 return;
@@ -1429,18 +1435,24 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
             if app.editor.selected_field.is_some() {
                 app.mode = AppMode::Properties;
                 app.property_index = 0;
+            } else {
+                app.set_message("Error: No field selected to edit (use arrows to select)");
             }
         }
         KeyCode::Char('C') => {
             if let Some(idx) = app.editor.selected_field {
                 app.mode = AppMode::ColorPicker;
                 app.selected_color = app.editor.map.fields[idx].color.clone();
+            } else {
+                app.set_message("Error: No field selected to change color (use arrows to select)");
             }
         }
         KeyCode::Char('t') => {
             if app.editor.selected_field.is_some() {
                 app.mode = AppMode::AttributePicker;
                 app.selected_attribute = None;
+            } else {
+                app.set_message("Error: No field selected to change attribute (use arrows to select)");
             }
         }
         
