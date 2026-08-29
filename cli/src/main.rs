@@ -2144,27 +2144,73 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                 let field_end_col = field_col + field.length as usize - 1;
                 
                 if grid_row + 1 == field_row && col >= field_col && col <= field_end_col {
-                    c = match field.field_type {
-                        FieldType::Map => '#',
-                        FieldType::Field => {
-                            if field.attrb.contains(&FieldAttribute::Prot) {
-                                'P'
-                            } else if field.attrb.contains(&FieldAttribute::Num) {
-                                '0'
-                            } else {
-                                'F'
+                    // Determine the character based on field type and position within field
+                    let field_start = field_col;
+                    let field_end = field_end_col;
+                    let is_first_col = col == field_start;
+                    let is_last_col = col == field_end;
+                    
+                    c = if *is_preview {
+                        // Preview fields use special characters
+                        if is_first_col {
+                            '['
+                        } else if is_last_col {
+                            ']'
+                        } else {
+                            '-'
+                        }
+                    } else if is_selected {
+                        // Selected fields use filled block for better visibility
+                        if is_first_col {
+                            '█'
+                        } else if is_last_col {
+                            '█'
+                        } else {
+                            '█'
+                        }
+                    } else {
+                        // Regular fields based on type - use horizontal line characters
+                        match field.field_type {
+                            FieldType::Map => {
+                                if is_first_col { '┏' } else if is_last_col { '┓' } else { '━' }
+                            }
+                            FieldType::Field => {
+                                if field.attrb.contains(&FieldAttribute::Prot) {
+                                    if is_first_col { '╭' } else if is_last_col { '╮' } else { '─' }
+                                } else if field.attrb.contains(&FieldAttribute::Num) {
+                                    if is_first_col { '[' } else if is_last_col { ']' } else { '═' }
+                                } else if field.attrb.contains(&FieldAttribute::Alph) || field.attrb.contains(&FieldAttribute::AlphaNum) {
+                                    if is_first_col { '⟦' } else if is_last_col { '⟧' } else { '─' }
+                                } else {
+                                    if is_first_col { '┌' } else if is_last_col { '┐' } else { '─' }
+                                }
+                            }
+                            FieldType::Literal => {
+                                if is_first_col { '«' } else if is_last_col { '»' } else { '─' }
+                            }
+                            FieldType::Group => {
+                                if is_first_col { '┌' } else if is_last_col { '┐' } else { '─' }
+                            }
+                            _ => {
+                                if is_first_col { '[' } else if is_last_col { ']' } else { '-' }
                             }
                         }
-                        FieldType::Literal => 'L',
-                        FieldType::Group => 'G',
-                        _ => 'X',
                     };
                     
-                    // Check if this is the selected field (only for non-preview fields)
+                    // Check if this field is selected
                     if !is_preview {
-                        if let Some(selected_idx) = app.editor.selected_field {
+                        for &selected_idx in &app.editor.selected_fields {
                             if map.fields.get(selected_idx).map_or(false, |f| f.pos == field.pos) {
                                 is_selected = true;
+                                break;
+                            }
+                        }
+                        // Also check single selected_field
+                        if !is_selected {
+                            if let Some(selected_idx) = app.editor.selected_field {
+                                if map.fields.get(selected_idx).map_or(false, |f| f.pos == field.pos) {
+                                    is_selected = true;
+                                }
                             }
                         }
                     }
@@ -2190,6 +2236,20 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
             }
             
             spans.push(Span::styled(c.to_string(), style));
+        }
+        
+        // Add cursor indicator if cursor is on this row
+        let cursor_row = app.editor.cursor_pos.0 as usize;
+        let cursor_col = app.editor.cursor_pos.1 as usize;
+        if grid_row + 1 == cursor_row && cursor_col <= visible_cols {
+            // Cursor is on this row and within visible columns
+            if cursor_col > 0 && cursor_col <= spans.len() {
+                // Replace the character at cursor position with cursor indicator
+                if let Some(span) = spans.get_mut(cursor_col - 1) {
+                    // Use a different character or style for cursor
+                    spans[cursor_col - 1] = Span::styled("▮".to_string(), Style::default().fg(TuiColor::White).bg(TuiColor::Red));
+                }
+            }
         }
         
         let line = Line::from(spans);
