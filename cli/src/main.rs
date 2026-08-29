@@ -3738,7 +3738,7 @@ impl PropertyType {
 /// Get InsertableObject from a BmsField
 fn get_insertable_object_from_field(field: &BmsField) -> Option<InsertableObject> {
     // Determine which InsertableObject this field corresponds to
-    if matches!(field.field_type, FieldType::Group) && field.fieldset_height.is_some() {
+    if matches!(field.field_type, FieldType::Group) && field.height.is_some() {
         Some(InsertableObject::Fieldset)
     } else if field.ascii_art.is_some() {
         Some(InsertableObject::AsciiArt)
