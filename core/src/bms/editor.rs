@@ -738,6 +738,10 @@ impl BmsEditor {
             line.push_str(&format!(",COLOR={}", color));
         }
         
+        if let Some(ref hlight_color) = field.border_color {
+            line.push_str(&format!(",HLIGHT={}", hlight_color));
+        }
+        
         if let Some(ref initial) = field.initial {
             line.push_str(&format!(",INITIAL='{}'", initial));
         }

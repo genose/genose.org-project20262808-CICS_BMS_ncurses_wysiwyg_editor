@@ -186,6 +186,13 @@ fn parse_dfhmnd(input: &str) -> IResult<&str, BmsField> {
             continue;
         }
         
+        // HLIGHT=value (highlight/focus color)
+        if let Ok((new_input, color)) = parse_highlight_color(input) {
+            field.border_color = Some(color);
+            remaining = new_input;
+            continue;
+        }
+        
         // TYPE=value
         if let Ok((new_input, field_type)) = parse_field_type(input) {
             field.field_type = field_type;
@@ -293,6 +300,20 @@ fn parse_color(input: &str) -> IResult<&str, Color> {
     let (input, _) = multispace0(input)?;
     
     let (input, _) = tag_no_case("COLOR")(input)?;
+    let (input, _) = char('=')(input)?;
+    let (input, color_str) = take_while1(|c: char| c.is_alphabetic())(input)?;
+    
+    Ok((input, Color::from_str(color_str)))
+}
+
+/// Parse HLIGHT=value (highlight/focus color)
+fn parse_highlight_color(input: &str) -> IResult<&str, Color> {
+    // Skip optional separators
+    let (input, _) = multispace0(input)?;
+    let (input, _) = opt(char(','))(input)?;
+    let (input, _) = multispace0(input)?;
+    
+    let (input, _) = tag_no_case("HLIGHT")(input)?;
     let (input, _) = char('=')(input)?;
     let (input, color_str) = take_while1(|c: char| c.is_alphabetic())(input)?;
     

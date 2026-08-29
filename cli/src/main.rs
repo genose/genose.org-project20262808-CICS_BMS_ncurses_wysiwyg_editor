@@ -79,6 +79,40 @@ fn bms_color_to_tui(color: &BmsColor) -> TuiColor {
     }
 }
 
+/// Get next color in the color cycle
+fn next_color(current: Option<BmsColor>) -> BmsColor {
+    use BmsColor::*;
+    match current {
+        None => Blue,
+        Some(Blue) => Green,
+        Some(Green) => Red,
+        Some(Red) => Yellow,
+        Some(Yellow) => Cyan,
+        Some(Cyan) => Magenta,
+        Some(Magenta) => White,
+        Some(White) => Black,
+        Some(Black) => Blue,
+        _ => Blue,
+    }
+}
+
+/// Get previous color in the color cycle
+fn prev_color(current: Option<BmsColor>) -> BmsColor {
+    use BmsColor::*;
+    match current {
+        None => Blue,
+        Some(Blue) => Black,
+        Some(Black) => White,
+        Some(White) => Magenta,
+        Some(Magenta) => Cyan,
+        Some(Cyan) => Yellow,
+        Some(Yellow) => Red,
+        Some(Red) => Green,
+        Some(Green) => Blue,
+        _ => Blue,
+    }
+}
+
 /// Convert color string to TuiColor for ASCII art rendering
 fn color_string_to_tui(color_str: &Option<String>) -> TuiColor {
     if let Some(color) = color_str {
@@ -1753,6 +1787,12 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
                             _ => field.field_type.clone(),
                         };
                     }
+                    14 => { // Color (TEXT)
+                        field.text_color = Some(next_color(field.text_color.clone()));
+                    }
+                    17 => { // HighLight (HLIGHT)
+                        field.border_color = Some(next_color(field.border_color.clone()));
+                    }
                     _ => {}
                 }
             }
@@ -1777,6 +1817,12 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
                         if let Some(val) = field.initial.as_mut() {
                             val.pop();
                         }
+                    }
+                    14 => { // Color (TEXT)
+                        field.text_color = Some(prev_color(field.text_color.clone()));
+                    }
+                    17 => { // HighLight (HLIGHT)
+                        field.border_color = Some(prev_color(field.border_color.clone()));
                     }
                     4 => {
                         field.field_type = match field.field_type {
@@ -2453,28 +2499,18 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                     if *is_preview {
                         style = style.fg(TuiColor::Cyan).underlined();
                     } else if is_selected {
-                        // Use border color if set, otherwise use yellow foreground
+                        // Selected/Focused: Use border_color (HLIGHT) if set, otherwise use yellow
                         if let Some(border_color) = &field.border_color {
                             style = style.fg(bms_color_to_tui(border_color)).bold();
                         } else {
                             style = style.fg(TuiColor::Yellow).bold();
                         }
                     } else {
-                        // Use text_color if set, otherwise use border_color, otherwise use field color
+                        // Normal: Use text_color only (BMS COLOR)
                         if let Some(text_color) = &field.text_color {
                             style = style.fg(bms_color_to_tui(text_color));
-                        } else if let Some(border_color) = &field.border_color {
-                            style = style.fg(bms_color_to_tui(border_color));
                         } else {
-                            match field.text_color {
-                                Some(BmsColor::Blue) => style = style.fg(TuiColor::Blue),
-                                Some(BmsColor::Green) => style = style.fg(TuiColor::Green),
-                                Some(BmsColor::Red) => style = style.fg(TuiColor::Red),
-                                Some(BmsColor::Yellow) => style = style.fg(TuiColor::Yellow),
-                                Some(BmsColor::Cyan) => style = style.fg(TuiColor::Cyan),
-                                Some(BmsColor::Magenta) => style = style.fg(TuiColor::Magenta),
-                                _ => style = style.fg(TuiColor::White),
-                            }
+                            style = style.fg(TuiColor::White);
                         }
                     }
                     break;
@@ -2803,6 +2839,15 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
             }
             lines.push(Line::from(""));
         }
+        
+        // Add color properties
+        lines.push(Line::from("> Color (TEXT) ".yellow()));
+        lines.push(Line::from(format!("  {:?} ", field.text_color)));
+        lines.push(Line::from(""));
+        
+        lines.push(Line::from("> HighLight (HLIGHT) ".yellow()));
+        lines.push(Line::from(format!("  {:?} ", field.border_color)));
+        lines.push(Line::from(""));
         
         lines.extend(vec![
             Line::from("Up/Down: Navigate".dim()),
