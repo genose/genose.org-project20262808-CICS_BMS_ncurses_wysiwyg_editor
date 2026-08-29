@@ -1382,6 +1382,7 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
     
     // Handle special actions (Shift+Enter when supported)
     if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
+        app.set_message("validation combokey shift enter");
         if app.active_panel == ActivePanel::Sidebar && app.sidebar_section == SidebarSection::Objects {
             // Direct insert in Objects sidebar (Shift+Enter when supported)
             if let Some(selected_idx) = app.sidebar_objects_selected {
