@@ -387,10 +387,7 @@ enum SidebarAction {
     Delete,
     Move,
     Resize,
-    Color,
-    Attributes,
     AddField,
-    AddLongField,
     PreviewBms,
     MapType,
 }
@@ -402,10 +399,7 @@ impl SidebarAction {
             SidebarAction::Delete,
             SidebarAction::Move,
             SidebarAction::Resize,
-            SidebarAction::Color,
-            SidebarAction::Attributes,
             SidebarAction::AddField,
-            SidebarAction::AddLongField,
             SidebarAction::PreviewBms,
             SidebarAction::MapType,
         ]
@@ -413,14 +407,11 @@ impl SidebarAction {
 
     fn display(&self) -> &'static str {
         match self {
-            SidebarAction::Edit => "e: Edit",
+            SidebarAction::Edit => "e: Edit Properties",
             SidebarAction::Delete => "d: Delete",
             SidebarAction::Move => "m: Move",
             SidebarAction::Resize => "r: Resize",
-            SidebarAction::Color => "C: Color",
-            SidebarAction::Attributes => "t: Attrs",
             SidebarAction::AddField => "a: Add field",
-            SidebarAction::AddLongField => "A: Add long",
             SidebarAction::PreviewBms => "p: Preview BMS",
             SidebarAction::MapType => "T: Map Type",
         }
@@ -433,10 +424,7 @@ impl SidebarAction {
             'd' => Some(SidebarAction::Delete),
             'm' => Some(SidebarAction::Move),
             'r' => Some(SidebarAction::Resize),
-            'C' => Some(SidebarAction::Color),
-            't' => Some(SidebarAction::Attributes),
             'a' => Some(SidebarAction::AddField),
-            'A' => Some(SidebarAction::AddLongField),
             'p' => Some(SidebarAction::PreviewBms),
             'T' => Some(SidebarAction::MapType),
             _ => None,
@@ -1714,26 +1702,9 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                                             app.set_message("Resize field - Left/Right to resize");
                                         }
                                     }
-                                    SidebarAction::Color => {
-                                        if app.editor.selected_field.is_some() {
-                                            app.mode = AppMode::ColorPicker;
-                                            app.selected_color = None;
-                                        }
-                                    }
-                                    SidebarAction::Attributes => {
-                                        if app.editor.selected_field.is_some() {
-                                            app.mode = AppMode::AttributePicker;
-                                            app.selected_attribute = None;
-                                        }
-                                    }
                                     SidebarAction::AddField => {
                                         app.editor.add_field_at_cursor(10);
                                         app.set_message("Added field");
-                                        app.show_validation_status();
-                                    }
-                                    SidebarAction::AddLongField => {
-                                        app.editor.add_field_at_cursor(20);
-                                        app.set_message("Added long field");
                                         app.show_validation_status();
                                     }
                                     SidebarAction::MapType => {
