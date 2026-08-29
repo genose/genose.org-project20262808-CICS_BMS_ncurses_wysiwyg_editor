@@ -20,12 +20,14 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     Terminal,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Scrollbar},
     layout::{Constraint, Direction, Layout, Rect},
     style::{Style, Stylize},
     text::{Line, Span, Text},
     Frame,
 };
+use ratatui::widgets::ScrollbarState;
+use ratatui::widgets::ScrollbarOrientation;
 use ratatui::style::Color as TuiColor;
 use std::{
     fs,
@@ -602,6 +604,8 @@ struct App {
     image_import_files: Vec<String>,
     image_import_selected_index: usize,
     image_import_show_all_files: bool,
+    // Pour le mode help scroll
+    help_scroll: usize,
 }
 
 /// Action to perform after text input is submitted
@@ -663,6 +667,7 @@ impl App {
             image_import_files: Vec::new(),
             image_import_selected_index: 0,
             image_import_show_all_files: true,
+            help_scroll: 0,
         }
     }
 
@@ -2174,6 +2179,26 @@ fn handle_text_input_mode(app: &mut App, key: event::KeyEvent) {
 fn handle_help_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
         KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
+        KeyCode::Up | KeyCode::Char('k') => {
+            if app.help_scroll > 0 {
+                app.help_scroll -= 1;
+            }
+        }
+        KeyCode::Down | KeyCode::Char('j') => {
+            app.help_scroll += 1;
+        }
+        KeyCode::PageUp => {
+            if app.help_scroll >= 10 {
+                app.help_scroll -= 10;
+            } else {
+                app.help_scroll = 0;
+            }
+        }
+        KeyCode::PageDown => {
+            app.help_scroll += 10;
+        }
+        KeyCode::Home => app.help_scroll = 0,
+        KeyCode::End => app.help_scroll = usize::MAX,
         _ => {}
     }
 }
@@ -3180,10 +3205,10 @@ fn render_text_input(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
 }
 
-fn render_help(f: &mut Frame, _app: &App, area: Rect) {
+fn render_help(f: &mut Frame, app: &App, area: Rect) {
     let help_area = area;
     let block = Block::default()
-        .title(" Help ")
+        .title(" Help (Scroll: Up/Down/PgUp/PgDn/Home/End) ")
         .borders(Borders::ALL);
     f.render_widget(block, help_area);
     
@@ -3194,7 +3219,7 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         height: help_area.height.saturating_sub(2),
     };
     
-    let help_text = Text::from(vec![
+    let all_help_lines: Vec<Line> = vec![
         Line::from(" WYSIWYG Editor - Help ".bold()),
         Line::from(""),
         Line::from(" Navigation: ".yellow()),
@@ -3262,11 +3287,40 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  ? or Ctrl+H: Toggle help"),
         Line::from(""),
         Line::from(" Note: Both legacy (letter) and new (Ctrl+letter) shortcuts work".dim()),
-    ]);
+    ];
+    
+    let total_lines = all_help_lines.len();
+    let visible_height = inner.height as usize;
+    
+    if visible_height == 0 {
+        return;
+    }
+    
+    let start_line = app.help_scroll.min(total_lines.saturating_sub(visible_height));
+    let end_line = (start_line + visible_height).min(total_lines);
+    
+    let visible_lines: Vec<Line> = all_help_lines.into_iter()
+        .skip(start_line)
+        .take(end_line - start_line)
+        .collect();
+    
+    let help_text = Text::from(visible_lines);
     
     let paragraph = Paragraph::new(help_text)
         .block(Block::default().borders(Borders::NONE));
     f.render_widget(paragraph, inner);
+    
+    if total_lines > visible_height {
+        let mut scrollbar_state = ScrollbarState::new(total_lines)
+            .position(app.help_scroll)
+            .viewport_content_length(visible_height);
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .thumb_symbol("\u{2588}")
+            .track_symbol(Some(" "))
+            .begin_symbol(None)
+            .end_symbol(None);
+        f.render_stateful_widget(scrollbar, inner, &mut scrollbar_state);
+    }
 }
 
 fn render_confirm(f: &mut Frame, app: &App, area: Rect) {
