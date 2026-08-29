@@ -176,6 +176,8 @@ enum AppMode {
     OpenDialog,
     /// Mode add object dialog
     AddObjectDialog,
+    /// Mode text input dialog (for INITIAL, PIC, name, etc.)
+    TextInput,
     /// Mode help
     Help,
     /// Mode confirm (pour suppression, etc.)
@@ -415,8 +417,25 @@ struct App {
     open_path: String,
     // Pour le mode add object
     selected_object_for_add: Option<InsertableObject>,
+    // Pour le mode text input
+    text_input_prompt: String,
+    text_input_value: String,
+    text_input_action: Option<TextInputAction>,
     // Pour le mode confirm
     confirm_action: ConfirmAction,
+}
+
+/// Action to perform after text input is submitted
+#[derive(Debug, Clone)]
+enum TextInputAction {
+    /// Set the initial value of the selected field
+    SetFieldInitial,
+    /// Set the PIC value of the selected field
+    SetFieldPic,
+    /// Set the name of the selected field
+    SetFieldName,
+    /// No action (generic text input)
+    Custom(String),
 }
 
 #[derive(Debug, Clone)]
@@ -453,6 +472,9 @@ impl App {
             save_path: String::new(),
             open_path: String::new(),
             selected_object_for_add: None,
+            text_input_prompt: String::new(),
+            text_input_value: String::new(),
+            text_input_action: None,
             confirm_action: ConfirmAction::QuitWithoutSave,
         }
     }
@@ -462,6 +484,41 @@ impl App {
         let objects = InsertableObject::all();
         if !objects.is_empty() {
             self.selected_object_for_add = Some(objects[0]);
+        }
+    }
+    
+    /// Start text input mode with an action
+    fn start_text_input(&mut self, prompt: &str, initial_value: &str, action: TextInputAction) {
+        self.mode = AppMode::TextInput;
+        self.text_input_prompt = prompt.to_string();
+        self.text_input_value = initial_value.to_string();
+        self.text_input_action = Some(action);
+    }
+    
+    /// Apply the text input action
+    fn apply_text_input(&mut self, value: String) {
+        if let Some(action) = self.text_input_action.take() {
+            if let Some(idx) = self.editor.selected_field {
+                match action {
+                    TextInputAction::SetFieldInitial => {
+                        let value_clone = value.clone();
+                        self.editor.map.fields[idx].initial = if value.is_empty() { None } else { Some(value) };
+                        self.set_message(&format!("INITIAL set to: {}", value_clone));
+                    }
+                    TextInputAction::SetFieldPic => {
+                        let value_clone = value.clone();
+                        self.editor.map.fields[idx].pic = if value.is_empty() { None } else { Some(value) };
+                        self.set_message(&format!("PIC set to: {}", value_clone));
+                    }
+                    TextInputAction::SetFieldName => {
+                        self.editor.map.fields[idx].name = value;
+                        self.set_message(&format!("Name set to: {}", self.editor.map.fields[idx].name));
+                    }
+                    TextInputAction::Custom(_) => {
+                        self.set_message(&format!("Text entered: {}", value));
+                    }
+                }
+            }
         }
     }
     
@@ -737,6 +794,7 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         AppMode::SaveDialog => handle_save_dialog_mode(app, key),
         AppMode::OpenDialog => handle_open_dialog_mode(app, key),
         AppMode::AddObjectDialog => handle_add_object_dialog_mode(app, key),
+        AppMode::TextInput => handle_text_input_mode(app, key),
         AppMode::Help => handle_help_mode(app, key),
         AppMode::Confirm => handle_confirm_mode(app, key),
         AppMode::Normal => handle_normal_mode(app, key),
@@ -1146,6 +1204,21 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
                         app.mode = AppMode::AttributePicker;
                         return;
                     }
+                    5 => { // INITIAL - open text input
+                        let initial = app.editor.map.fields[idx].initial.clone().unwrap_or_default();
+                        app.start_text_input("Enter INITIAL value:", &initial, TextInputAction::SetFieldInitial);
+                        return;
+                    }
+                    6 => { // PIC - open text input
+                        let pic = app.editor.map.fields[idx].pic.clone().unwrap_or_default();
+                        app.start_text_input("Enter PIC value:", &pic, TextInputAction::SetFieldPic);
+                        return;
+                    }
+                    7 => { // Name - open text input
+                        let name = app.editor.map.fields[idx].name.clone();
+                        app.start_text_input("Enter field name:", &name, TextInputAction::SetFieldName);
+                        return;
+                    }
                     _ => {}
                 }
             }
@@ -1172,7 +1245,30 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
                 }
             }
         }
-        KeyCode::Enter => app.mode = AppMode::Edit,
+        KeyCode::Enter => {
+            if let Some(idx) = app.editor.selected_field {
+                match app.property_index {
+                    5 => { // INITIAL - open text input
+                        let initial = app.editor.map.fields[idx].initial.clone().unwrap_or_default();
+                        app.start_text_input("Enter INITIAL value:", &initial, TextInputAction::SetFieldInitial);
+                        return;
+                    }
+                    6 => { // PIC - open text input
+                        let pic = app.editor.map.fields[idx].pic.clone().unwrap_or_default();
+                        app.start_text_input("Enter PIC value:", &pic, TextInputAction::SetFieldPic);
+                        return;
+                    }
+                    7 => { // Name - open text input
+                        let name = app.editor.map.fields[idx].name.clone();
+                        app.start_text_input("Enter field name:", &name, TextInputAction::SetFieldName);
+                        return;
+                    }
+                    _ => app.mode = AppMode::Edit,
+                }
+            } else {
+                app.mode = AppMode::Edit;
+            }
+        }
         _ => {}
     }
 }
@@ -1566,6 +1662,30 @@ fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
     }
 }
 
+fn handle_text_input_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = AppMode::Edit;
+            app.text_input_prompt.clear();
+            app.text_input_value.clear();
+            app.text_input_action = None;
+        }
+        KeyCode::Enter => {
+            let value = std::mem::take(&mut app.text_input_value);
+            app.apply_text_input(value);
+            app.mode = AppMode::Edit;
+            app.text_input_prompt.clear();
+        }
+        KeyCode::Backspace => {
+            app.text_input_value.pop();
+        }
+        KeyCode::Char(c) => {
+            app.text_input_value.push(c);
+        }
+        _ => {}
+    }
+}
+
 fn handle_help_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
         KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
@@ -1639,6 +1759,7 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::SaveDialog => " SAVE FILE ",
         AppMode::OpenDialog => " OPEN FILE ",
         AppMode::AddObjectDialog => " ADD OBJECT ",
+        AppMode::TextInput => " TEXT INPUT ",
         AppMode::Help => " HELP ",
         AppMode::Confirm => " CONFIRM ",
         AppMode::Normal => " PREVIEW ",
@@ -1693,6 +1814,10 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::AddObjectDialog => {
             render_canvas(f, app, content_area);
             render_add_object_dialog(f, app, content_area);
+        }
+        AppMode::TextInput => {
+            render_canvas(f, app, content_area);
+            render_text_input(f, app, content_area);
         }
         AppMode::Help => {
             render_help(f, app, content_area);
@@ -2397,6 +2522,41 @@ fn render_add_object_dialog(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(paragraph, inner);
 }
 
+fn render_text_input(f: &mut Frame, app: &App, area: Rect) {
+    let dialog_width = 50;
+    let dialog_height = 5;
+    let dialog_area = Rect {
+        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
+        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
+        width: dialog_width,
+        height: dialog_height,
+    };
+    
+    let block = Block::default()
+        .title(" Text Input ")
+        .borders(Borders::ALL);
+    f.render_widget(block, dialog_area);
+    
+    let inner = Rect {
+        x: dialog_area.x + 1,
+        y: dialog_area.y + 1,
+        width: dialog_area.width.saturating_sub(2),
+        height: dialog_area.height.saturating_sub(2),
+    };
+    
+    let prompt = Paragraph::new(app.text_input_prompt.as_str())
+        .style(Style::default().fg(TuiColor::Yellow));
+    f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
+    
+    let value_text = Paragraph::new(app.text_input_value.as_str())
+        .style(Style::default().fg(TuiColor::White));
+    f.render_widget(value_text, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
+    
+    let help = Paragraph::new("Enter: OK | Esc: Cancel | Backspace: Delete")
+        .style(Style::default().fg(TuiColor::Cyan));
+    f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
+}
+
 fn render_help(f: &mut Frame, _app: &App, area: Rect) {
     let help_area = area;
     let block = Block::default()
@@ -2527,6 +2687,7 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         AppMode::SaveDialog => "SAVE",
         AppMode::OpenDialog => "OPEN",
         AppMode::AddObjectDialog => "ADD_OBJ",
+        AppMode::TextInput => "TEXT_IN",
         AppMode::Help => "HELP",
         AppMode::Confirm => "CONFIRM",
         AppMode::Normal => "PREVIEW",
