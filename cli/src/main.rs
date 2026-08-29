@@ -1469,18 +1469,6 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
         KeyCode::Char('?') => app.mode = AppMode::Help,
         KeyCode::Char(' ') => app.mode = AppMode::Normal,
         
-        // Legacy field add (a/A)
-        KeyCode::Char('a') => {
-            app.editor.add_field_at_cursor(10);
-            app.set_message("Added field [a]");
-            app.show_validation_status();
-        }
-        KeyCode::Char('A') => {
-            app.editor.add_field_at_cursor(20);
-            app.set_message("Added long field [A]");
-            app.show_validation_status();
-        }
-        
         // New map commands
         KeyCode::Char('n') => {
             app.editor.new_map("NEWMAP", "DEFAULT", (24, 80));
