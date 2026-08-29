@@ -524,6 +524,7 @@ impl InsertableObject {
             field.decoration = Some(DecorationType::Brackets);  // Default decoration for title
             field.border = Some(DecorationType::Dashes);  // Default border for bottom line
             field.title_align = Some(Justify::Left);  // Default title alignment: Left
+            field.title_fill_decoration = None;  // Default: space fill (no decoration)
         }
         
         field
@@ -2528,6 +2529,21 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                 // Get title alignment (default to Left)
                                 let title_align = field.title_align.clone().unwrap_or(Justify::Left);
                                 
+                                // Get fill decoration for title line (default to space)
+                                let fill_char = if let Some(fill_dec) = field.title_fill_decoration.clone() {
+                                    match fill_dec {
+                                        DecorationType::Brackets => '[',
+                                        DecorationType::Parentheses => '(',
+                                        DecorationType::Plus => '+',
+                                        DecorationType::Asterisk => '*',
+                                        DecorationType::Hash => '#',
+                                        DecorationType::Dashes => '-',
+                                        DecorationType::Equals => '=',
+                                    }
+                                } else {
+                                    ' '  // Default: space
+                                };
+                                
                                 if is_first_row {
                                     // First line: open_dec + title + close_dec
                                     if is_first_col {
@@ -2552,9 +2568,9 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                             if col_in_field >= title_start && col_in_field < title_end {
                                                 // Get the specific character from the title
                                                 let char_idx = col_in_field - title_start;
-                                                title.chars().nth(char_idx).unwrap_or(' ')
+                                                title.chars().nth(char_idx).unwrap_or(fill_char)
                                             } else {
-                                                ' '
+                                                fill_char
                                             }
                                         } else {
                                             ' '

@@ -147,6 +147,7 @@ pub struct BmsField {
     pub decoration: Option<DecorationType>,  // Decoration style for fieldset title (open/close chars)
     pub border: Option<DecorationType>,      // Border style for fieldset bottom line
     pub title_align: Option<Justify>,  // Text alignment for fieldset title (Left, Center, Right)
+    pub title_fill_decoration: Option<DecorationType>,  // Fill decoration for title line empty spaces
     
     // ASCII Art specific properties
     pub ascii_art: Option<AsciiArt>,  // ASCII art data with colors
@@ -507,6 +508,7 @@ impl Default for BmsField {
             decoration: None,
             border: None,
             title_align: None,
+            title_fill_decoration: None,
         }
     }
 }
