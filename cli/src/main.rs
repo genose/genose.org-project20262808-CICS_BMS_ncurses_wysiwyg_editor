@@ -13,7 +13,7 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use crossterm::{
-    event::{self, Event, KeyCode, KeyModifiers},
+    event::{self, Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind, EnableMouseCapture, DisableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -436,6 +436,9 @@ struct App {
     text_input_action: Option<TextInputAction>,
     // Pour le mode confirm
     confirm_action: ConfirmAction,
+    // Mouse support
+    mouse_dragging: bool,
+    mouse_anchor: Option<(u16, u16)>,
 }
 
 /// Action to perform after text input is submitted
@@ -489,6 +492,8 @@ impl App {
             text_input_value: String::new(),
             text_input_action: None,
             confirm_action: ConfirmAction::QuitWithoutSave,
+            mouse_dragging: false,
+            mouse_anchor: None,
         }
     }
 
@@ -604,7 +609,7 @@ fn run_editor(editor: BmsEditor) -> Result<()> {
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     
@@ -621,8 +626,13 @@ fn run_editor(editor: BmsEditor) -> Result<()> {
         
         // Handle input
         if event::poll(Duration::from_millis(50))? {
-            if let Event::Key(key) = event::read()? {
-                handle_input(&mut app, key);
+            match event::read()? {
+                Event::Key(key) => handle_input(&mut app, key),
+                Event::Mouse(mouse_event) => handle_mouse_input(&mut app, mouse_event),
+                Event::Resize(_, _) => {
+                    // Terminal resize - redraw will handle it
+                }
+                _ => {}
             }
         }
         
@@ -631,7 +641,7 @@ fn run_editor(editor: BmsEditor) -> Result<()> {
     
     // Cleanup
     disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
     Ok(())
 }
 
@@ -852,6 +862,86 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         AppMode::Help => handle_help_mode(app, key),
         AppMode::Confirm => handle_confirm_mode(app, key),
         AppMode::Normal => handle_normal_mode(app, key),
+    }
+}
+
+/// Handle mouse input for field selection and drag selection
+fn handle_mouse_input(app: &mut App, mouse_event: MouseEvent) {
+    // Only handle mouse events in Edit mode when Canvas is active
+    if app.mode != AppMode::Edit || app.active_panel != ActivePanel::Canvas {
+        return;
+    }
+    
+    match mouse_event.kind {
+        MouseEventKind::Down(button) => {
+            if button == MouseButton::Left {
+                // Store the anchor position for potential drag selection
+                app.mouse_anchor = Some((mouse_event.column, mouse_event.row));
+                app.mouse_dragging = true;
+                
+                // Try to select the field at the clicked position
+                // Note: mouse coordinates are 0-indexed, BMS coordinates are 1-indexed
+                let pos = (mouse_event.row.saturating_add(1), mouse_event.column.saturating_add(1));
+                if let Some(field_idx) = app.editor.field_at(pos) {
+                    // If Shift is being held, extend the selection
+                    // For now, just select the field (we'll check for Shift in key modifiers separately)
+                    // Since mouse events don't have modifier info in crossterm 0.27,
+                    // we'll use a simple click for single selection
+                    app.editor.select_field(field_idx);
+                    app.editor.cursor_pos = app.editor.map.fields[field_idx].pos;
+                    app.set_message(&format!("Selected field {}", field_idx));
+                } else {
+                    // Clicked on empty space - clear selection and move cursor
+                    app.editor.selected_field = None;
+                    app.editor.selected_fields.clear();
+                    app.editor.cursor_pos = pos;
+                }
+            } else if button == MouseButton::Right {
+                // Right-click: select field and show properties (or context menu in future)
+                let pos = (mouse_event.row.saturating_add(1), mouse_event.column.saturating_add(1));
+                if let Some(field_idx) = app.editor.field_at(pos) {
+                    app.editor.select_field(field_idx);
+                    // In the future, we could show a context menu here
+                    app.set_message(&format!("Right-clicked field {}", field_idx));
+                }
+            }
+        }
+        MouseEventKind::Up(button) => {
+            if button == MouseButton::Left {
+                app.mouse_dragging = false;
+                app.mouse_anchor = None;
+            }
+        }
+        MouseEventKind::Drag(button) => {
+            if button == MouseButton::Left && app.mouse_dragging {
+                // Drag selection - extend selection to current position
+                if let Some(anchor) = app.mouse_anchor {
+                    let current_pos = (mouse_event.column, mouse_event.row);
+                    
+                    // Convert to 1-indexed BMS coordinates
+                    let anchor_bms = (anchor.1.saturating_add(1), anchor.0.saturating_add(1));
+                    let current_bms = (current_pos.1.saturating_add(1), current_pos.0.saturating_add(1));
+                    
+                    // Find fields at both positions
+                    if let Some(_anchor_idx) = app.editor.field_at(anchor_bms) {
+                        if let Some(current_idx) = app.editor.field_at(current_bms) {
+                            // Extend selection from anchor to current field
+                            app.editor.extend_selection_to(current_idx);
+                            app.set_message(&format!("Selected {} field(s)", app.editor.selected_count()));
+                        }
+                    }
+                }
+            }
+        }
+        MouseEventKind::ScrollDown | MouseEventKind::ScrollUp => {
+            // Handle scroll wheel
+            if mouse_event.kind == MouseEventKind::ScrollDown {
+                app.scroll_down();
+            } else {
+                app.scroll_up();
+            }
+        }
+        _ => {}
     }
 }
 
@@ -2718,6 +2808,12 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  Ctrl+P: Toggle Canvas/Sidebar"),
         Line::from("  Ctrl+Shift+P: Toggle preview"),
         Line::from("  Key triggers displayed in message bar"),
+        Line::from(""),
+        Line::from(" Mouse: ".yellow()),
+        Line::from("  Left-click: Select field"),
+        Line::from("  Left-click + drag: Multi-select fields"),
+        Line::from("  Right-click: Select and show info"),
+        Line::from("  Scroll: Scroll canvas"),
         Line::from(""),
         Line::from(" Selection: ".yellow()),
         Line::from("  Ctrl+Shift+A: Select all fields"),
