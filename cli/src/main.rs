@@ -3980,7 +3980,9 @@ fn handle_image_import_mode(app: &mut App, key: event::KeyEvent) {
                 // Clamp index to valid range
                 app.image_import_selected_index = app.image_import_selected_index.min(app.image_import_files.len().saturating_sub(1));
                 // Update the path to show the selected file
-                app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
+                if !app.image_import_files.is_empty() && app.image_import_selected_index < app.image_import_files.len() {
+                    app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
+                }
                 app.image_import_error = None;
             }
         }
@@ -3994,7 +3996,9 @@ fn handle_image_import_mode(app: &mut App, key: event::KeyEvent) {
                 // Clamp index to valid range
                 app.image_import_selected_index = app.image_import_selected_index.min(app.image_import_files.len().saturating_sub(1));
                 // Update the path to show the selected file
-                app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
+                if !app.image_import_files.is_empty() && app.image_import_selected_index < app.image_import_files.len() {
+                    app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
+                }
                 app.image_import_error = None;
             }
         }
