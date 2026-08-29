@@ -494,6 +494,94 @@ impl BmsMap {
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(json)
     }
+    
+    /// Valider que la map est correcte
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+        
+        // Verifier les dimensions de la map
+        if self.size.0 == 0 || self.size.1 == 0 {
+            errors.push("Map size must be greater than 0".to_string());
+        }
+        
+        // Verifier chaque champ
+        for (i, field) in self.fields.iter().enumerate() {
+            // Verifier la position
+            if field.pos.0 == 0 || field.pos.1 == 0 {
+                errors.push(format!("Field {}: Position must be greater than 0", i));
+            }
+            
+            // Verifier que la position est dans les limites de la map
+            if field.pos.0 > self.size.0 {
+                errors.push(format!("Field {}: Row {} exceeds map height {}", i, field.pos.0, self.size.0));
+            }
+            if field.pos.1 > self.size.1 {
+                errors.push(format!("Field {}: Column {} exceeds map width {}", i, field.pos.1, self.size.1));
+            }
+            
+            // Verifier la longueur
+            if field.length == 0 {
+                errors.push(format!("Field {}: Length must be greater than 0", i));
+            }
+            
+            // Verifier que le champ ne depasse pas les limites
+            if field.pos.1 + field.length - 1 > self.size.1 {
+                errors.push(format!("Field {}: Field extends beyond column {}", i, self.size.1));
+            }
+        }
+        
+        // Verifier les chevauchements de champs
+        for i in 0..self.fields.len() {
+            for j in i + 1..self.fields.len() {
+                let f1 = &self.fields[i];
+                let f2 = &self.fields[j];
+                
+                // Verifier si les champs se chevauchent
+                if f1.pos.0 == f2.pos.0 { // Memes ligne
+                    let f1_start = f1.pos.1;
+                    let f1_end = f1.pos.1 + f1.length - 1;
+                    let f2_start = f2.pos.1;
+                    let f2_end = f2.pos.1 + f2.length - 1;
+                    
+                    if f1_start <= f2_end && f2_start <= f1_end {
+                        errors.push(format!("Fields {} and {} overlap at row {}", i, j, f1.pos.0));
+                    }
+                }
+            }
+        }
+        
+        errors
+    }
+    
+    /// Verifier si une position est valide pour un champ de longueur donnee
+    pub fn is_valid_field_position(&self, pos: (u16, u16), length: u16) -> bool {
+        if pos.0 == 0 || pos.1 == 0 || length == 0 {
+            return false;
+        }
+        if pos.0 > self.size.0 || pos.1 > self.size.1 {
+            return false;
+        }
+        if pos.1 + length - 1 > self.size.1 {
+            return false;
+        }
+        
+        // Verifier les chevauchements avec les champs existants
+        let new_start = pos.1;
+        let new_end = pos.1 + length - 1;
+        
+        for field in &self.fields {
+            if field.pos.0 == pos.0 { // Memes ligne
+                let f_start = field.pos.1;
+                let f_end = field.pos.1 + field.length - 1;
+                
+                if new_start <= f_end && f_start <= new_end {
+                    return false;
+                }
+            }
+        }
+        
+        true
+    }
 }
 
 impl BmsMapSet {

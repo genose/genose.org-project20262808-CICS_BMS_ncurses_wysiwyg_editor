@@ -743,3 +743,111 @@ fn test_mapset_json_serialization() {
     assert_eq!(imported_mapset.maps.len(), 1);
     assert!(imported_mapset.maps.contains_key("MAP1"));
 }
+
+// ==================== TESTS: Validation ====================
+
+#[test]
+fn test_validate_empty_map() {
+    let map = BmsMap::new("TEST", "TESTSET");
+    let errors = map.validate();
+    assert_eq!(errors.len(), 0); // Empty map is valid
+}
+
+#[test]
+fn test_validate_field_out_of_bounds() {
+    let mut map = BmsMap::new("TEST", "TESTSET");
+    map.size = (24, 80);
+    
+    // Add field that exceeds column limit
+    let mut field = BmsField::default();
+    field.pos = (1, 75);
+    field.length = 10; // Would go to column 84, but map is only 80 wide
+    map.fields.push(field);
+    
+    let errors = map.validate();
+    assert!(errors.len() > 0);
+    assert!(errors.iter().any(|e| e.contains("extends beyond")));
+}
+
+#[test]
+fn test_validate_overlapping_fields() {
+    let mut map = BmsMap::new("TEST", "TESTSET");
+    map.size = (24, 80);
+    
+    // Add two fields on the same row that overlap
+    let mut field1 = BmsField::default();
+    field1.pos = (1, 1);
+    field1.length = 10;
+    map.fields.push(field1);
+    
+    let mut field2 = BmsField::default();
+    field2.pos = (1, 5);
+    field2.length = 10; // Overlaps with field1
+    map.fields.push(field2);
+    
+    let errors = map.validate();
+    assert!(errors.len() > 0);
+    assert!(errors.iter().any(|e| e.contains("overlap")));
+}
+
+#[test]
+fn test_validate_zero_position() {
+    let mut map = BmsMap::new("TEST", "TESTSET");
+    map.size = (24, 80);
+    
+    // Add field with zero position
+    let mut field = BmsField::default();
+    field.pos = (0, 1); // Row 0 is invalid
+    field.length = 10;
+    map.fields.push(field);
+    
+    let errors = map.validate();
+    assert!(errors.len() > 0);
+    assert!(errors.iter().any(|e| e.contains("Position must be greater than 0")));
+}
+
+#[test]
+fn test_validate_zero_length() {
+    let mut map = BmsMap::new("TEST", "TESTSET");
+    map.size = (24, 80);
+    
+    // Add field with zero length
+    let mut field = BmsField::default();
+    field.pos = (1, 1);
+    field.length = 0;
+    map.fields.push(field);
+    
+    let errors = map.validate();
+    assert!(errors.len() > 0);
+    assert!(errors.iter().any(|e| e.contains("Length must be greater than 0")));
+}
+
+#[test]
+fn test_is_valid_field_position() {
+    let mut map = BmsMap::new("TEST", "TESTSET");
+    map.size = (24, 80);
+    
+    // Valid position
+    assert!(map.is_valid_field_position((1, 1), 10));
+    
+    // Invalid: out of bounds
+    assert!(!map.is_valid_field_position((25, 1), 10)); // Row 25 > 24
+    assert!(!map.is_valid_field_position((1, 80), 10)); // Would extend beyond column 80
+    
+    // Invalid: zero values
+    assert!(!map.is_valid_field_position((0, 1), 10));
+    assert!(!map.is_valid_field_position((1, 0), 10));
+    assert!(!map.is_valid_field_position((1, 1), 0));
+    
+    // Add a field and test overlap
+    let mut field = BmsField::default();
+    field.pos = (1, 1);
+    field.length = 10;
+    map.fields.push(field);
+    
+    // Overlapping position
+    assert!(!map.is_valid_field_position((1, 5), 10));
+    
+    // Non-overlapping position
+    assert!(map.is_valid_field_position((1, 15), 10));
+}

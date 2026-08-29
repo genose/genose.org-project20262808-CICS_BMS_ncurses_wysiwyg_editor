@@ -522,6 +522,22 @@ impl App {
         }
     }
     
+    /// Validate the current map and display errors if any
+    fn validate_map(&mut self) -> bool {
+        let errors = self.editor.map.validate();
+        if errors.is_empty() {
+            true
+        } else {
+            self.set_message(&format!("Validation errors: {}", errors.join("; ")));
+            false
+        }
+    }
+    
+    /// Check if a field position is valid
+    fn is_valid_field_position(&self, pos: (u16, u16), length: u16) -> bool {
+        self.editor.map.is_valid_field_position(pos, length)
+    }
+    
     fn is_modified(&self) -> bool {
         self.current_file.is_none() || 
         (self.current_file.as_ref().and_then(|p| {
@@ -730,6 +746,19 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                     }
                 }
                 return;
+            }
+            KeyCode::Char('v') | KeyCode::Char('V') => {
+                // Ctrl+Shift+V: Validate
+                if key.modifiers.contains(KeyModifiers::SHIFT) && app.mode == AppMode::Edit {
+                    let errors = app.editor.map.validate();
+                    if errors.is_empty() {
+                        app.set_message("Validation: OK");
+                    } else {
+                        app.set_message(&format!("Validation errors: {}", errors.join("; ")));
+                    }
+                    return;
+                }
+                // Ctrl+V: Fall through to allow other handlers
             }
             KeyCode::Char('o') | KeyCode::Char('O') => {
                 // Ctrl+O: Open file dialog
@@ -1557,6 +1586,12 @@ fn handle_save_dialog_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
         KeyCode::Esc => app.mode = AppMode::Edit,
         KeyCode::Enter => {
+            // Validate before saving
+            let errors = app.editor.map.validate();
+            if !errors.is_empty() {
+                app.set_message(&format!("Cannot save: {}", errors.join("; ")));
+                return;
+            }
             let path = PathBuf::from(&app.save_path);
             match fs::write(&path, app.editor.export_to_bms()) {
                 Ok(_) => {
@@ -2611,6 +2646,9 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from(" Undo/Redo: ".yellow()),
         Line::from("  Ctrl+Z: Undo"),
         Line::from("  Ctrl+Y: Redo"),
+        Line::from(""),
+        Line::from(" Validation: ".yellow()),
+        Line::from("  Ctrl+Shift+V: Validate map"),
         Line::from(""),
         Line::from(" Exit: ".yellow()),
         Line::from("  Esc: Quit with confirm"),
