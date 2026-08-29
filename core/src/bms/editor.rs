@@ -84,11 +84,12 @@ impl EditHistory {
 pub struct BmsEditor {
     pub map: BmsMap,
     pub selected_field: Option<usize>,
+    pub selected_fields: Vec<usize>,
     pub cursor_pos: (u16, u16),
     pub drag_start: Option<(u16, u16)>,
     pub mode: EditorMode,
     pub history: EditHistory,
-    pub clipboard: Option<BmsField>,
+    pub clipboard: Vec<BmsField>,
 }
 
 /// Mode de l'editeur
@@ -123,11 +124,12 @@ impl BmsEditor {
         Self {
             map: BmsMap::new("NEWMAP", "DEFAULT"),
             selected_field: None,
+            selected_fields: Vec::new(),
             cursor_pos: (1, 1),
             drag_start: None,
             mode: EditorMode::Navigate,
             history: EditHistory::new(100),
-            clipboard: None,
+            clipboard: Vec::new(),
         }
     }
     
@@ -136,11 +138,12 @@ impl BmsEditor {
         Self {
             map,
             selected_field: None,
+            selected_fields: Vec::new(),
             cursor_pos: (1, 1),
             drag_start: None,
             mode: EditorMode::Navigate,
             history: EditHistory::new(100),
-            clipboard: None,
+            clipboard: Vec::new(),
         }
     }
     
@@ -269,7 +272,7 @@ impl BmsEditor {
     /// Copier le champ selectionne dans le presse-papier
     pub fn copy_selected(&mut self) {
         if let Some(index) = self.selected_field {
-            self.clipboard = Some(self.map.fields[index].clone());
+            self.clipboard = vec![self.map.fields[index].clone()];
         }
     }
     
@@ -280,13 +283,121 @@ impl BmsEditor {
     }
     
     /// Coller le presse-papier a la position du curseur
+    /// Si plusieurs champs sont dans le clipboard, ils sont colles avec un decalage
     pub fn paste_at_cursor(&mut self) -> Option<usize> {
-        if let Some(field) = self.clipboard.clone() {
-            let mut new_field = field;
+        if self.clipboard.is_empty() {
+            return None;
+        }
+        
+        let clipboard = self.clipboard.clone();
+        let first_index = if let Some(first) = clipboard.first() {
+            let mut new_field = first.clone();
             new_field.pos = self.cursor_pos;
             Some(self.add_field(new_field))
         } else {
             None
+        };
+        
+        // Paste remaining fields with offset
+        for (i, field) in clipboard.iter().skip(1).enumerate() {
+            let mut new_field = field.clone();
+            new_field.pos = (self.cursor_pos.0 + i as u16 + 1, self.cursor_pos.1);
+            self.add_field(new_field);
+        }
+        
+        first_index
+    }
+    
+    /// Copier plusieurs champs selectionnes (par indices)
+    pub fn copy_fields(&mut self, indices: &[usize]) {
+        self.clipboard = indices.iter()
+            .filter_map(|&idx| self.map.fields.get(idx).cloned())
+            .collect();
+    }
+    
+    /// Coller plusieurs champs avec un decalage
+    pub fn paste_fields_at(&mut self, pos: (u16, u16)) -> usize {
+        let clipboard = self.clipboard.clone();
+        for (i, field) in clipboard.iter().enumerate() {
+            let mut new_field = field.clone();
+            new_field.pos = (pos.0 + i as u16, pos.1);
+            self.add_field(new_field);
+        }
+        clipboard.len()
+    }
+    
+    /// Effacer le presse-papier
+    pub fn clear_clipboard(&mut self) {
+        self.clipboard.clear();
+    }
+    
+    /// Nombre d'elements dans le presse-papier
+    pub fn clipboard_count(&self) -> usize {
+        self.clipboard.len()
+    }
+    
+    /// Selectionner un champ (remplace la selection actuelle)
+    pub fn select_field(&mut self, index: usize) {
+        self.selected_field = Some(index);
+        self.selected_fields = vec![index];
+    }
+    
+    /// Ajouter un champ a la selection multiple
+    pub fn toggle_field_selection(&mut self, index: usize) {
+        if let Some(pos) = self.selected_fields.iter().position(|&x| x == index) {
+            self.selected_fields.remove(pos);
+            if self.selected_fields.is_empty() {
+                self.selected_field = None;
+            } else {
+                self.selected_field = Some(self.selected_fields[0]);
+            }
+        } else {
+            self.selected_fields.push(index);
+            self.selected_field = Some(index);
+        }
+    }
+    
+    /// Selectionner tous les champs
+    pub fn select_all_fields(&mut self) {
+        self.selected_fields = (0..self.map.fields.len()).collect();
+        self.selected_field = self.selected_fields.first().copied();
+    }
+    
+    /// Deslectionner tous les champs
+    pub fn clear_selection(&mut self) {
+        self.selected_field = None;
+        self.selected_fields.clear();
+    }
+    
+    /// Copier les champs selectionnes
+    pub fn copy_selected_fields(&mut self) {
+        if !self.selected_fields.is_empty() {
+            let fields = self.selected_fields.clone();
+            self.copy_fields(&fields);
+        } else if let Some(_idx) = self.selected_field {
+            self.copy_selected();
+        }
+    }
+    
+    /// Nombre de champs selectionnes
+    pub fn selected_count(&self) -> usize {
+        if !self.selected_fields.is_empty() {
+            self.selected_fields.len()
+        } else if self.selected_field.is_some() {
+            1
+        } else {
+            0
+        }
+    }
+    
+    /// Obtenir les indices des champs selectionnes
+    pub fn get_selected_indices(&self) -> Vec<usize> {
+        if !self.selected_fields.is_empty() {
+            self.selected_fields.clone()
+        } else if let Some(idx) = self.selected_field {
+            vec![idx]
+        } else {
+            Vec::new()
         }
     }
     

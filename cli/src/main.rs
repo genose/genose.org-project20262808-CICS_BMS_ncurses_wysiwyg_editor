@@ -309,6 +309,19 @@ impl InsertableObject {
             InsertableObject::Box => "Box",
         }
     }
+    
+    pub fn default_length(&self) -> u16 {
+        match self {
+            InsertableObject::AlphanumericField => 20,
+            InsertableObject::NumericField => 10,
+            InsertableObject::DateField => 8,
+            InsertableObject::TimeField => 6,
+            InsertableObject::BooleanField => 1,
+            InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
+            InsertableObject::Group => 1,
+            InsertableObject::Line | InsertableObject::Box => 40,
+        }
+    }
 
     pub fn create_field(&self, pos: (u16, u16)) -> BmsField {
         let mut field = BmsField::default();
@@ -538,6 +551,14 @@ impl App {
         self.editor.map.is_valid_field_position(pos, length)
     }
     
+    /// Show validation status if there are errors
+    fn show_validation_status(&mut self) {
+        let errors = self.editor.map.validate();
+        if !errors.is_empty() {
+            self.set_message(&format!("WARNING: {}", errors.join("; ")));
+        }
+    }
+    
     fn is_modified(&self) -> bool {
         self.current_file.is_none() || 
         (self.current_file.as_ref().and_then(|p| {
@@ -695,8 +716,9 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         match key.code {
             KeyCode::Char('c') => {
                 if app.mode == AppMode::Edit {
-                    app.editor.copy_selected();
-                    app.set_message("Copied");
+                    let count = app.editor.selected_count();
+                    app.editor.copy_selected_fields();
+                    app.set_message(&format!("Copied {} field(s)", count));
                 }
                 return;
             }
@@ -770,8 +792,11 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 return;
             }
             KeyCode::Char('a') | KeyCode::Char('A') => {
-                // Ctrl+A: Add object dialog
-                if app.mode == AppMode::Edit {
+                // Ctrl+A: Add object dialog OR Ctrl+Shift+A: Select all
+                if key.modifiers.contains(KeyModifiers::SHIFT) && app.mode == AppMode::Edit {
+                    app.editor.select_all_fields();
+                    app.set_message("All fields selected");
+                } else if app.mode == AppMode::Edit {
                     app.mode = AppMode::AddObjectDialog;
                     app.init_add_object_dialog();
                     app.set_message("Select object type");
@@ -1072,10 +1097,12 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                                     SidebarAction::AddField => {
                                         app.editor.add_field_at_cursor(10);
                                         app.set_message("Added field");
+                                        app.show_validation_status();
                                     }
                                     SidebarAction::AddLongField => {
                                         app.editor.add_field_at_cursor(20);
                                         app.set_message("Added long field");
+                                        app.show_validation_status();
                                     }
                                     SidebarAction::MapType => {
                                         app.mode = AppMode::MapTypePicker;
@@ -1118,10 +1145,12 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
         KeyCode::Char('a') => {
             app.editor.add_field_at_cursor(10);
             app.set_message("Added field [a]");
+            app.show_validation_status();
         }
         KeyCode::Char('A') => {
             app.editor.add_field_at_cursor(20);
             app.set_message("Added long field [A]");
+            app.show_validation_status();
         }
         
         // New map commands
@@ -1159,8 +1188,9 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
         
         // Clipboard
         KeyCode::Char('c') => {
-            app.editor.copy_selected();
-            app.set_message("Copied");
+            let count = app.editor.selected_count();
+            app.editor.copy_selected_fields();
+            app.set_message(&format!("Copied {} field(s)", count));
         }
         KeyCode::Char('x') => {
             if app.editor.cut_selected().is_some() {
@@ -1168,8 +1198,10 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
             }
         }
         KeyCode::Char('v') => {
-            if app.editor.paste_at_cursor().is_some() {
-                app.set_message("Pasted");
+            if let Some(_first_idx) = app.editor.paste_at_cursor() {
+                let count = app.editor.clipboard_count();
+                app.set_message(&format!("Pasted {} field(s)", count));
+                app.show_validation_status();
             }
         }
         
@@ -1317,6 +1349,16 @@ fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
         };
         
         if let Some(obj) = obj {
+            // Check if position is valid before inserting
+            let field_length = obj.default_length();
+            if !app.is_valid_field_position(app.pending_position, field_length) {
+                app.set_message(&format!("Cannot insert: Invalid position ({},{}) for {}", 
+                    app.pending_position.0, app.pending_position.1, obj.display()));
+                // Keep pending_object for retry
+                app.pending_object = Some(obj);
+                return;
+            }
+            
             let field = obj.create_field(app.pending_position);
             app.editor.map.fields.push(field);
             app.mode = AppMode::Edit;
@@ -1663,6 +1705,7 @@ fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
                 app.mode = AppMode::Edit;
                 app.selected_object_for_add = None;
                 app.set_message(&format!("Inserted {}", obj.display()));
+                app.show_validation_status();
             }
         }
         KeyCode::Up => {
@@ -1736,6 +1779,7 @@ fn handle_confirm_mode(app: &mut App, key: event::KeyEvent) {
                 ConfirmAction::DeleteField => {
                     if app.editor.remove_selected_field().is_some() {
                         app.set_message("Field deleted");
+                        app.show_validation_status();
                     }
                     app.mode = AppMode::Edit;
                 }
@@ -2219,12 +2263,27 @@ fn render_insert_position_dialog(f: &mut Frame, app: &App, area: Rect) {
     let obj_name = app.pending_object.map(|o| o.display()).unwrap_or("Object");
     let (row, col) = app.pending_position;
     
+    // Check if position is valid
+    let is_valid = if let Some(obj) = app.pending_object {
+        app.editor.map.is_valid_field_position(app.pending_position, obj.default_length())
+    } else {
+        false
+    };
+    
+    let validity_text = if is_valid {
+        Line::from("Status: Valid".green())
+    } else {
+        Line::from("Status: INVALID - will not be inserted".red())
+    };
+    
     let lines = vec![
         Line::from(format!("Object: {}", obj_name)),
         Line::from(""),
         Line::from("Position:".yellow()),
         Line::from(format!("  Row: {}", row)),
         Line::from(format!("  Col: {}", col)),
+        Line::from(""),
+        validity_text,
         Line::from(""),
         Line::from("Arrows: Move".dim()),
         Line::from("Enter: Confirm".dim()),

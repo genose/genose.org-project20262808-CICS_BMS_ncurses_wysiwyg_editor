@@ -304,8 +304,8 @@ fn test_copy_cut_paste() {
     
     // Copier
     editor.copy_selected();
-    assert!(editor.clipboard.is_some());
-    assert_eq!(editor.clipboard.as_ref().unwrap().color, Some(Color::Blue));
+    assert!(!editor.clipboard.is_empty());
+    assert_eq!(editor.clipboard[0].color, Some(Color::Blue));
     assert_eq!(editor.map.fields.len(), 1);
     
     // Couper
@@ -313,7 +313,7 @@ fn test_copy_cut_paste() {
     let cut_field = editor.cut_selected();
     assert!(cut_field.is_some());
     assert_eq!(editor.map.fields.len(), 0);
-    assert_eq!(editor.clipboard.as_ref().unwrap().color, Some(Color::Blue));
+    assert_eq!(editor.clipboard[0].color, Some(Color::Blue));
     
     // Coller
     editor.set_cursor((5, 5));
@@ -327,11 +327,51 @@ fn test_copy_cut_paste() {
 #[test]
 fn test_paste_empty_clipboard() {
     let mut editor = BmsEditor::new();
-    editor.clipboard = None;
+    editor.clipboard.clear();
     
     let result = editor.paste_at_cursor();
     assert!(result.is_none());
     assert_eq!(editor.map.fields.len(), 0);
+}
+
+#[test]
+fn test_multiple_field_clipboard() {
+    let mut editor = BmsEditor::new();
+    
+    // Add multiple fields
+    editor.add_field_at_cursor(10); // Field 0
+    editor.set_cursor((2, 1));
+    editor.add_field_at_cursor(10); // Field 1
+    editor.set_cursor((3, 1));
+    editor.add_field_at_cursor(10); // Field 2
+    
+    assert_eq!(editor.map.fields.len(), 3);
+    
+    // Copy multiple fields
+    editor.copy_fields(&[0, 1, 2]);
+    assert_eq!(editor.clipboard_count(), 3);
+    
+    // Move cursor and paste
+    editor.set_cursor((10, 1));
+    let count = editor.paste_fields_at((10, 1));
+    assert_eq!(count, 3);
+    assert_eq!(editor.map.fields.len(), 6);
+    
+    // Check pasted positions
+    assert_eq!(editor.map.fields[3].pos, (10, 1));
+    assert_eq!(editor.map.fields[4].pos, (11, 1));
+    assert_eq!(editor.map.fields[5].pos, (12, 1));
+}
+
+#[test]
+fn test_clipboard_clear() {
+    let mut editor = BmsEditor::new();
+    editor.add_field_at_cursor(10);
+    editor.copy_selected();
+    assert_eq!(editor.clipboard_count(), 1);
+    
+    editor.clear_clipboard();
+    assert_eq!(editor.clipboard_count(), 0);
 }
 
 // ==================== TESTS: Properties ====================
