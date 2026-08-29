@@ -1555,9 +1555,20 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
     if key.code == KeyCode::Enter {
         if let Some(field) = app.edit_properties_field.take() {
             if let Some(idx) = app.editor.selected_field {
+                // Update existing field
                 app.editor.map.fields[idx] = field;
                 app.mode = AppMode::Edit;
                 app.set_message("Properties saved");
+            } else {
+                // Add new field (came from AddObjectDialog)
+                app.editor.add_field(field);
+                // Select the newly added field
+                if let Some(new_idx) = app.editor.map.fields.len().checked_sub(1) {
+                    app.editor.select_field(new_idx);
+                }
+                app.mode = AppMode::Edit;
+                app.set_message("Field inserted");
+                app.show_validation_status();
             }
         }
         return;
@@ -1851,13 +1862,16 @@ fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
         }
         KeyCode::Enter => {
             if let Some(obj) = app.selected_object_for_add {
-                // Add object at cursor position
-                let field = obj.create_field(app.editor.cursor_pos);
-                app.editor.map.fields.push(field);
-                app.mode = AppMode::Edit;
+                // Create a field from the selected object
+                let mut field = obj.create_field(app.editor.cursor_pos);
+                
+                // Instead of inserting immediately, go to EditProperties mode
+                // to allow configuring the field properties
+                app.edit_properties_field = Some(field);
+                app.edit_properties_index = 0;
+                app.mode = AppMode::EditProperties;
                 app.selected_object_for_add = None;
-                app.set_message(&format!("Inserted {}", obj.display()));
-                app.show_validation_status();
+                app.set_message(&format!("Configure {}", obj.display()));
             }
         }
         KeyCode::Up => {
@@ -2907,7 +2921,7 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from(""),
         Line::from(" Field Ops: ".yellow()),
         Line::from("  a/A: Add field (10/20 chars) - legacy"),
-        Line::from("  Ctrl+A: Add object dialog"),
+        Line::from("  Ctrl+A: Add object (select type, then configure properties)"),
         Line::from("  d: Delete field (or Ctrl+D)"),
         Line::from("  m: Move field (or Ctrl+M)"),
         Line::from("  r: Resize field (or Ctrl+R)"),
