@@ -891,3 +891,146 @@ fn test_is_valid_field_position() {
     // Non-overlapping position
     assert!(map.is_valid_field_position((1, 15), 10));
 }
+
+// ==================== TESTS: Multi-Selection ====================
+
+#[test]
+fn test_select_all_fields() {
+    let mut editor = BmsEditor::new();
+    
+    // Add 3 fields
+    editor.add_field(BmsField {
+        name: "FIELD1".to_string(),
+        pos: (1, 1),
+        length: 10,
+        ..Default::default()
+    });
+    editor.add_field(BmsField {
+        name: "FIELD2".to_string(),
+        pos: (2, 1),
+        length: 10,
+        ..Default::default()
+    });
+    editor.add_field(BmsField {
+        name: "FIELD3".to_string(),
+        pos: (3, 1),
+        length: 10,
+        ..Default::default()
+    });
+    
+    editor.select_all_fields();
+    
+    assert_eq!(editor.selected_fields.len(), 3);
+    assert_eq!(editor.selected_field, Some(0));
+    assert_eq!(editor.selected_count(), 3);
+}
+
+#[test]
+fn test_selected_count() {
+    let mut editor = BmsEditor::new();
+    
+    // No selection
+    assert_eq!(editor.selected_count(), 0);
+    
+    // Add a field and select it
+    let idx = editor.add_field(BmsField {
+        name: "FIELD1".to_string(),
+        pos: (1, 1),
+        length: 10,
+        ..Default::default()
+    });
+    editor.select_field(idx);
+    assert_eq!(editor.selected_count(), 1);
+    
+    // Multi-select
+    editor.add_field(BmsField {
+        name: "FIELD2".to_string(),
+        pos: (2, 1),
+        length: 10,
+        ..Default::default()
+    });
+    editor.toggle_field_selection(1);
+    assert_eq!(editor.selected_count(), 2);
+}
+
+#[test]
+fn test_extend_selection_to() {
+    let mut editor = BmsEditor::new();
+    
+    // Add 3 fields
+    let idx0 = editor.add_field(BmsField {
+        name: "FIELD1".to_string(),
+        pos: (1, 1),
+        length: 10,
+        ..Default::default()
+    });
+    let idx1 = editor.add_field(BmsField {
+        name: "FIELD2".to_string(),
+        pos: (2, 1),
+        length: 10,
+        ..Default::default()
+    });
+    let idx2 = editor.add_field(BmsField {
+        name: "FIELD3".to_string(),
+        pos: (3, 1),
+        length: 10,
+        ..Default::default()
+    });
+    
+    // Select first field
+    editor.select_field(idx0);
+    assert_eq!(editor.selected_count(), 1);
+    
+    // Extend to third field
+    editor.extend_selection_to(idx2);
+    assert_eq!(editor.selected_fields.len(), 3);
+    assert!(editor.selected_fields.contains(&idx0));
+    assert!(editor.selected_fields.contains(&idx1));
+    assert!(editor.selected_fields.contains(&idx2));
+}
+
+#[test]
+fn test_select_range() {
+    let mut editor = BmsEditor::new();
+    
+    // Add 5 fields
+    for i in 0..5 {
+        editor.add_field(BmsField {
+            name: format!("FIELD{}", i+1),
+            pos: ((i+1) as u16, 1),
+            length: 10,
+            ..Default::default()
+        });
+    }
+    
+    // Select range from 1 to 3
+    editor.select_range(1, 3);
+    
+    assert_eq!(editor.selected_fields.len(), 3);
+    assert!(editor.selected_fields.contains(&1));
+    assert!(editor.selected_fields.contains(&2));
+    assert!(editor.selected_fields.contains(&3));
+    assert!(!editor.selected_fields.contains(&0));
+    assert!(!editor.selected_fields.contains(&4));
+}
+
+#[test]
+fn test_field_at() {
+    let mut editor = BmsEditor::new();
+    
+    // Add a field at (5, 10) with length 5
+    editor.add_field(BmsField {
+        name: "FIELD1".to_string(),
+        pos: (5, 10),
+        length: 5,
+        ..Default::default()
+    });
+    
+    // Field covers columns 10-14 on row 5
+    assert_eq!(editor.field_at((5, 10)), Some(0));
+    assert_eq!(editor.field_at((5, 12)), Some(0));
+    assert_eq!(editor.field_at((5, 14)), Some(0));
+    assert_eq!(editor.field_at((5, 9)), None);
+    assert_eq!(editor.field_at((5, 15)), None);
+    assert_eq!(editor.field_at((6, 10)), None);
+}

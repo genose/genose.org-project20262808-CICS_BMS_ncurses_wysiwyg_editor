@@ -906,6 +906,46 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
         }
     }
     
+    // Handle Shift+Arrow for multi-selection (range selection)
+    if key.modifiers.contains(KeyModifiers::SHIFT) && !key.modifiers.contains(KeyModifiers::CONTROL) && !key.modifiers.contains(KeyModifiers::ALT) {
+        if app.active_panel == ActivePanel::Canvas {
+            // Remember the current anchor point for range selection
+            let anchor_idx = app.editor.selected_field;
+            
+            match key.code {
+                KeyCode::Up => {
+                    app.editor.move_cursor(CursorDirection::Up, 1);
+                }
+                KeyCode::Down => {
+                    app.editor.move_cursor(CursorDirection::Down, 1);
+                }
+                KeyCode::Left => {
+                    app.editor.move_cursor(CursorDirection::Left, 1);
+                }
+                KeyCode::Right => {
+                    app.editor.move_cursor(CursorDirection::Right, 1);
+                }
+                _ => {}
+            }
+            
+            // Extend selection to the field at the new cursor position
+            if let Some(new_idx) = app.editor.field_at(app.editor.cursor_pos) {
+                if let Some(anchor_idx) = anchor_idx {
+                    // Ensure selected_fields is initialized with anchor
+                    if app.editor.selected_fields.is_empty() {
+                        app.editor.selected_fields = vec![anchor_idx];
+                    }
+                    app.editor.extend_selection_to(new_idx);
+                    app.set_message(&format!("Selected {} field(s)", app.editor.selected_count()));
+                } else {
+                    // No anchor, just select the field at new position
+                    app.editor.select_field_at(app.editor.cursor_pos);
+                }
+            }
+            return;
+        }
+    }
+    
     // Handle special actions (Shift+Enter when supported)
     if key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Enter {
         if app.active_panel == ActivePanel::Sidebar && app.sidebar_section == SidebarSection::Objects {
@@ -2674,9 +2714,14 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  Alt/Ctrl+Up/Down: Move cursor (5 lines)"),
         Line::from("  Alt/Ctrl+Left/Right: Prev/Next field"),
         Line::from("  Tab/Shift+Tab: Next/Prev field"),
+        Line::from("  Shift+Arrow: Extend selection"),
         Line::from("  Ctrl+P: Toggle Canvas/Sidebar"),
         Line::from("  Ctrl+Shift+P: Toggle preview"),
         Line::from("  Key triggers displayed in message bar"),
+        Line::from(""),
+        Line::from(" Selection: ".yellow()),
+        Line::from("  Ctrl+Shift+A: Select all fields"),
+        Line::from("  Shift+Arrow: Multi-select fields"),
         Line::from(""),
         Line::from(" Field Ops: ".yellow()),
         Line::from("  a/A: Add field (10/20 chars) - legacy"),
@@ -2766,9 +2811,9 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     let status_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(30),
+            Constraint::Percentage(25),
             Constraint::Percentage(40),
-            Constraint::Percentage(30),
+            Constraint::Percentage(35),
         ])
         .split(area);
     
@@ -2802,7 +2847,14 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         .block(Block::default().borders(Borders::NONE));
     f.render_widget(message, status_layout[1]);
     
-    // File info
+    // Selection count and file info
+    let selection_count = app.editor.selected_count();
+    let selection_text = if selection_count > 0 {
+        format!(" [{}] ", selection_count)
+    } else {
+        String::new()
+    };
+    
     let file_info = if let Some(ref path) = app.current_file {
         format!(" {} ", path.file_name().unwrap_or_default().to_string_lossy())
     } else {
@@ -2811,7 +2863,7 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     
     let modified = if app.is_modified() { "[MODIFIED]" } else { "" };
     let vscode_indicator = if is_vscode_terminal() { "[VSCode]" } else { "" };
-    let file = Paragraph::new(format!("{}{}{}", file_info, modified, vscode_indicator))
+    let file = Paragraph::new(format!("{}{}{}{}", selection_text, file_info, modified, vscode_indicator))
         .style(Style::default().fg(TuiColor::Cyan))
         .alignment(ratatui::layout::Alignment::Right)
         .block(Block::default().borders(Borders::NONE));

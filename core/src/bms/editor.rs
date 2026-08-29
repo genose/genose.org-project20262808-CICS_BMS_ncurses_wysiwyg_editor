@@ -206,19 +206,30 @@ impl BmsEditor {
         }
     }
     
-    /// Selectionner le champ a la position donnee
-    pub fn select_field_at(&mut self, pos: (u16, u16)) -> Option<usize> {
+    /// Trouver le champ a la position donnee (sans selectionner)
+    pub fn field_at(&self, pos: (u16, u16)) -> Option<usize> {
         for (idx, field) in self.map.fields.iter().enumerate().rev() {
             let (row, col) = field.pos;
             let end_col = col + field.length - 1;
             
             if pos.0 == row && pos.1 >= col && pos.1 <= end_col {
-                self.selected_field = Some(idx);
                 return Some(idx);
             }
         }
-        self.selected_field = None;
         None
+    }
+    
+    /// Selectionner le champ a la position donnee
+    pub fn select_field_at(&mut self, pos: (u16, u16)) -> Option<usize> {
+        if let Some(idx) = self.field_at(pos) {
+            self.selected_field = Some(idx);
+            self.selected_fields = vec![idx];
+            Some(idx)
+        } else {
+            self.selected_field = None;
+            self.selected_fields.clear();
+            None
+        }
     }
     
     /// Selectionner le champ suivant
@@ -398,6 +409,30 @@ impl BmsEditor {
             vec![idx]
         } else {
             Vec::new()
+        }
+    }
+    
+    /// Selectionner une plage de champs de start a end (inclus)
+    pub fn select_range(&mut self, start: usize, end: usize) {
+        let start = min(start, end);
+        let end = max(start, end);
+        self.selected_fields = (start..=end).collect();
+        self.selected_field = if !self.selected_fields.is_empty() {
+            Some(self.selected_fields[0])
+        } else {
+            None
+        };
+    }
+    
+    /// Etendre la selection jusqu'a un index
+    pub fn extend_selection_to(&mut self, index: usize) {
+        if let Some(anchor) = self.selected_fields.first().copied() {
+            self.select_range(anchor, index);
+        } else if let Some(anchor) = self.selected_field {
+            self.selected_fields = vec![anchor];
+            self.select_range(anchor, index);
+        } else {
+            self.select_field(index);
         }
     }
     
