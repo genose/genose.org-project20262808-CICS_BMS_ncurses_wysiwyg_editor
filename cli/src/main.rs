@@ -521,8 +521,9 @@ impl InsertableObject {
         // Set Fieldset-specific properties (minimum 3 rows)
         if matches!(self, InsertableObject::Fieldset) {
             field.height = Some(3);  // Minimum height for Fieldset
-            field.decoration_type = Some(DecorationType::Brackets);  // Default decoration
-            field.title_align = Some(Justify::Center);  // Default title alignment
+            field.decoration = Some(DecorationType::Brackets);  // Default decoration for title
+            field.border = Some(DecorationType::Dashes);  // Default border for bottom line
+            field.title_align = Some(Justify::Left);  // Default title alignment: Left
         }
         
         field
@@ -2500,20 +2501,32 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             let is_fieldset = matches!(field.field_type, FieldType::Group) && field.height.is_some();
                             
                             c = if is_fieldset {
-                                // Fieldset rendering: first line = (decoration)(title)(decoration), last line = (decoration)
-                                let dec_type = field.decoration_type.clone().unwrap_or(DecorationType::Brackets);
-                                let (open_dec, close_dec, line_dec) = match dec_type {
-                                    DecorationType::Brackets => ('[', ']', '-'),
-                                    DecorationType::Parentheses => ('(', ')', '-'),
-                                    DecorationType::Plus => ('+', '+', '-'),
-                                    DecorationType::Asterisk => ('*', '*', '*'),
-                                    DecorationType::Hash => ('#', '#', '#'),
-                                    DecorationType::Dashes => ('-', '-', '-'),
-                                    DecorationType::Equals => ('=', '=', '='),
+                                // Fieldset rendering: first line = (decoration)(title)(decoration), last line = (border)
+                                let dec_type = field.decoration.clone().unwrap_or(DecorationType::Brackets);
+                                let border_type = field.border.clone().unwrap_or(DecorationType::Dashes);
+                                
+                                let (open_dec, close_dec) = match dec_type {
+                                    DecorationType::Brackets => ('[', ']'),
+                                    DecorationType::Parentheses => ('(', ')'),
+                                    DecorationType::Plus => ('+', '+'),
+                                    DecorationType::Asterisk => ('*', '*'),
+                                    DecorationType::Hash => ('#', '#'),
+                                    DecorationType::Dashes => ('-', '-'),
+                                    DecorationType::Equals => ('=', '='),
                                 };
                                 
-                                // Get title alignment (default to Center)
-                                let title_align = field.title_align.clone().unwrap_or(Justify::Center);
+                                let line_dec = match border_type {
+                                    DecorationType::Brackets => '-',
+                                    DecorationType::Parentheses => '-',
+                                    DecorationType::Plus => '-',
+                                    DecorationType::Asterisk => '*',
+                                    DecorationType::Hash => '#',
+                                    DecorationType::Dashes => '-',
+                                    DecorationType::Equals => '=',
+                                };
+                                
+                                // Get title alignment (default to Left)
+                                let title_align = field.title_align.clone().unwrap_or(Justify::Left);
                                 
                                 if is_first_row {
                                     // First line: open_dec + title + close_dec
