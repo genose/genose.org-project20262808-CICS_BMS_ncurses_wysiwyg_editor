@@ -418,9 +418,8 @@ pub enum InsertableObject {
     BooleanField,
     Literal,
     ProtectedLiteral,
-    Group,
+    Fieldset,
     Line,
-    Box,
     AsciiArt,
 }
 
@@ -434,9 +433,8 @@ impl InsertableObject {
             InsertableObject::BooleanField,
             InsertableObject::Literal,
             InsertableObject::ProtectedLiteral,
-            InsertableObject::Group,
+            InsertableObject::Fieldset,
             InsertableObject::Line,
-            InsertableObject::Box,
             InsertableObject::AsciiArt,
         ]
     }
@@ -450,9 +448,8 @@ impl InsertableObject {
             InsertableObject::BooleanField => "Boolean Field",
             InsertableObject::Literal => "Literal",
             InsertableObject::ProtectedLiteral => "Protected Literal",
-            InsertableObject::Group => "Group",
+            InsertableObject::Fieldset => "Fieldset",
             InsertableObject::Line => "Horizontal Line",
-            InsertableObject::Box => "Box",
             InsertableObject::AsciiArt => "Image to Ascii",
         }
     }
@@ -465,8 +462,8 @@ impl InsertableObject {
             InsertableObject::TimeField => 6,
             InsertableObject::BooleanField => 1,
             InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
-            InsertableObject::Group => 1,
-            InsertableObject::Line | InsertableObject::Box | InsertableObject::AsciiArt => 40,
+            InsertableObject::Fieldset => 10,
+            InsertableObject::Line | InsertableObject::AsciiArt => 40,
         }
     }
 
@@ -480,8 +477,8 @@ impl InsertableObject {
             InsertableObject::TimeField => 6,
             InsertableObject::BooleanField => 1,
             InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
-            InsertableObject::Group => 10,  // Minimum reasonable size for a group
-            InsertableObject::Line | InsertableObject::Box | InsertableObject::AsciiArt => 40,
+            InsertableObject::Fieldset => 10,  // Default length for fieldset
+            InsertableObject::Line | InsertableObject::AsciiArt => 40,
         };
         field.name = match self {
             InsertableObject::AlphanumericField => "ALNUM_FIELD".to_string(),
@@ -491,13 +488,12 @@ impl InsertableObject {
             InsertableObject::BooleanField => "BOOL_FIELD".to_string(),
             InsertableObject::Literal => "LITERAL".to_string(),
             InsertableObject::ProtectedLiteral => "PROT_LITERAL".to_string(),
-            InsertableObject::Group => "GROUP".to_string(),
+            InsertableObject::Fieldset => "FIELDSET".to_string(),
             InsertableObject::Line => "HLINE".to_string(),
-            InsertableObject::Box => "BOX".to_string(),
             InsertableObject::AsciiArt => "ASCII_ART".to_string(),
         };
         field.field_type = match self {
-            InsertableObject::Group => FieldType::Group,
+            InsertableObject::Fieldset => FieldType::Group,
             InsertableObject::AsciiArt => FieldType::Literal, // Treat as literal for ASCII art
             _ => FieldType::Field,
         };
@@ -522,14 +518,9 @@ impl InsertableObject {
             field.height = Some(5);  // Default height for ASCII art
         }
         
-        // Set Box-specific properties (same as Group - minimum 3 rows for fieldset)
-        if matches!(self, InsertableObject::Box) {
-            field.height = Some(3);  // Minimum height for Box as fieldset
-        }
-        
-        // Set Group-specific properties (minimum 3 rows for fieldset)
-        if matches!(self, InsertableObject::Group) {
-            field.height = Some(3);  // Minimum height for Group/Fieldset
+        // Set Fieldset-specific properties (minimum 3 rows)
+        if matches!(self, InsertableObject::Fieldset) {
+            field.height = Some(3);  // Minimum height for Fieldset
         }
         
         field
@@ -2503,9 +2494,8 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             }
                         } else {
                             // Regular field type handling
-                            // For multi-row fieldset-like objects (Box and Group), use fieldset rendering
-                            let is_fieldset = (field.name == "BOX" && field.height.is_some()) || 
-                                            (matches!(field.field_type, FieldType::Group) && field.height.is_some());
+                            // For multi-row fieldset objects, use fieldset rendering
+                            let is_fieldset = matches!(field.field_type, FieldType::Group) && field.height.is_some();
                             
                             c = if is_fieldset {
                                 // Fieldset rendering: first line = decoration+title+decoration, middle = decoration, last = decoration

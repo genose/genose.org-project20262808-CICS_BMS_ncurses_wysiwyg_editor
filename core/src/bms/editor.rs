@@ -209,41 +209,22 @@ impl BmsEditor {
             let offset_row = new_pos.0 as i32 - old_pos.0 as i32;
             let offset_col = new_pos.1 as i32 - old_pos.1 as i32;
             
-            // If this is a Group/Fieldset or Box, move all child fields within the container
-            // Both Box and Group use the same fieldset behavior
-            if field_type == FieldType::Group || field_name == "BOX" {
-                // For Group, move all fields with matching grp_name
-                // For Box, move all fields within its area
+            // If this is a Fieldset (Group), move all child fields with matching grp_name
+            if field_type == FieldType::Group {
                 for (child_idx, child_field) in self.map.fields.iter_mut().enumerate() {
-                    if child_idx != index {
-                        let should_move = if field_type == FieldType::Group {
-                            // Group: move fields with matching grp_name
-                            child_field.grp_name.as_ref() == Some(&field_name)
-                        } else {
-                            // Box: move fields within its area
-                            let box_start_row = old_pos.0;
-                            let box_end_row = old_pos.0 + field_height.unwrap_or(1) - 1;
-                            let box_start_col = old_pos.1;
-                            let box_end_col = old_pos.1 + field_length - 1;
-                            let child_pos = child_field.pos;
-                            child_pos.0 >= box_start_row && child_pos.0 <= box_end_row &&
-                            child_pos.1 >= box_start_col && child_pos.1 <= box_end_col
-                        };
-                        
-                        if should_move {
-                            let old_child_pos = child_field.pos;
-                            let new_child_pos = (
-                                (old_child_pos.0 as i32 + offset_row).max(1) as u16,
-                                (old_child_pos.1 as i32 + offset_col).max(1) as u16,
-                            );
-                            child_field.pos = new_child_pos;
-                            // Record history for each child move
-                            self.history.push(EditOperation::MoveField { 
-                                field_index: child_idx, 
-                                old_pos: old_child_pos, 
-                                new_pos: new_child_pos 
-                            });
-                        }
+                    if child_idx != index && child_field.grp_name.as_ref() == Some(&field_name) {
+                        let old_child_pos = child_field.pos;
+                        let new_child_pos = (
+                            (old_child_pos.0 as i32 + offset_row).max(1) as u16,
+                            (old_child_pos.1 as i32 + offset_col).max(1) as u16,
+                        );
+                        child_field.pos = new_child_pos;
+                        // Record history for each child move
+                        self.history.push(EditOperation::MoveField { 
+                            field_index: child_idx, 
+                            old_pos: old_child_pos, 
+                            new_pos: new_child_pos 
+                        });
                     }
                 }
             }
