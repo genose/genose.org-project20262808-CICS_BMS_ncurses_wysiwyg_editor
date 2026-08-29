@@ -581,7 +581,23 @@ fn get_object_type_metadata() -> HashMap<InsertableObject, ObjectTypeMetadata> {
         min_height: 1,
         default_length: 10,
     });
-    
+
+    // Image: import image as ASCII art
+    map.insert(InsertableObject::Image, ObjectTypeMetadata {
+        ascii_model: vec![
+            "  .------.",
+            "  | IMAGE |",
+            "  '------'",
+        ],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Height,
+            PropertyType::TextColor, PropertyType::AsciiArt,
+        ],
+        min_height: 1,
+        default_length: 10,
+    });
+
     map
 }
 
@@ -598,6 +614,7 @@ pub enum InsertableObject {
     Fieldset,
     Line,
     AsciiArt,
+    Image,
 }
 
 impl InsertableObject {
@@ -613,6 +630,7 @@ impl InsertableObject {
             InsertableObject::Fieldset,
             InsertableObject::Line,
             InsertableObject::AsciiArt,
+            InsertableObject::Image,
         ]
     }
 
@@ -627,7 +645,8 @@ impl InsertableObject {
             InsertableObject::ProtectedLiteral => "Protected Literal",
             InsertableObject::Fieldset => "Fieldset",
             InsertableObject::Line => "Horizontal Line",
-            InsertableObject::AsciiArt => "Image to Ascii",
+            InsertableObject::AsciiArt => "ASCII Art",
+            InsertableObject::Image => "Import Image",
         }
     }
     
@@ -640,7 +659,7 @@ impl InsertableObject {
             InsertableObject::BooleanField => 1,
             InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
             InsertableObject::Fieldset => 10,
-            InsertableObject::Line | InsertableObject::AsciiArt => 40,
+            InsertableObject::Line | InsertableObject::AsciiArt | InsertableObject::Image => 40,
         }
     }
 
@@ -655,7 +674,7 @@ impl InsertableObject {
             InsertableObject::BooleanField => 1,
             InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
             InsertableObject::Fieldset => 10,  // Default length for fieldset
-            InsertableObject::Line | InsertableObject::AsciiArt => 40,
+            InsertableObject::Line | InsertableObject::AsciiArt | InsertableObject::Image => 40,
         };
         field.name = match self {
             InsertableObject::AlphanumericField => "ALNUM_FIELD".to_string(),
@@ -668,10 +687,11 @@ impl InsertableObject {
             InsertableObject::Fieldset => "FIELDSET".to_string(),
             InsertableObject::Line => "HLINE".to_string(),
             InsertableObject::AsciiArt => "ASCII_ART".to_string(),
+            InsertableObject::Image => "IMAGE_ART".to_string(),
         };
         field.field_type = match self {
             InsertableObject::Fieldset => FieldType::Group,
-            InsertableObject::AsciiArt => FieldType::Literal, // Treat as literal for ASCII art
+            InsertableObject::AsciiArt | InsertableObject::Image => FieldType::Literal, // Treat as literal for ASCII art
             _ => FieldType::Field,
         };
         field.attrb = match self {
@@ -691,7 +711,7 @@ impl InsertableObject {
         };
         
         // Set AsciiArt-specific properties
-        if matches!(self, InsertableObject::AsciiArt) {
+        if matches!(self, InsertableObject::AsciiArt | InsertableObject::Image) {
             field.height = Some(5);  // Default height for ASCII art
         }
         
@@ -2381,8 +2401,8 @@ fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
         }
         KeyCode::Enter => {
             if let Some(obj) = app.selected_object_for_add {
-                if obj == InsertableObject::AsciiArt {
-                    // For AsciiArt, go directly to image import
+                if obj == InsertableObject::AsciiArt || obj == InsertableObject::Image {
+                    // For AsciiArt and Image, go directly to image import
                     let field = obj.create_field(app.editor.cursor_pos);
                     app.edit_properties_field = Some(field);
                     
@@ -2406,7 +2426,7 @@ fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
                     app.image_import_error = None;
                     app.image_import_show_all_files = false;
                     app.selected_object_for_add = None;
-                    app.set_message("Import image for ASCII Art - Use arrows to select, Tab to show all files");
+                    app.set_message(&format!("Import image for {} - Use arrows to select, Tab to show all files", obj.display()));
                 } else {
                     // Create a field from the selected object
                     let mut field = obj.create_field(app.editor.cursor_pos);
@@ -3741,7 +3761,11 @@ fn get_insertable_object_from_field(field: &BmsField) -> Option<InsertableObject
     if matches!(field.field_type, FieldType::Group) && field.height.is_some() {
         Some(InsertableObject::Fieldset)
     } else if field.ascii_art.is_some() {
-        Some(InsertableObject::AsciiArt)
+        if field.name == "IMAGE_ART" {
+            Some(InsertableObject::Image)
+        } else {
+            Some(InsertableObject::AsciiArt)
+        }
     } else if field.attrb.contains(&FieldAttribute::Prot) && field.initial.is_some() {
         Some(InsertableObject::ProtectedLiteral)
     } else if field.attrb.contains(&FieldAttribute::Prot) {
