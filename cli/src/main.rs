@@ -2838,11 +2838,31 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             // For multi-row fieldset objects, use fieldset rendering
                             c = if let Some((open_dec, close_dec, line_dec, fill_char, title_align)) = fieldset_chars.clone() {
                                 if is_first_row {
-                                    // First line: open_dec + title + close_dec
+                                    // First line: use box-drawing characters for corners and horizontal line
                                     if is_first_col {
-                                        open_dec
+                                        // Top-left corner
+                                        match open_dec {
+                                            '[' => '┌',
+                                            '(' => '⎵',
+                                            '+' => '┌',
+                                            '*' => '✧',
+                                            '#' => '⌖',
+                                            '-' => '─',
+                                            '=' => '⌐',
+                                            _ => open_dec,
+                                        }
                                     } else if is_last_col {
-                                        close_dec
+                                        // Top-right corner
+                                        match close_dec {
+                                            ']' => '┐',
+                                            ')' => '⎵',
+                                            '+' => '┐',
+                                            '*' => '✦',
+                                            '#' => '⌕',
+                                            '-' => '─',
+                                            '=' => '⌒',
+                                            _ => close_dec,
+                                        }
                                     } else {
                                         // In the title row, check if we should display title text
                                         if let Some(title) = &field.fieldset_title {
@@ -2863,18 +2883,51 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                                 let char_idx = col_in_field - title_start;
                                                 title.chars().nth(char_idx).unwrap_or(fill_char)
                                             } else {
-                                                fill_char
+                                                // Use horizontal line for fill in title row
+                                                match line_dec {
+                                                    '-' => '─',
+                                                    '=' => '─',
+                                                    _ => fill_char,
+                                                }
                                             }
                                         } else {
-                                            ' '
+                                            match line_dec {
+                                                '-' => '─',
+                                                '=' => '═',
+                                                _ => fill_char,
+                                            }
                                         }
                                     }
                                 } else if is_last_row {
-                                    // Last line: line_dec repeated
-                                    line_dec
+                                    // Last line: use box-drawing for bottom border
+                                    if is_first_col {
+                                        match open_dec {
+                                            '[' => '└',
+                                            '(' => '⎺',
+                                            '+' => '└',
+                                            _ => line_dec,
+                                        }
+                                    } else if is_last_col {
+                                        match close_dec {
+                                            ']' => '┘',
+                                            ')' => '⎺',
+                                            '+' => '┘',
+                                            _ => line_dec,
+                                        }
+                                    } else {
+                                        match line_dec {
+                                            '-' => '─',
+                                            '=' => '═',
+                                            _ => line_dec,
+                                        }
+                                    }
                                 } else {
-                                    // Middle lines: empty (no decoration)
-                                    ' '
+                                    // Middle lines: vertical borders at first and last columns
+                                    if is_first_col || is_last_col {
+                                        '│'
+                                    } else {
+                                        ' '
+                                    }
                                 }
                             } else {
                                 // Single-row field handling
