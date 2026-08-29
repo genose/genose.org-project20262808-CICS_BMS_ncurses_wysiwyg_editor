@@ -2835,91 +2835,56 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             }
                         } else {
                             // Regular field type handling
-                            // For multi-row fieldset objects, use fieldset rendering
+                            // For multi-row fieldset objects, use HTML FIELDSET-like rendering
                             c = if let Some((open_dec, close_dec, line_dec, fill_char, title_align)) = fieldset_chars.clone() {
                                 if is_first_row {
-                                    // First line: use box-drawing characters for corners and horizontal line
+                                    // HTML FIELDSET: top border with legend title embedded
                                     if is_first_col {
                                         // Top-left corner
-                                        match open_dec {
-                                            '[' => '┌',
-                                            '(' => '⎵',
-                                            '+' => '┌',
-                                            '*' => '✧',
-                                            '#' => '⌖',
-                                            '-' => '─',
-                                            '=' => '⌐',
-                                            _ => open_dec,
-                                        }
+                                        '┌'
                                     } else if is_last_col {
                                         // Top-right corner
-                                        match close_dec {
-                                            ']' => '┐',
-                                            ')' => '⎵',
-                                            '+' => '┐',
-                                            '*' => '✦',
-                                            '#' => '⌕',
-                                            '-' => '─',
-                                            '=' => '⌒',
-                                            _ => close_dec,
-                                        }
+                                        '┐'
                                     } else {
-                                        // In the title row, check if we should display title text
+                                        // Top border: horizontal line, but break for title
                                         if let Some(title) = &field.fieldset_title {
                                             let title_len = title.len();
                                             let field_width = (field_end_col - field_start + 1) as usize;
                                             let col_in_field = col - field_start;
                                             
                                             // Calculate title start position based on alignment
+                                            // Title should appear in the middle of the top border
+                                            let border_padding = 2; // Space on each side of title
                                             let title_start = match title_align {
-                                                Justify::Left => 1,  // Start right after open_dec
-                                                Justify::Right => field_width.saturating_sub(title_len + 1),  // End before close_dec
-                                                Justify::Center => (field_width.saturating_sub(title_len)) / 2,
+                                                Justify::Left => 1 + 1,  // 1 for corner, 1 for space
+                                                Justify::Right => field_width.saturating_sub(title_len + 1 + 1), 
+                                                Justify::Center => {
+                                                    let available = field_width.saturating_sub(2); // Subtract corners
+                                                    (available.saturating_sub(title_len)) / 2 + 1
+                                                },
                                             };
                                             let title_end = title_start + title_len;
                                             
                                             if col_in_field >= title_start && col_in_field < title_end {
-                                                // Get the specific character from the title
+                                                // Title character
                                                 let char_idx = col_in_field - title_start;
-                                                title.chars().nth(char_idx).unwrap_or(fill_char)
+                                                title.chars().nth(char_idx).unwrap_or(' ')
                                             } else {
-                                                // Use horizontal line for fill in title row
-                                                match line_dec {
-                                                    '-' => '─',
-                                                    '=' => '─',
-                                                    _ => fill_char,
-                                                }
+                                                // Horizontal line for border
+                                                '─'
                                             }
                                         } else {
-                                            match line_dec {
-                                                '-' => '─',
-                                                '=' => '═',
-                                                _ => fill_char,
-                                            }
+                                            '─'
                                         }
                                     }
                                 } else if is_last_row {
-                                    // Last line: use box-drawing for bottom border
+                                    // Bottom border
                                     if is_first_col {
-                                        match open_dec {
-                                            '[' => '└',
-                                            '(' => '⎺',
-                                            '+' => '└',
-                                            _ => line_dec,
-                                        }
+                                        '└'
                                     } else if is_last_col {
-                                        match close_dec {
-                                            ']' => '┘',
-                                            ')' => '⎺',
-                                            '+' => '┘',
-                                            _ => line_dec,
-                                        }
+                                        '┘'
                                     } else {
-                                        match line_dec {
-                                            '-' => '─',
-                                            '=' => '═',
-                                            _ => line_dec,
-                                        }
+                                        '─'
                                     }
                                 } else {
                                     // Middle lines: vertical borders at first and last columns
