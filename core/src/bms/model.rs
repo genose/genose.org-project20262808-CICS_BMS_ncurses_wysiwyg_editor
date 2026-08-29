@@ -114,6 +114,19 @@ impl fmt::Display for DataType {
     }
 }
 
+/// Decoration type for fieldset borders
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum DecorationType {
+    #[default]
+    Brackets,      // [ Title ]
+    Parentheses,    // ( Title )
+    Plus,          // + Title +
+    Asterisk,      // * Title *
+    Hash,          // # Title #
+    Dashes,        // - Title -
+    Equals,        // = Title =
+}
+
 /// Represents a single BMS field (DFHMND, DFHMDF, etc.)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BmsField {
@@ -131,6 +144,7 @@ pub struct BmsField {
     // Group/Fieldset specific properties
     pub title: Option<String>,       // Title for group/fieldset
     pub height: Option<u16>,        // Height for multi-row elements (e.g., groups)
+    pub decoration_type: Option<DecorationType>,  // Decoration style for fieldset borders
     
     // ASCII Art specific properties
     pub ascii_art: Option<AsciiArt>,  // ASCII art data with colors
@@ -488,6 +502,7 @@ impl Default for BmsField {
             decimal_point: None,
             synchronized: None,
             usage: None,
+            decoration_type: None,
         }
     }
 }

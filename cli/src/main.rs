@@ -41,7 +41,7 @@ use cobol_bms_core::{
     BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection, create_default_map,
     image_to_ascii_simple,
 };
-use cobol_bms_core::model::Color as BmsColor;
+use cobol_bms_core::model::{Color as BmsColor, DecorationType};
 
 // ==================== UTILITIES ====================
 
@@ -521,6 +521,7 @@ impl InsertableObject {
         // Set Fieldset-specific properties (minimum 3 rows)
         if matches!(self, InsertableObject::Fieldset) {
             field.height = Some(3);  // Minimum height for Fieldset
+            field.decoration_type = Some(DecorationType::Brackets);  // Default decoration
         }
         
         field
@@ -2498,13 +2499,24 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             let is_fieldset = matches!(field.field_type, FieldType::Group) && field.height.is_some();
                             
                             c = if is_fieldset {
-                                // Fieldset rendering: first line = decoration+title+decoration, middle = decoration, last = decoration
+                                // Fieldset rendering: first line = (decoration)(title)(decoration), last line = (decoration)
+                                let dec_type = field.decoration_type.clone().unwrap_or(DecorationType::Brackets);
+                                let (open_dec, close_dec, line_dec) = match dec_type {
+                                    DecorationType::Brackets => ('[', ']', '-'),
+                                    DecorationType::Parentheses => ('(', ')', '-'),
+                                    DecorationType::Plus => ('+', '+', '-'),
+                                    DecorationType::Asterisk => ('*', '*', '*'),
+                                    DecorationType::Hash => ('#', '#', '#'),
+                                    DecorationType::Dashes => ('-', '-', '-'),
+                                    DecorationType::Equals => ('=', '=', '='),
+                                };
+                                
                                 if is_first_row {
-                                    // First row: ┌ title ┐
+                                    // First line: open_dec + title + close_dec
                                     if is_first_col {
-                                        '┌'
+                                        open_dec
                                     } else if is_last_col {
-                                        '┐'
+                                        close_dec
                                     } else {
                                         // In the title row, check if we should display title text
                                         if let Some(title) = &field.title {
@@ -2519,23 +2531,20 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                             if col_in_field >= title_start && col_in_field < title_end {
                                                 // Get the specific character from the title
                                                 let char_idx = col_in_field - title_start;
-                                                title.chars().nth(char_idx).unwrap_or('─')
+                                                title.chars().nth(char_idx).unwrap_or(' ')
                                             } else {
-                                                '─'
+                                                ' '
                                             }
                                         } else {
-                                            '─'
+                                            ' '
                                         }
                                     }
                                 } else if is_last_row {
-                                    // Last row: └──────┘
-                                    if is_first_col { '└' }
-                                    else if is_last_col { '┘' }
-                                    else { '─' }
+                                    // Last line: line_dec repeated
+                                    line_dec
                                 } else {
-                                    // Middle rows: │    │
-                                    if is_first_col || is_last_col { '│' }
-                                    else { ' ' }
+                                    // Middle lines: empty (no decoration)
+                                    ' '
                                 }
                             } else {
                                 // Single-row field handling

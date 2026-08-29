@@ -202,8 +202,6 @@ impl BmsEditor {
             let old_pos = self.map.fields[index].pos;
             let field_type = self.map.fields[index].field_type.clone();
             let field_name = self.map.fields[index].name.clone();
-            let field_height = self.map.fields[index].height;
-            let field_length = self.map.fields[index].length;
             
             // Calculate the offset
             let offset_row = new_pos.0 as i32 - old_pos.0 as i32;
