@@ -200,6 +200,34 @@ impl BmsEditor {
     pub fn move_selected_field(&mut self, new_pos: (u16, u16)) {
         if let Some(index) = self.selected_field {
             let old_pos = self.map.fields[index].pos;
+            let field_type = self.map.fields[index].field_type.clone();
+            let field_name = self.map.fields[index].name.clone();
+            
+            // Calculate the offset
+            let offset_row = new_pos.0 as i32 - old_pos.0 as i32;
+            let offset_col = new_pos.1 as i32 - old_pos.1 as i32;
+            
+            // If this is a Group/Fieldset, move all child fields with the same grp_name first
+            if field_type == FieldType::Group {
+                for (child_idx, child_field) in self.map.fields.iter_mut().enumerate() {
+                    if child_idx != index && child_field.grp_name.as_ref() == Some(&field_name) {
+                        let old_child_pos = child_field.pos;
+                        let new_child_pos = (
+                            (old_child_pos.0 as i32 + offset_row).max(1) as u16,
+                            (old_child_pos.1 as i32 + offset_col).max(1) as u16,
+                        );
+                        child_field.pos = new_child_pos;
+                        // Record history for each child move
+                        self.history.push(EditOperation::MoveField { 
+                            field_index: child_idx, 
+                            old_pos: old_child_pos, 
+                            new_pos: new_child_pos 
+                        });
+                    }
+                }
+            }
+            
+            // Move the selected field
             self.map.fields[index].pos = new_pos;
             self.history.push(EditOperation::MoveField { field_index: index, old_pos, new_pos });
         }
