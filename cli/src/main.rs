@@ -2449,6 +2449,47 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                     let is_first_row = grid_row + 1 == field_row;
                     let is_last_row = grid_row + 1 == field_end_row;
                     
+                    // Pre-compute fieldset decoration for color handling
+                    let fieldset_chars = if matches!(field.field_type, FieldType::Group) && field.height.is_some() {
+                        let dec_type = field.decoration.clone().unwrap_or(DecorationType::Brackets);
+                        let border_type = field.border.clone().unwrap_or(DecorationType::Dashes);
+                        let title_align = field.title_align.clone().unwrap_or(Justify::Left);
+                        let fill_char = if let Some(fill_dec) = field.title_fill_decoration.clone() {
+                            match fill_dec {
+                                DecorationType::Brackets => '[',
+                                DecorationType::Parentheses => '(',
+                                DecorationType::Plus => '+',
+                                DecorationType::Asterisk => '*',
+                                DecorationType::Hash => '#',
+                                DecorationType::Dashes => '-',
+                                DecorationType::Equals => '=',
+                            }
+                        } else {
+                            ' '  // Default: space
+                        };
+                        let (open_dec, close_dec) = match dec_type {
+                            DecorationType::Brackets => ('[', ']'),
+                            DecorationType::Parentheses => ('(', ')'),
+                            DecorationType::Plus => ('+', '+'),
+                            DecorationType::Asterisk => ('*', '*'),
+                            DecorationType::Hash => ('#', '#'),
+                            DecorationType::Dashes => ('-', '-'),
+                            DecorationType::Equals => ('=', '='),
+                        };
+                        let line_dec = match border_type {
+                            DecorationType::Brackets => '-',
+                            DecorationType::Parentheses => '-',
+                            DecorationType::Plus => '-',
+                            DecorationType::Asterisk => '*',
+                            DecorationType::Hash => '#',
+                            DecorationType::Dashes => '-',
+                            DecorationType::Equals => '=',
+                        };
+                        Some((open_dec, close_dec, line_dec, fill_char, title_align))
+                    } else {
+                        None
+                    };
+                    
                     c = if *is_preview {
                         // Preview fields use special characters
                         if is_first_col {
@@ -2499,51 +2540,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                         } else {
                             // Regular field type handling
                             // For multi-row fieldset objects, use fieldset rendering
-                            let is_fieldset = matches!(field.field_type, FieldType::Group) && field.height.is_some();
-                            
-                            c = if is_fieldset {
-                                // Fieldset rendering: first line = (decoration)(title)(decoration), last line = (border)
-                                let dec_type = field.decoration.clone().unwrap_or(DecorationType::Brackets);
-                                let border_type = field.border.clone().unwrap_or(DecorationType::Dashes);
-                                
-                                let (open_dec, close_dec) = match dec_type {
-                                    DecorationType::Brackets => ('[', ']'),
-                                    DecorationType::Parentheses => ('(', ')'),
-                                    DecorationType::Plus => ('+', '+'),
-                                    DecorationType::Asterisk => ('*', '*'),
-                                    DecorationType::Hash => ('#', '#'),
-                                    DecorationType::Dashes => ('-', '-'),
-                                    DecorationType::Equals => ('=', '='),
-                                };
-                                
-                                let line_dec = match border_type {
-                                    DecorationType::Brackets => '-',
-                                    DecorationType::Parentheses => '-',
-                                    DecorationType::Plus => '-',
-                                    DecorationType::Asterisk => '*',
-                                    DecorationType::Hash => '#',
-                                    DecorationType::Dashes => '-',
-                                    DecorationType::Equals => '=',
-                                };
-                                
-                                // Get title alignment (default to Left)
-                                let title_align = field.title_align.clone().unwrap_or(Justify::Left);
-                                
-                                // Get fill decoration for title line (default to space)
-                                let fill_char = if let Some(fill_dec) = field.title_fill_decoration.clone() {
-                                    match fill_dec {
-                                        DecorationType::Brackets => '[',
-                                        DecorationType::Parentheses => '(',
-                                        DecorationType::Plus => '+',
-                                        DecorationType::Asterisk => '*',
-                                        DecorationType::Hash => '#',
-                                        DecorationType::Dashes => '-',
-                                        DecorationType::Equals => '=',
-                                    }
-                                } else {
-                                    ' '  // Default: space
-                                };
-                                
+                            c = if let Some((open_dec, close_dec, line_dec, fill_char, title_align)) = fieldset_chars.clone() {
                                 if is_first_row {
                                     // First line: open_dec + title + close_dec
                                     if is_first_col {
@@ -2560,7 +2557,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                             // Calculate title start position based on alignment
                                             let title_start = match title_align {
                                                 Justify::Left => 1,  // Start right after open_dec
-                                                Justify::Right => (field_width.saturating_sub(title_len + 1)),  // End before close_dec
+                                                Justify::Right => field_width.saturating_sub(title_len + 1),  // End before close_dec
                                                 Justify::Center => (field_width.saturating_sub(title_len)) / 2,
                                             };
                                             let title_end = title_start + title_len;
@@ -2649,6 +2646,47 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             style = style.fg(bms_color_to_tui(text_color));
                         } else {
                             style = style.fg(TuiColor::White);
+                        }
+                        
+                        // Fieldset-specific colors (using the fieldset_chars if available)
+                        if let Some((open_dec, close_dec, line_dec, fill_char, title_align)) = fieldset_chars.clone() {
+                            if is_first_row {
+                                // Title line: use fieldset_title_color or fieldset_fill_title_color based on position
+                                if let Some(title) = &field.title {
+                                    let title_len = title.len();
+                                    let field_width = (field_end_col - field_start + 1) as usize;
+                                    let col_in_field = col - field_start;
+                                    
+                                    let title_start = match title_align {
+                                        Justify::Left => 1,
+                                        Justify::Right => field_width.saturating_sub(title_len + 1),
+                                        Justify::Center => (field_width.saturating_sub(title_len)) / 2,
+                                    };
+                                    let title_end = title_start + title_len;
+                                    
+                                    if col_in_field >= title_start && col_in_field < title_end {
+                                        // This is the title text - use fieldset_title_color
+                                        if let Some(title_color) = &field.fieldset_title_color {
+                                            style = style.fg(bms_color_to_tui(title_color));
+                                        }
+                                    } else if c != open_dec && c != close_dec {
+                                        // This is the fill - use fieldset_fill_title_color
+                                        if let Some(fill_color) = &field.fieldset_fill_title_color {
+                                            style = style.fg(bms_color_to_tui(fill_color));
+                                        }
+                                    }
+                                }
+                            } else if is_last_row {
+                                // Border line - use fieldset_border_color
+                                if let Some(border_color) = &field.fieldset_border_color {
+                                    style = style.fg(bms_color_to_tui(border_color));
+                                }
+                            } else {
+                                // Content area - use fieldset_content_color
+                                if let Some(content_color) = &field.fieldset_content_color {
+                                    style = style.fg(bms_color_to_tui(content_color));
+                                }
+                            }
                         }
                     }
                     break;

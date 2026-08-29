@@ -149,6 +149,12 @@ pub struct BmsField {
     pub title_align: Option<Justify>,  // Text alignment for fieldset title (Left, Center, Right)
     pub title_fill_decoration: Option<DecorationType>,  // Fill decoration for title line empty spaces
     
+    // Fieldset color properties
+    pub fieldset_title_color: Option<Color>,      // Color for fieldset title text
+    pub fieldset_fill_title_color: Option<Color>, // Color for fill decoration in title line
+    pub fieldset_border_color: Option<Color>,     // Color for fieldset border line
+    pub fieldset_content_color: Option<Color>,    // Color for fieldset content/background
+    
     // ASCII Art specific properties
     pub ascii_art: Option<AsciiArt>,  // ASCII art data with colors
     
@@ -509,6 +515,10 @@ impl Default for BmsField {
             border: None,
             title_align: None,
             title_fill_decoration: None,
+            fieldset_title_color: None,
+            fieldset_fill_title_color: None,
+            fieldset_border_color: None,
+            fieldset_content_color: None,
         }
     }
 }
