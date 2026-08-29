@@ -1,4 +1,5 @@
 use crate::bms::model::*;
+use crate::bms::binary_parser::{parse_bms_binary, is_bms_binary_file, BmsBinaryParseError};
 use nom::{
     IResult,
     bytes::complete::{tag_no_case, take_until, take_while1},
@@ -7,6 +8,7 @@ use nom::{
     sequence::{delimited, separated_pair},
 };
 use std::fs;
+use std::io::Read;
 use thiserror::Error;
 
 /// Custom error type for BMS parsing
@@ -16,6 +18,8 @@ pub enum BmsParseError {
     ParseError(String),
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
+    #[error("Binary parse error: {0}")]
+    BinaryParseError(#[from] BmsBinaryParseError),
 }
 
 /// Parse a BMS source string and return a BmsMap
@@ -51,10 +55,31 @@ pub fn parse_bms(input: &str) -> Result<BmsMap, BmsParseError> {
     Ok(current_map.unwrap_or(map))
 }
 
-/// Parse a BMS file from disk
+/// Parse a BMS file from disk (auto-detects text or binary format)
 pub fn parse_bms_file(path: &str) -> Result<BmsMap, BmsParseError> {
-    let content = fs::read_to_string(path)?;
-    parse_bms(&content)
+    // First, try to read a small header to detect if it's binary
+    let mut file = fs::File::open(path)?;
+    let mut header = [0u8; 32];
+    
+    match file.read_exact(&mut header) {
+        Ok(_) => {
+            // Check if this looks like a binary BMS file
+            if is_bms_binary_file(&header) {
+                // Rewind and parse as binary
+                drop(file);
+                parse_bms_binary(std::path::Path::new(path)).map_err(|e| e.into())
+            } else {
+                // Parse as text
+                let content = fs::read_to_string(path)?;
+                parse_bms(&content)
+            }
+        }
+        Err(_) => {
+            // File is too short to be a valid binary, try as text
+            let content = fs::read_to_string(path)?;
+            parse_bms(&content)
+        }
+    }
 }
 
 /// Parse DFHMSD statement
