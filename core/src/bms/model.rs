@@ -2,6 +2,21 @@ use std::collections::HashMap;
 use std::fmt;
 use serde::{Serialize, Deserialize};
 
+/// ASCII Art data with color information for each character
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AsciiArtChar {
+    pub character: char,
+    pub color: Option<String>,  // Store color as string for serialization
+}
+
+/// ASCII Art field data - a grid of characters with colors
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AsciiArt {
+    pub data: Vec<Vec<AsciiArtChar>>,
+    pub width: u16,
+    pub height: u16,
+}
+
 /// Justification type for BMS fields
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Justify {
@@ -111,6 +126,13 @@ pub struct BmsField {
     pub initial: Option<String>,
     pub pic: Option<String>,
     pub grp_name: Option<String>,
+    
+    // Group/Fieldset specific properties
+    pub title: Option<String>,       // Title for group/fieldset
+    pub height: Option<u16>,        // Height for multi-row elements (e.g., groups)
+    
+    // ASCII Art specific properties
+    pub ascii_art: Option<AsciiArt>,  // ASCII art data with colors
     
     // Extended CICS/BMS support
     pub justification: Option<Justify>,
@@ -444,6 +466,9 @@ impl Default for BmsField {
             initial: None,
             pic: None,
             grp_name: None,
+            title: None,
+            height: None,
+            ascii_art: None,
             justification: None,
             autoskip: None,
             fieldexit: None,

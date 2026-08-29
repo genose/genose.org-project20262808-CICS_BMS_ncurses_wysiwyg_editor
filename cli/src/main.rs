@@ -48,6 +48,29 @@ fn is_vscode_terminal() -> bool {
     term_program == "vscode" || term_program.contains("vscode")
 }
 
+/// Convert color string to TuiColor for ASCII art rendering
+fn color_string_to_tui(color_str: &Option<String>) -> TuiColor {
+    if let Some(color) = color_str {
+        match color.to_uppercase().as_str() {
+            "BLACK" => TuiColor::Black,
+            "BLUE" => TuiColor::Blue,
+            "GREEN" => TuiColor::Green,
+            "CYAN" => TuiColor::Cyan,
+            "RED" => TuiColor::Red,
+            "MAGENTA" => TuiColor::Magenta,
+            "YELLOW" => TuiColor::Yellow,
+            "WHITE" => TuiColor::White,
+            "ORANGE" => TuiColor::Rgb(255, 165, 0),
+            "PURPLE" => TuiColor::Rgb(128, 0, 128),
+            "PINK" => TuiColor::Magenta,
+            "GRAY" | "GREY" => TuiColor::Gray,
+            _ => TuiColor::White,
+        }
+    } else {
+        TuiColor::White
+    }
+}
+
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
 #[derive(Parser, Debug)]
 #[command(name = "cobol-bms")]
@@ -277,6 +300,7 @@ pub enum InsertableObject {
     Group,
     Line,
     Box,
+    AsciiArt,
 }
 
 impl InsertableObject {
@@ -292,6 +316,7 @@ impl InsertableObject {
             InsertableObject::Group,
             InsertableObject::Line,
             InsertableObject::Box,
+            InsertableObject::AsciiArt,
         ]
     }
 
@@ -307,6 +332,7 @@ impl InsertableObject {
             InsertableObject::Group => "Group",
             InsertableObject::Line => "Horizontal Line",
             InsertableObject::Box => "Box",
+            InsertableObject::AsciiArt => "Image to Ascii",
         }
     }
     
@@ -319,7 +345,7 @@ impl InsertableObject {
             InsertableObject::BooleanField => 1,
             InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
             InsertableObject::Group => 1,
-            InsertableObject::Line | InsertableObject::Box => 40,
+            InsertableObject::Line | InsertableObject::Box | InsertableObject::AsciiArt => 40,
         }
     }
 
@@ -334,7 +360,7 @@ impl InsertableObject {
             InsertableObject::BooleanField => 1,
             InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
             InsertableObject::Group => 10,  // Minimum reasonable size for a group
-            InsertableObject::Line | InsertableObject::Box => 40,
+            InsertableObject::Line | InsertableObject::Box | InsertableObject::AsciiArt => 40,
         };
         field.name = match self {
             InsertableObject::AlphanumericField => "ALNUM_FIELD".to_string(),
@@ -347,9 +373,11 @@ impl InsertableObject {
             InsertableObject::Group => "GROUP".to_string(),
             InsertableObject::Line => "HLINE".to_string(),
             InsertableObject::Box => "BOX".to_string(),
+            InsertableObject::AsciiArt => "ASCII_ART".to_string(),
         };
         field.field_type = match self {
             InsertableObject::Group => FieldType::Group,
+            InsertableObject::AsciiArt => FieldType::Literal, // Treat as literal for ASCII art
             _ => FieldType::Field,
         };
         field.attrb = match self {
@@ -367,6 +395,12 @@ impl InsertableObject {
             InsertableObject::BooleanField => Some("X(1)".to_string()),
             _ => None,
         };
+        
+        // Set AsciiArt-specific properties
+        if matches!(self, InsertableObject::AsciiArt) {
+            field.height = Some(5);  // Default height for ASCII art
+        }
+        
         field
     }
 }
@@ -2187,30 +2221,61 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                         }
                     } else {
                         // Regular fields based on type - use horizontal line characters
-                        match field.field_type {
-                            FieldType::Map => {
-                                if is_first_col { '┏' } else if is_last_col { '┓' } else { '━' }
-                            }
-                            FieldType::Field => {
-                                if field.attrb.contains(&FieldAttribute::Prot) {
-                                    if is_first_col { '╭' } else if is_last_col { '╮' } else { '─' }
-                                } else if field.attrb.contains(&FieldAttribute::Num) {
-                                    if is_first_col { '[' } else if is_last_col { ']' } else { '═' }
-                                } else if field.attrb.contains(&FieldAttribute::Alph) || field.attrb.contains(&FieldAttribute::AlphaNum) {
-                                    if is_first_col { '⟦' } else if is_last_col { '⟧' } else { '─' }
+                        // Special handling for ASCII art fields
+                        if let Some(ascii_art) = &field.ascii_art {
+                            // Calculate position within the ASCII art grid
+                            let art_row = grid_row + 1 - field_row; // row within the art (0-based)
+                            let art_col = col - field_col; // column within the art (0-based)
+                            
+                            if art_row < ascii_art.height as usize && art_col < ascii_art.width as usize {
+                                // Get the character and color from the ASCII art data
+                                if let Some(row_data) = ascii_art.data.get(art_row) {
+                                    if let Some(ascii_char) = row_data.get(art_col) {
+                                        c = ascii_char.character;
+                                        // Apply the character's color
+                                        let char_color = color_string_to_tui(&ascii_char.color);
+                                        style = style.fg(char_color);
+                                        c
+                                    } else {
+                                        c = ' '; // Default character if out of bounds
+                                        c
+                                    }
                                 } else {
+                                    c = ' '; // Default character if out of bounds
+                                    c
+                                }
+                            } else {
+                                c = ' '; // Default character if out of bounds
+                                c
+                            }
+                        } else {
+                            // Regular field type handling
+                            c = match field.field_type {
+                                FieldType::Map => {
+                                    if is_first_col { '┏' } else if is_last_col { '┓' } else { '━' }
+                                }
+                                FieldType::Field => {
+                                    if field.attrb.contains(&FieldAttribute::Prot) {
+                                        if is_first_col { '╭' } else if is_last_col { '╮' } else { '─' }
+                                    } else if field.attrb.contains(&FieldAttribute::Num) {
+                                        if is_first_col { '[' } else if is_last_col { ']' } else { '═' }
+                                    } else if field.attrb.contains(&FieldAttribute::Alph) || field.attrb.contains(&FieldAttribute::AlphaNum) {
+                                        if is_first_col { '⟦' } else if is_last_col { '⟧' } else { '─' }
+                                    } else {
+                                        if is_first_col { '┌' } else if is_last_col { '┐' } else { '─' }
+                                    }
+                                }
+                                FieldType::Literal => {
+                                    if is_first_col { '«' } else if is_last_col { '»' } else { '─' }
+                                }
+                                FieldType::Group => {
                                     if is_first_col { '┌' } else if is_last_col { '┐' } else { '─' }
                                 }
-                            }
-                            FieldType::Literal => {
-                                if is_first_col { '«' } else if is_last_col { '»' } else { '─' }
-                            }
-                            FieldType::Group => {
-                                if is_first_col { '┌' } else if is_last_col { '┐' } else { '─' }
-                            }
-                            _ => {
-                                if is_first_col { '[' } else if is_last_col { ']' } else { '-' }
-                            }
+                                _ => {
+                                    if is_first_col { '[' } else if is_last_col { ']' } else { '-' }
+                                }
+                            };
+                            c
                         }
                     };
                     
