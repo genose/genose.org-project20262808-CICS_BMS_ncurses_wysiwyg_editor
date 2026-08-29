@@ -527,6 +527,11 @@ impl InsertableObject {
             field.height = Some(5);  // Default height for Box
         }
         
+        // Set Group-specific properties (minimum 3 rows for fieldset)
+        if matches!(self, InsertableObject::Group) {
+            field.height = Some(3);  // Minimum height for Group/Fieldset
+        }
+        
         field
     }
 }
@@ -2498,11 +2503,12 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             }
                         } else {
                             // Regular field type handling
-                            // For multi-row fields like Box, use proper box-drawing characters
-                            let is_box_like = field.name == "BOX" || matches!(field.field_type, FieldType::Group);
+                            // For multi-row fields, use proper box-drawing characters
+                            let is_box = field.name == "BOX";
+                            let is_group = matches!(field.field_type, FieldType::Group);
                             
-                            c = if is_box_like && field.height.is_some() {
-                                // Multi-row box/fieldset rendering
+                            c = if is_box && field.height.is_some() {
+                                // Box rendering - full border
                                 if is_first_row && is_first_col { '┌' }
                                 else if is_first_row && is_last_col { '┐' }
                                 else if is_last_row && is_first_col { '└' }
@@ -2510,6 +2516,47 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                 else if is_first_row || is_last_row { '─' }
                                 else if is_first_col || is_last_col { '│' }
                                 else { ' ' }
+                            } else if is_group && field.height.is_some() {
+                                // Group/Fieldset rendering with title in first row
+                                // First row format: ┌─ title ─┐
+                                if is_first_row {
+                                    if is_first_col {
+                                        '┌'
+                                    } else if is_last_col {
+                                        '┐'
+                                    } else {
+                                        // In the title row, check if we should display title text
+                                        // Display title character if available and not at border
+                                        if let Some(title) = &field.title {
+                                            let title_len = title.len();
+                                            let field_width = (field_end_col - field_start + 1) as usize;
+                                            let col_in_field = col - field_start;
+                                            
+                                            // Center the title: start at (field_width - title_len) / 2
+                                            let title_start = (field_width.saturating_sub(title_len)) / 2;
+                                            let title_end = title_start + title_len;
+                                            
+                                            if col_in_field >= title_start && col_in_field < title_end {
+                                                // Get the specific character from the title
+                                                let char_idx = col_in_field - title_start;
+                                                title.chars().nth(char_idx).unwrap_or('─')
+                                            } else {
+                                                '─'
+                                            }
+                                        } else {
+                                            '─'
+                                        }
+                                    }
+                                } else if is_last_row {
+                                    // Last row: └──────┘
+                                    if is_first_col { '└' }
+                                    else if is_last_col { '┘' }
+                                    else { '─' }
+                                } else {
+                                    // Middle rows: │    │
+                                    if is_first_col || is_last_col { '│' }
+                                    else { ' ' }
+                                }
                             } else {
                                 // Single-row field handling
                                 match field.field_type {
