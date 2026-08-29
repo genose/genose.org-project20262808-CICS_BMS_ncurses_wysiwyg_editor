@@ -903,6 +903,16 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         return;
     }
     
+    // Handle Ctrl+H for toggle help
+    if key.modifiers.contains(KeyModifiers::CONTROL) && !key.modifiers.contains(KeyModifiers::ALT) && key.code == KeyCode::Char('h') {
+        if app.mode == AppMode::Help {
+            app.mode = AppMode::Edit;
+        } else {
+            app.mode = AppMode::Help;
+        }
+        return;
+    }
+    
     // Handle Ctrl keys in all modes
     if key.modifiers.contains(KeyModifiers::CONTROL) && !key.modifiers.contains(KeyModifiers::ALT) {
         match key.code {
@@ -3249,7 +3259,7 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  Ctrl+Shift+Esc: Quit with confirm"),
         Line::from(""),
         Line::from(" Other: ".yellow()),
-        Line::from("  ?: Help"),
+        Line::from("  ? or Ctrl+H: Toggle help"),
         Line::from(""),
         Line::from(" Note: Both legacy (letter) and new (Ctrl+letter) shortcuts work".dim()),
     ]);
