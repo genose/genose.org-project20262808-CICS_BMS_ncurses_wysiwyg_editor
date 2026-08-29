@@ -877,7 +877,20 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         return;
     }
     
-    // Handle Ctrl+Shift+P for toggle preview
+    // Handle Ctrl+Space for toggle preview (canvas/code)
+    if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char(' ') {
+        if app.mode == AppMode::Edit {
+            app.show_bms_text = !app.show_bms_text;
+            app.set_message(if app.show_bms_text {
+                "BMS text preview ON [Ctrl+Space]"
+            } else {
+                "BMS text preview OFF [Ctrl+Space]"
+            });
+        }
+        return;
+    }
+    
+    // Handle Ctrl+Shift+P for toggle preview (legacy)
     if key.modifiers.contains(KeyModifiers::CONTROL) && key.modifiers.contains(KeyModifiers::SHIFT) && key.code == KeyCode::Char('p') {
         if app.mode == AppMode::Edit {
             app.show_bms_text = !app.show_bms_text;
@@ -2310,8 +2323,8 @@ fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
     
     // Draw border
     let canvas_title = match app.active_panel {
-        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Ctrl+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav|Ctrl+Shift+P:Preview]", app.editor.map.size.0, app.editor.map.size.1),
-        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Ctrl+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav|Ctrl+Shift+P:Preview]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Ctrl+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav|Ctrl+Space:Preview]", app.editor.map.size.0, app.editor.map.size.1),
+        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Ctrl+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav|Ctrl+Space:Preview]", app.editor.map.size.0, app.editor.map.size.1),
     };
     
     // Couleur du cadre en fonction de l'activation
@@ -2669,7 +2682,7 @@ fn render_sidebar(f: &mut Frame, app: &App, area: Rect) {
     lines.push(Line::from("Shift+Tab: Previous field".dim()));
     lines.push(Line::from("Alt/Ctrl+Up/Down: Fast scroll (5 lines)".dim()));
     lines.push(Line::from("Alt/Ctrl+Left/Right: Prev/Next field".dim()));
-    lines.push(Line::from("Ctrl+Shift+P: Toggle preview".dim()));
+    lines.push(Line::from("Ctrl+Space: Toggle preview".dim()));
     
     let text = Text::from(lines);
     let paragraph = Paragraph::new(text)
@@ -3182,7 +3195,7 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from("  Tab/Shift+Tab: Next/Prev field"),
         Line::from("  Shift+Arrow: Extend selection"),
         Line::from("  Ctrl+P: Toggle Canvas/Sidebar"),
-        Line::from("  Ctrl+Shift+P: Toggle preview"),
+        Line::from("  Ctrl+Space: Toggle preview (canvas/code)"),
         Line::from("  Key triggers displayed in message bar"),
         Line::from(""),
         Line::from(" Mouse: ".yellow()),
