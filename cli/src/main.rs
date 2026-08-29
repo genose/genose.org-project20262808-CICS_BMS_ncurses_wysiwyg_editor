@@ -37,6 +37,7 @@ use std::{
 use cobol_bms_core::{
     parse_bms_file, generate_cobol, render_bms_text, FieldType, FieldAttribute,
     BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection, create_default_map,
+    image_to_ascii_simple,
 };
 use cobol_bms_core::model::Color as BmsColor;
 
@@ -68,6 +69,58 @@ fn color_string_to_tui(color_str: &Option<String>) -> TuiColor {
         }
     } else {
         TuiColor::White
+    }
+}
+
+/// Supported image file extensions
+fn is_image_file(filename: &str) -> bool {
+    let ext = std::path::Path::new(filename)
+        .extension()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_lowercase());
+    
+    match ext.as_deref() {
+        Some("png") | Some("jpg") | Some("jpeg") | Some("tif") | Some("tiff") |
+        Some("gif") | Some("bmp") | Some("webp") | Some("svg") => true,
+        _ => false,
+    }
+}
+
+/// Scan a directory for files, optionally filtering for image files only
+fn scan_directory_files(directory: &str, image_only: bool) -> Vec<String> {
+    let path = std::path::Path::new(directory);
+    
+    if !path.exists() || !path.is_dir() {
+        return Vec::new();
+    }
+    
+    let mut files: Vec<String> = std::fs::read_dir(path)
+        .ok()
+        .map(|entries| {
+            entries.filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path();
+                if path.is_file() {
+                    let filename = path.file_name()
+                        .and_then(|n| n.to_str())
+                        .map(|s| s.to_string());
+                    filename
+                } else {
+                    None
+                }
+            }).collect()
+        })
+        .unwrap_or_default();
+    
+    // Sort files alphabetically
+    files.sort();
+    
+    if image_only {
+        files.into_iter()
+            .filter(|f| is_image_file(f))
+            .collect()
+    } else {
+        files
     }
 }
 
@@ -205,6 +258,8 @@ enum AppMode {
     Help,
     /// Mode confirm (pour suppression, etc.)
     Confirm,
+    /// Mode image import (for AsciiArt fields)
+    ImageImport,
 }
 
 /// Panel actif pour la navigation (Canvas ou Sidebar)
@@ -476,6 +531,13 @@ struct App {
     // Mouse support
     mouse_dragging: bool,
     mouse_anchor: Option<(u16, u16)>,
+    // Pour le mode image import
+    image_import_path: String,
+    image_import_error: Option<String>,
+    image_import_directory: String,
+    image_import_files: Vec<String>,
+    image_import_selected_index: usize,
+    image_import_show_all_files: bool,
 }
 
 /// Action to perform after text input is submitted
@@ -531,6 +593,12 @@ impl App {
             confirm_action: ConfirmAction::QuitWithoutSave,
             mouse_dragging: false,
             mouse_anchor: None,
+            image_import_path: String::new(),
+            image_import_error: None,
+            image_import_directory: String::new(),
+            image_import_files: Vec::new(),
+            image_import_selected_index: 0,
+            image_import_show_all_files: true,
         }
     }
 
@@ -920,6 +988,7 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         AppMode::TextInput => handle_text_input_mode(app, key),
         AppMode::Help => handle_help_mode(app, key),
         AppMode::Confirm => handle_confirm_mode(app, key),
+        AppMode::ImageImport => handle_image_import_mode(app, key),
         AppMode::Normal => handle_normal_mode(app, key),
     }
 }
@@ -1684,6 +1753,14 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
                 app.mode = AppMode::Edit;
                 app.edit_properties_field = None;
             }
+            KeyCode::Char('i') | KeyCode::Char('I') => {
+                // Trigger image import for ASCII art fields
+                if field.name == "ASCII_ART" {
+                    app.mode = AppMode::ImageImport;
+                    app.image_import_path.clear();
+                    app.image_import_error = None;
+                }
+            }
             _ => {}
         }
     }
@@ -1899,16 +1976,38 @@ fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
         }
         KeyCode::Enter => {
             if let Some(obj) = app.selected_object_for_add {
-                // Create a field from the selected object
-                let mut field = obj.create_field(app.editor.cursor_pos);
-                
-                // Instead of inserting immediately, go to EditProperties mode
-                // to allow configuring the field properties
-                app.edit_properties_field = Some(field);
-                app.edit_properties_index = 0;
-                app.mode = AppMode::EditProperties;
-                app.selected_object_for_add = None;
-                app.set_message(&format!("Configure {}", obj.display()));
+                if obj == InsertableObject::AsciiArt {
+                    // For AsciiArt, go directly to image import
+                    let field = obj.create_field(app.editor.cursor_pos);
+                    app.edit_properties_field = Some(field);
+                    
+                    // Initialize image import with current directory
+                    let current_dir = std::env::current_dir()
+                        .ok()
+                        .map(|p| p.to_string_lossy().to_string())
+                        .unwrap_or_else(|| ".".to_string());
+                    
+                    app.mode = AppMode::ImageImport;
+                    app.image_import_path.clear();
+                    app.image_import_directory = current_dir;
+                    app.image_import_files = scan_directory_files(&app.image_import_directory, true); // Show image files by default
+                    app.image_import_selected_index = 0;
+                    app.image_import_error = None;
+                    app.image_import_show_all_files = false;
+                    app.selected_object_for_add = None;
+                    app.set_message("Import image for ASCII Art - Use arrows to select, Tab to show all files");
+                } else {
+                    // Create a field from the selected object
+                    let mut field = obj.create_field(app.editor.cursor_pos);
+                    
+                    // Instead of inserting immediately, go to EditProperties mode
+                    // to allow configuring the field properties
+                    app.edit_properties_field = Some(field);
+                    app.edit_properties_index = 0;
+                    app.mode = AppMode::EditProperties;
+                    app.selected_object_for_add = None;
+                    app.set_message(&format!("Configure {}", obj.display()));
+                }
             }
         }
         KeyCode::Up => {
@@ -2044,6 +2143,7 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::TextInput => " TEXT INPUT ",
         AppMode::Help => " HELP ",
         AppMode::Confirm => " CONFIRM ",
+        AppMode::ImageImport => " IMAGE IMPORT ",
         AppMode::Normal => " PREVIEW ",
     };
     
@@ -2106,6 +2206,10 @@ fn ui(f: &mut Frame, app: &App) {
         }
         AppMode::Confirm => {
             render_confirm(f, app, content_area);
+        }
+        AppMode::ImageImport => {
+            render_canvas(f, app, content_area);
+            render_image_import_dialog(f, app, content_area);
         }
     }
     
@@ -2626,11 +2730,26 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
             Line::from("> Type ".yellow()),
             Line::from(format!("  {:?}", field.field_type)),
             Line::from(""),
+        ];
+        
+        // Add ASCII Art specific properties
+        if field.field_type == FieldType::Literal && field.name == "ASCII_ART" {
+            lines.push(Line::from("> ASCII Art Image ".yellow()));
+            if let Some(ascii_art) = &field.ascii_art {
+                lines.push(Line::from(format!("  Loaded: {}x{} ", ascii_art.width, ascii_art.height)));
+                lines.push(Line::from("  [Press I to import new image]".cyan()));
+            } else {
+                lines.push(Line::from("  [No image loaded - Press I to import]".dim()));
+            }
+            lines.push(Line::from(""));
+        }
+        
+        lines.extend(vec![
             Line::from("Up/Down: Navigate".dim()),
             Line::from(r#"+/- : Modify"#.dim()),
             Line::from("Enter: Save".dim()),
             Line::from("Esc: Cancel".dim()),
-        ];
+        ]);
         
         // Highlight current property
         if app.edit_properties_index < lines.len() {
@@ -3071,6 +3190,117 @@ fn render_confirm(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(help, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
 }
 
+/// Render image import dialog with file browser
+fn render_image_import_dialog(f: &mut Frame, app: &App, area: Rect) {
+    let dialog_width = area.width.min(60);
+    let dialog_height = area.height.min(16);
+    let dialog_area = Rect {
+        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
+        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
+        width: dialog_width,
+        height: dialog_height,
+    };
+    
+    let block = Block::default()
+        .title(" Import Image for ASCII Art [Enter:Select|Esc:Cancel|Tab:Toggle Filter] ")
+        .borders(Borders::ALL);
+    f.render_widget(block, dialog_area);
+    
+    let inner = Rect {
+        x: dialog_area.x + 1,
+        y: dialog_area.y + 1,
+        width: dialog_area.width.saturating_sub(2),
+        height: dialog_area.height.saturating_sub(2),
+    };
+    
+    let mut current_y = inner.y;
+    
+    // Display current directory
+    let dir_display = if app.image_import_directory.is_empty() {
+        ".".to_string()
+    } else {
+        app.image_import_directory.clone()
+    };
+    let dir_para = Paragraph::new(format!("Directory: {}", dir_display))
+        .style(Style::default().fg(TuiColor::Cyan));
+    f.render_widget(dir_para, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
+    current_y += 1;
+    
+    // Display filter mode
+    let filter_mode = if app.image_import_show_all_files {
+        "Showing ALL files"
+    } else {
+        "Showing IMAGE files only"
+    };
+    let filter_para = Paragraph::new(filter_mode)
+        .style(Style::default().fg(TuiColor::Yellow));
+    f.render_widget(filter_para, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
+    current_y += 1;
+    
+    // Display file list
+    if !app.image_import_files.is_empty() {
+        let visible_files = &app.image_import_files;
+        let start_idx = app.image_import_selected_index.min(visible_files.len().saturating_sub(1));
+        
+        // Show files in a scrollable list
+        for (idx, filename) in visible_files.iter().enumerate() {
+            if (current_y - inner.y) as usize >= inner.height as usize - 3 {
+                break; // Stop if we run out of space
+            }
+            
+            let is_selected = idx == app.image_import_selected_index;
+            let file_style = if is_selected {
+                Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
+            } else {
+                Style::default().fg(TuiColor::White)
+            };
+            
+            let file_para = Paragraph::new(format!("  {}", filename))
+                .style(file_style);
+            f.render_widget(file_para, Rect { x: inner.x, y: current_y as u16, width: inner.width, height: 1 });
+            current_y += 1;
+        }
+    } else {
+        let no_files = Paragraph::new("  No files found")
+            .style(Style::default().fg(TuiColor::Gray));
+        f.render_widget(no_files, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
+        current_y += 1;
+    }
+    
+    // Display selected file path (for manual entry)
+    if !app.image_import_path.is_empty() {
+        let path_display = format!("Path: {}", app.image_import_path);
+        let path_para = Paragraph::new(path_display)
+            .style(Style::default().fg(TuiColor::Green));
+        f.render_widget(path_para, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
+        current_y += 1;
+    }
+    
+    // Display error if any
+    if let Some(error) = &app.image_import_error {
+        let error_msg = Paragraph::new(error.clone())
+            .style(Style::default().fg(TuiColor::Red));
+        f.render_widget(error_msg, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
+        current_y += 1;
+    }
+    
+    // Display help at the bottom
+    let help_text = vec![
+        "Up/Down: Navigate files",
+        "Enter: Select file",
+        "Tab: Toggle image/all files",
+        "Esc: Cancel",
+    ];
+    for help_line in help_text.iter().rev() {
+        if current_y < inner.y + inner.height {
+            let help_para = Paragraph::new(*help_line)
+                .style(Style::default().fg(TuiColor::Cyan).dim());
+            f.render_widget(help_para, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
+        }
+        current_y += 1;
+    }
+}
+
 fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
     let status_layout = Layout::default()
         .direction(Direction::Horizontal)
@@ -3096,6 +3326,7 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         AppMode::TextInput => "TEXT_IN",
         AppMode::Help => "HELP",
         AppMode::Confirm => "CONFIRM",
+        AppMode::ImageImport => "IMG_IMPORT",
         AppMode::Normal => "PREVIEW",
     };
     
@@ -3144,4 +3375,105 @@ fn app_scroll_up(app: &mut App) {
 #[allow(dead_code)]
 fn app_scroll_down(app: &mut App) {
     app.scroll += 1;
+}
+
+/// Handle image import mode for ASCII art
+fn handle_image_import_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Esc => {
+            app.mode = AppMode::Edit;
+            app.edit_properties_field = None;
+            app.image_import_error = None;
+            app.image_import_path.clear();
+            app.image_import_directory.clear();
+            app.image_import_files.clear();
+            app.image_import_selected_index = 0;
+        }
+        KeyCode::Enter => {
+            // Determine the full path based on current directory and selection
+            let full_path = if !app.image_import_directory.is_empty() && app.image_import_selected_index < app.image_import_files.len() {
+                let filename = &app.image_import_files[app.image_import_selected_index];
+                std::path::Path::new(&app.image_import_directory).join(filename)
+            } else if !app.image_import_path.is_empty() {
+                std::path::PathBuf::from(&app.image_import_path)
+            } else {
+                app.image_import_error = Some("No file selected".to_string());
+                return;
+            };
+            
+            let path_str = full_path.to_string_lossy().to_string();
+            
+            // Try to load the image and convert to ASCII art
+            match image_to_ascii_simple(&path_str, app.edit_properties_field.as_ref().map_or(40, |f| f.length as u32), None) {
+                Ok(ascii_art) => {
+                    // Set the ASCII art on the current field
+                    if let Some(field) = app.edit_properties_field.as_mut() {
+                        field.ascii_art = Some(ascii_art);
+                        // Update field dimensions to match ASCII art
+                        if let Some(ascii_art_data) = &field.ascii_art {
+                            field.length = ascii_art_data.width;
+                            field.height = Some(ascii_art_data.height);
+                        }
+                    }
+                    app.mode = AppMode::Edit;
+                    app.edit_properties_field = None;
+                    app.image_import_error = None;
+                    app.image_import_path.clear();
+                    app.image_import_directory.clear();
+                    app.image_import_files.clear();
+                    app.set_message("Image converted to ASCII art!");
+                }
+                Err(e) => {
+                    app.image_import_error = Some(format!("Error: {}", e));
+                }
+            }
+        }
+        KeyCode::Up => {
+            if !app.image_import_files.is_empty() {
+                if app.image_import_selected_index > 0 {
+                    app.image_import_selected_index -= 1;
+                } else {
+                    app.image_import_selected_index = app.image_import_files.len() - 1;
+                }
+                // Update the path to show the selected file
+                if app.image_import_selected_index < app.image_import_files.len() {
+                    app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
+                }
+                app.image_import_error = None;
+            }
+        }
+        KeyCode::Down => {
+            if !app.image_import_files.is_empty() {
+                if app.image_import_selected_index < app.image_import_files.len() - 1 {
+                    app.image_import_selected_index += 1;
+                } else {
+                    app.image_import_selected_index = 0;
+                }
+                // Update the path to show the selected file
+                if app.image_import_selected_index < app.image_import_files.len() {
+                    app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
+                }
+                app.image_import_error = None;
+            }
+        }
+        KeyCode::Tab => {
+            // Toggle between showing all files and image files only
+            app.image_import_show_all_files = !app.image_import_show_all_files;
+            // Refresh the file list
+            if !app.image_import_directory.is_empty() {
+                app.image_import_files = scan_directory_files(&app.image_import_directory, !app.image_import_show_all_files);
+            }
+            app.image_import_selected_index = 0;
+            app.image_import_error = None;
+        }
+        KeyCode::Char(c) => {
+            app.image_import_path.push(c);
+            app.image_import_error = None;
+        }
+        KeyCode::Backspace => {
+            app.image_import_path.pop();
+            app.image_import_error = None;
+        }
+        _ => {}
+    }
 }

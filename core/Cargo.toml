@@ -11,6 +11,8 @@ nom = "7.1"
 thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+image = "0.25"  # For PNG, JPEG, TIFF, GIF, BMP, etc.
+anyhow = "1.0"  # For error handling
 
 [dev-dependencies]
 rstest = "0.18"
