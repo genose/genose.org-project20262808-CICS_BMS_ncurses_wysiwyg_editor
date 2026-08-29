@@ -2460,8 +2460,10 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             style = style.fg(TuiColor::Yellow).bold();
                         }
                     } else {
-                        // Use border color if set as foreground, otherwise use field color
-                        if let Some(border_color) = &field.border_color {
+                        // Use text_color if set, otherwise use border_color, otherwise use field color
+                        if let Some(text_color) = &field.text_color {
+                            style = style.fg(bms_color_to_tui(text_color));
+                        } else if let Some(border_color) = &field.border_color {
                             style = style.fg(bms_color_to_tui(border_color));
                         } else {
                             match field.color {
