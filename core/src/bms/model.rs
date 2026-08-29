@@ -145,6 +145,7 @@ pub struct BmsField {
     pub title: Option<String>,       // Title for group/fieldset
     pub height: Option<u16>,        // Height for multi-row elements (e.g., groups)
     pub decoration_type: Option<DecorationType>,  // Decoration style for fieldset borders
+    pub title_align: Option<Justify>,  // Text alignment for fieldset title (Left, Center, Right)
     
     // ASCII Art specific properties
     pub ascii_art: Option<AsciiArt>,  // ASCII art data with colors
@@ -503,6 +504,7 @@ impl Default for BmsField {
             synchronized: None,
             usage: None,
             decoration_type: None,
+            title_align: None,
         }
     }
 }

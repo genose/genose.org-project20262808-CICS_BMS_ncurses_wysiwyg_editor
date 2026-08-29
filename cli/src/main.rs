@@ -41,7 +41,7 @@ use cobol_bms_core::{
     BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection, create_default_map,
     image_to_ascii_simple,
 };
-use cobol_bms_core::model::{Color as BmsColor, DecorationType};
+use cobol_bms_core::model::{Color as BmsColor, DecorationType, Justify};
 
 // ==================== UTILITIES ====================
 
@@ -522,6 +522,7 @@ impl InsertableObject {
         if matches!(self, InsertableObject::Fieldset) {
             field.height = Some(3);  // Minimum height for Fieldset
             field.decoration_type = Some(DecorationType::Brackets);  // Default decoration
+            field.title_align = Some(Justify::Center);  // Default title alignment
         }
         
         field
@@ -2511,6 +2512,9 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                     DecorationType::Equals => ('=', '=', '='),
                                 };
                                 
+                                // Get title alignment (default to Center)
+                                let title_align = field.title_align.clone().unwrap_or(Justify::Center);
+                                
                                 if is_first_row {
                                     // First line: open_dec + title + close_dec
                                     if is_first_col {
@@ -2524,8 +2528,12 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                             let field_width = (field_end_col - field_start + 1) as usize;
                                             let col_in_field = col - field_start;
                                             
-                                            // Center the title: start at (field_width - title_len) / 2
-                                            let title_start = (field_width.saturating_sub(title_len)) / 2;
+                                            // Calculate title start position based on alignment
+                                            let title_start = match title_align {
+                                                Justify::Left => 1,  // Start right after open_dec
+                                                Justify::Right => (field_width.saturating_sub(title_len + 1)),  // End before close_dec
+                                                Justify::Center => (field_width.saturating_sub(title_len)) / 2,
+                                            };
                                             let title_end = title_start + title_len;
                                             
                                             if col_in_field >= title_start && col_in_field < title_end {
