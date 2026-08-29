@@ -543,7 +543,7 @@ fn get_object_type_metadata() -> HashMap<InsertableObject, ObjectTypeMetadata> {
         default_properties: vec![
             PropertyType::Name, PropertyType::FieldType, PropertyType::PositionRow, PropertyType::PositionCol,
             PropertyType::Length, PropertyType::Height,
-            PropertyType::FieldsetTitle, PropertyType::FieldsetHeight,
+            PropertyType::FieldsetTitle,
             PropertyType::FieldsetDecoration, PropertyType::FieldsetBorder,
             PropertyType::FieldsetTitleAlign, PropertyType::FieldsetTitleFillDecoration,
             PropertyType::TextColor, PropertyType::BorderColor,
@@ -697,7 +697,7 @@ impl InsertableObject {
         
         // Set Fieldset-specific properties (minimum 3 rows)
         if matches!(self, InsertableObject::Fieldset) {
-            field.fieldset_height = Some(3);  // Minimum height for Fieldset
+            field.height = Some(3);  // Use standard height property, minimum 3 for Fieldset
             field.fieldset_decoration = Some(DecorationType::Brackets);  // Default decoration for title
             field.fieldset_border = Some(DecorationType::Dashes);  // Default border for bottom line
             field.fieldset_title_align = Some(Justify::Left);  // Default title alignment: Left
@@ -2730,7 +2730,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                 let field_end_col = field_col + field.length as usize - 1;
                 
                 // Check if this cell is within the field's area (considering height for multi-row fields)
-                let field_end_row = if let Some(height) = field.height.or(field.fieldset_height) {
+                let field_end_row = if let Some(height) = field.height {
                     field_row + height as usize - 1
                 } else {
                     field_row
@@ -2746,7 +2746,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                     let is_last_row = grid_row + 1 == field_end_row;
                     
                     // Pre-compute fieldset decoration for color handling
-                    let fieldset_chars = if matches!(field.field_type, FieldType::Group) && field.fieldset_height.is_some() {
+                    let fieldset_chars = if matches!(field.field_type, FieldType::Group) && field.height.is_some() {
                         let dec_type = field.fieldset_decoration.clone().unwrap_or(DecorationType::Brackets);
                         let border_type = field.fieldset_border.clone().unwrap_or(DecorationType::Dashes);
                         let title_align = field.fieldset_title_align.clone().unwrap_or(Justify::Left);
@@ -3325,7 +3325,6 @@ enum PropertyType {
     
     // Fieldset-specific properties
     FieldsetTitle,
-    FieldsetHeight,
     FieldsetDecoration,
     FieldsetBorder,
     FieldsetTitleAlign,
@@ -3374,7 +3373,6 @@ impl PropertyType {
             PropertyType::GrpName => "Group Name",
             PropertyType::Height => "Height",
             PropertyType::FieldsetTitle => "Fieldset Title",
-            PropertyType::FieldsetHeight => "Fieldset Height",
             PropertyType::FieldsetDecoration => "Decoration",
             PropertyType::FieldsetBorder => "Border",
             PropertyType::FieldsetTitleAlign => "Title Align",
@@ -3426,7 +3424,6 @@ impl PropertyType {
             PropertyType::GrpName => field.grp_name.clone().unwrap_or_default(),
             PropertyType::Height => field.height.map_or("None".to_string(), |h| h.to_string()),
             PropertyType::FieldsetTitle => field.fieldset_title.clone().unwrap_or_default(),
-            PropertyType::FieldsetHeight => field.fieldset_height.map_or("None".to_string(), |h| h.to_string()),
             PropertyType::FieldsetDecoration => format!("{:?}", field.fieldset_decoration),
             PropertyType::FieldsetBorder => format!("{:?}", field.fieldset_border),
             PropertyType::FieldsetTitleAlign => format!("{:?}", field.fieldset_title_align),
@@ -3557,14 +3554,7 @@ impl PropertyType {
                     val
                 });
             },
-            PropertyType::FieldsetHeight => {
-                let min_height = get_min_height(&field.field_type).max(3);  // Fieldset always has min 3
-                field.fieldset_height = Some(if increase {
-                    field.fieldset_height.unwrap_or(min_height) + 1
-                } else {
-                    (field.fieldset_height.unwrap_or(min_height)).saturating_sub(1).max(min_height)
-                });
-            },
+
             PropertyType::FieldsetDecoration => {
                 field.fieldset_decoration = Some(match field.fieldset_decoration {
                     Some(DecorationType::Brackets) => if increase { DecorationType::Parentheses } else { DecorationType::Equals },
@@ -3817,7 +3807,7 @@ fn get_properties_for_field(field: &BmsField) -> Vec<PropertyType> {
     ];
     
     // Add height for multi-row fields (ASCII Art, Fieldset)
-    let is_multi_row = field.height.is_some() || field.fieldset_height.is_some() || field.ascii_art.is_some();
+    let is_multi_row = field.height.is_some() || field.ascii_art.is_some();
     if is_multi_row {
         properties.push(PropertyType::Height);
     }
@@ -3826,7 +3816,6 @@ fn get_properties_for_field(field: &BmsField) -> Vec<PropertyType> {
     if matches!(field.field_type, FieldType::Group) {
         properties.extend(vec![
             PropertyType::FieldsetTitle,
-            PropertyType::FieldsetHeight,
             PropertyType::FieldsetDecoration,
             PropertyType::FieldsetBorder,
             PropertyType::FieldsetTitleAlign,
@@ -3969,7 +3958,7 @@ fn is_property_group_start(index: usize, properties: &[PropertyType]) -> bool {
         PropertyType::TextColor | PropertyType::BorderColor => 1,
         PropertyType::Initial | PropertyType::Pic | PropertyType::GrpName => 2,
         PropertyType::Height => 3,
-        PropertyType::FieldsetTitle | PropertyType::FieldsetHeight | PropertyType::FieldsetDecoration | 
+        PropertyType::FieldsetTitle | PropertyType::FieldsetDecoration | 
         PropertyType::FieldsetBorder | PropertyType::FieldsetTitleAlign | 
         PropertyType::FieldsetTitleFillDecoration | PropertyType::FieldsetTitleColor | 
         PropertyType::FieldsetFillTitleColor | PropertyType::FieldsetBorderColor | 
@@ -3989,7 +3978,7 @@ fn is_property_group_start(index: usize, properties: &[PropertyType]) -> bool {
         PropertyType::TextColor | PropertyType::BorderColor => 1,
         PropertyType::Initial | PropertyType::Pic | PropertyType::GrpName => 2,
         PropertyType::Height => 3,
-        PropertyType::FieldsetTitle | PropertyType::FieldsetHeight | PropertyType::FieldsetDecoration | 
+        PropertyType::FieldsetTitle | PropertyType::FieldsetDecoration | 
         PropertyType::FieldsetBorder | PropertyType::FieldsetTitleAlign | 
         PropertyType::FieldsetTitleFillDecoration | PropertyType::FieldsetTitleColor | 
         PropertyType::FieldsetFillTitleColor | PropertyType::FieldsetBorderColor | 
