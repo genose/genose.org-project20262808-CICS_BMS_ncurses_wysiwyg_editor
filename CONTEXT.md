@@ -46,6 +46,10 @@ Les developpeurs **COBOL/CICS** sur **mainframe IBM Z** font face a plusieurs de
 | **Undo/Redo** | Historique des operations | ✅ Implemente |
 | **Clipboard** | Copier/Couper/Coller des champs | ✅ Implemente |
 | **Export/Import JSON** | Serialization des maps et de l'editeur | ✅ Implemente |
+| **Boite de proprietes avancee** | Toutes les proprietes par type d'objet | ✅ Implemente |
+| **Support Fieldset/Group** | Avec titre, decoration, bordures | ✅ Implemente |
+| **Gestion des couleurs** | Texte, bordure, titre, contenu | ✅ Implemente |
+| **ASCII Art & Image to ASCII** | Import et conversion d'images | ✅ Implemente |
 
 ### Public Cible
 
@@ -356,6 +360,24 @@ pub enum Color {
 
 ---
 
+### Decision 6: Boite de Proprietes Dynamique
+
+**Probleme**: Comment afficher et editer toutes les proprietes des different types d'objets BMS (Field, Group/Fieldset, ASCII Art, Image)?
+
+**Decision**:
+- Creer un enum `PropertyType` listant toutes les proprietes possibles
+- Implemente `get_properties_for_field()` pour generer dynamiquement la liste des proprietes selon le type d'objet
+- Regrouper les proprietes par categories (Commun, Couleurs, Fieldset, ASCII Art, etc.)
+- Navigation avec Up/Down, modification avec +/- dans la boite de proprietes
+
+**Avantages**:
+- Approche type-safe avec Rust enums
+- Extensible pour de nouveaux types d'objets
+- Interface utilisateur coherente
+- Gestion dynamique des proprietes selon le contexte
+
+---
+
 ## 💡 **Bonnes Pratiques**
 
 ### Rust
@@ -478,6 +500,15 @@ pub enum Color {
 - CLI avec TUI (ratatui)
 - Plugin VSCode de base
 
+### Version 0.2.0 (2026-08-29)
+- **Boite de proprietes avancee**: Toutes les proprietes par type d'objet
+- **Support Fieldset/Group**: Titre, decoration, bordures, couleurs
+- **Gestion des couleurs**: Texte, bordure, titre, contenu
+- **ASCII Art & Image to ASCII**: Import et conversion d'images
+- **Raccourcis clavier**: Ctrl+A, Ctrl+M, Ctrl+H, Ctrl+Space
+- **Ameliorations UI**: Messages d'erreur, coordonnees curseur
+- **Fixes**: Correction des erreurs de compilation (out of bounds)
+
 ---
 
 ## 🤝 **Contributeurs**
@@ -486,6 +517,7 @@ pub enum Color {
 |------|--------------|--------|
 | Auteur | Architecture, implementation complete | 2024 |
 | Mistral Vibe | Generation du code initial | 2024-08-28 |
+| Mistral Vibe | Boite de proprietes, Fieldset, couleurs, fixes | 2026-08-29 |
 
 ---
 
@@ -498,6 +530,6 @@ Pour les questions, suggestions ou rapports de bugs:
 
 ---
 
-> **Derniere mise a jour**: 2024-08-28
-> **Version**: 0.1.0
+> **Derniere mise a jour**: 2026-08-29
+> **Version**: 0.2.0
 > **Auteur**: genose.org

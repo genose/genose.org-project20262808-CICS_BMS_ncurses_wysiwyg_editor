@@ -41,7 +41,7 @@ use cobol_bms_core::{
     BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection, create_default_map,
     image_to_ascii_simple,
 };
-use cobol_bms_core::model::{Color as BmsColor, DecorationType, Justify};
+use cobol_bms_core::model::{Color as BmsColor, DecorationType, Justify, DataType};
 
 // ==================== UTILITIES ====================
 
@@ -1891,6 +1891,9 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
     }
     
     if let Some(field) = app.edit_properties_field.as_mut() {
+        // Get the list of properties for this field
+        let properties = get_properties_for_field(field);
+        
         match key.code {
             KeyCode::Esc => {
                 app.mode = AppMode::Edit;
@@ -1902,72 +1905,22 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
                 }
             }
             KeyCode::Down => {
-                app.edit_properties_index += 1;
+                if app.edit_properties_index + 1 < properties.len() {
+                    app.edit_properties_index += 1;
+                }
             }
             KeyCode::Char('+') | KeyCode::Right => {
-                match app.edit_properties_index {
-                    0 => field.pos.1 += 1, // Column
-                    1 => field.pos.0 += 1, // Row
-                    2 => field.length += 1, // Length
-                    3 => { // Value/Initial
-                        field.initial = Some(field.initial.clone().unwrap_or_default() + "+");
+                if app.edit_properties_index < properties.len() {
+                    if let Some(prop) = properties.get(app.edit_properties_index) {
+                        prop.modify_value(field, true);
                     }
-                    4 => { // Type
-                        field.field_type = match field.field_type {
-                            FieldType::Field => FieldType::Literal,
-                            FieldType::Literal => FieldType::Group,
-                            FieldType::Group => FieldType::Map,
-                            FieldType::Map => FieldType::Field,
-                            _ => field.field_type.clone(),
-                        };
-                    }
-                    14 => { // Color (TEXT)
-                        field.text_color = Some(next_color(field.text_color.clone()));
-                    }
-                    17 => { // HighLight (HLIGHT)
-                        field.border_color = Some(next_color(field.border_color.clone()));
-                    }
-                    _ => {}
                 }
             }
             KeyCode::Char('-') | KeyCode::Left => {
-                match app.edit_properties_index {
-                    0 => {
-                        if field.pos.1 > 1 {
-                            field.pos.1 -= 1;
-                        }
+                if app.edit_properties_index < properties.len() {
+                    if let Some(prop) = properties.get(app.edit_properties_index) {
+                        prop.modify_value(field, false);
                     }
-                    1 => {
-                        if field.pos.0 > 1 {
-                            field.pos.0 -= 1;
-                        }
-                    }
-                    2 => {
-                        if field.length > 1 {
-                            field.length -= 1;
-                        }
-                    }
-                    3 => {
-                        if let Some(val) = field.initial.as_mut() {
-                            val.pop();
-                        }
-                    }
-                    14 => { // Color (TEXT)
-                        field.text_color = Some(prev_color(field.text_color.clone()));
-                    }
-                    17 => { // HighLight (HLIGHT)
-                        field.border_color = Some(prev_color(field.border_color.clone()));
-                    }
-                    4 => {
-                        field.field_type = match field.field_type {
-                            FieldType::Field => FieldType::Map,
-                            FieldType::Literal => FieldType::Field,
-                            FieldType::Group => FieldType::Literal,
-                            FieldType::Map => FieldType::Group,
-                            _ => field.field_type.clone(),
-                        };
-                    }
-                    _ => {}
                 }
             }
             KeyCode::Enter => {
@@ -1977,7 +1930,7 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
             }
             KeyCode::Char('i') | KeyCode::Char('I') => {
                 // Trigger image import for ASCII art fields
-                if field.name == "ASCII_ART" {
+                if field.ascii_art.is_some() || field.name == "ASCII_ART" {
                     app.mode = AppMode::ImageImport;
                     app.image_import_path.clear();
                     app.image_import_error = None;
@@ -3147,13 +3100,519 @@ fn render_insert_position_dialog(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(paragraph, inner);
 }
 
+/// Property types for edit properties panel
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PropertyType {
+    // Common properties for all field types
+    Name,
+    FieldType,
+    PositionRow,
+    PositionCol,
+    Length,
+    Attributes,
+    TextColor,
+    BorderColor,
+    Initial,
+    Pic,
+    GrpName,
+    
+    // Multi-row properties
+    Height,
+    
+    // Fieldset-specific properties
+    FieldsetTitle,
+    FieldsetHeight,
+    FieldsetDecoration,
+    FieldsetBorder,
+    FieldsetTitleAlign,
+    FieldsetTitleFillDecoration,
+    FieldsetTitleColor,
+    FieldsetFillTitleColor,
+    FieldsetBorderColor,
+    FieldsetContentColor,
+    
+    // ASCII Art properties
+    AsciiArt,
+    
+    // Extended BMS properties
+    Justification,
+    AutoSkip,
+    FieldExit,
+    BlankZero,
+    Repeat,
+    FillChar,
+    Format,
+    KeyType,
+    DataType,
+    Occurs,
+    DependingOn,
+    Redefines,
+    SignLeading,
+    SignTrailing,
+    DecimalPoint,
+    Synchronized,
+    Usage,
+}
+
+impl PropertyType {
+    fn display_name(&self) -> &'static str {
+        match self {
+            PropertyType::Name => "Name",
+            PropertyType::FieldType => "Type",
+            PropertyType::PositionRow => "Row",
+            PropertyType::PositionCol => "Col",
+            PropertyType::Length => "Length",
+            PropertyType::Attributes => "Attributes",
+            PropertyType::TextColor => "Text Color",
+            PropertyType::BorderColor => "Border Color",
+            PropertyType::Initial => "Initial",
+            PropertyType::Pic => "PIC",
+            PropertyType::GrpName => "Group Name",
+            PropertyType::Height => "Height",
+            PropertyType::FieldsetTitle => "Fieldset Title",
+            PropertyType::FieldsetHeight => "Fieldset Height",
+            PropertyType::FieldsetDecoration => "Decoration",
+            PropertyType::FieldsetBorder => "Border",
+            PropertyType::FieldsetTitleAlign => "Title Align",
+            PropertyType::FieldsetTitleFillDecoration => "Title Fill",
+            PropertyType::FieldsetTitleColor => "Title Color",
+            PropertyType::FieldsetFillTitleColor => "Fill Title Color",
+            PropertyType::FieldsetBorderColor => "Border Color",
+            PropertyType::FieldsetContentColor => "Content Color",
+            PropertyType::AsciiArt => "ASCII Art",
+            PropertyType::Justification => "Justification",
+            PropertyType::AutoSkip => "Auto Skip",
+            PropertyType::FieldExit => "Field Exit",
+            PropertyType::BlankZero => "Blank Zero",
+            PropertyType::Repeat => "Repeat",
+            PropertyType::FillChar => "Fill Char",
+            PropertyType::Format => "Format",
+            PropertyType::KeyType => "Key Type",
+            PropertyType::DataType => "Data Type",
+            PropertyType::Occurs => "Occurs",
+            PropertyType::DependingOn => "Depending On",
+            PropertyType::Redefines => "Redefines",
+            PropertyType::SignLeading => "Sign Leading",
+            PropertyType::SignTrailing => "Sign Trailing",
+            PropertyType::DecimalPoint => "Decimal Point",
+            PropertyType::Synchronized => "Synchronized",
+            PropertyType::Usage => "Usage",
+        }
+    }
+    
+    /// Get property value as string for display
+    fn get_value(&self, field: &BmsField) -> String {
+        match self {
+            PropertyType::Name => field.name.clone(),
+            PropertyType::FieldType => format!("{:?}", field.field_type),
+            PropertyType::PositionRow => field.pos.0.to_string(),
+            PropertyType::PositionCol => field.pos.1.to_string(),
+            PropertyType::Length => field.length.to_string(),
+            PropertyType::Attributes => {
+                if field.attrb.is_empty() {
+                    "None".to_string()
+                } else {
+                    field.attrb.iter().map(|a| format!("{:?}", a)).collect::<Vec<_>>().join(", ")
+                }
+            },
+            PropertyType::TextColor => format!("{:?}", field.text_color),
+            PropertyType::BorderColor => format!("{:?}", field.border_color),
+            PropertyType::Initial => field.initial.clone().unwrap_or_default(),
+            PropertyType::Pic => field.pic.clone().unwrap_or_default(),
+            PropertyType::GrpName => field.grp_name.clone().unwrap_or_default(),
+            PropertyType::Height => field.height.map_or("None".to_string(), |h| h.to_string()),
+            PropertyType::FieldsetTitle => field.fieldset_title.clone().unwrap_or_default(),
+            PropertyType::FieldsetHeight => field.fieldset_height.map_or("None".to_string(), |h| h.to_string()),
+            PropertyType::FieldsetDecoration => format!("{:?}", field.fieldset_decoration),
+            PropertyType::FieldsetBorder => format!("{:?}", field.fieldset_border),
+            PropertyType::FieldsetTitleAlign => format!("{:?}", field.fieldset_title_align),
+            PropertyType::FieldsetTitleFillDecoration => format!("{:?}", field.fieldset_title_fill_decoration),
+            PropertyType::FieldsetTitleColor => format!("{:?}", field.fieldset_title_color),
+            PropertyType::FieldsetFillTitleColor => format!("{:?}", field.fieldset_fill_title_color),
+            PropertyType::FieldsetBorderColor => format!("{:?}", field.fieldset_border_color),
+            PropertyType::FieldsetContentColor => format!("{:?}", field.fieldset_content_color),
+            PropertyType::AsciiArt => {
+                if let Some(ascii) = &field.ascii_art {
+                    format!("{}x{}", ascii.width, ascii.height)
+                } else {
+                    "None".to_string()
+                }
+            },
+            PropertyType::Justification => format!("{:?}", field.justification),
+            PropertyType::AutoSkip => format!("{:?}", field.autoskip),
+            PropertyType::FieldExit => format!("{:?}", field.fieldexit),
+            PropertyType::BlankZero => format!("{:?}", field.blank_zero),
+            PropertyType::Repeat => field.repeat.map_or("None".to_string(), |r| r.to_string()),
+            PropertyType::FillChar => field.fill_char.map_or("None".to_string(), |c| c.to_string()),
+            PropertyType::Format => field.format.clone().unwrap_or_default(),
+            PropertyType::KeyType => format!("{:?}", field.key_type),
+            PropertyType::DataType => format!("{:?}", field.data_type),
+            PropertyType::Occurs => field.occurs.map_or("None".to_string(), |o| o.to_string()),
+            PropertyType::DependingOn => field.depending_on.clone().unwrap_or_default(),
+            PropertyType::Redefines => field.redefines.clone().unwrap_or_default(),
+            PropertyType::SignLeading => format!("{:?}", field.sign_leading),
+            PropertyType::SignTrailing => format!("{:?}", field.sign_trailing),
+            PropertyType::DecimalPoint => format!("{:?}", field.decimal_point),
+            PropertyType::Synchronized => format!("{:?}", field.synchronized),
+            PropertyType::Usage => field.usage.clone().unwrap_or_default(),
+        }
+    }
+    
+    /// Modify property value
+    fn modify_value(&self, field: &mut BmsField, increase: bool) {
+        match self {
+            PropertyType::Name => {},
+            PropertyType::FieldType => {
+                field.field_type = match field.field_type.clone() {
+                    FieldType::Field => if increase { FieldType::Literal } else { FieldType::Map },
+                    FieldType::Literal => if increase { FieldType::Group } else { FieldType::Field },
+                    FieldType::Group => if increase { FieldType::Map } else { FieldType::Literal },
+                    FieldType::Map => if increase { FieldType::Field } else { FieldType::Group },
+                    other => if increase { FieldType::Field } else { other.clone() },
+                };
+            },
+            PropertyType::PositionRow => {
+                if increase { field.pos.0 += 1; } else if field.pos.0 > 1 { field.pos.0 -= 1; }
+            },
+            PropertyType::PositionCol => {
+                if increase { field.pos.1 += 1; } else if field.pos.1 > 1 { field.pos.1 -= 1; }
+            },
+            PropertyType::Length => {
+                if increase { field.length += 1; } else if field.length > 1 { field.length -= 1; }
+            },
+            PropertyType::Attributes => {
+                // Cycle through common attributes
+                if !field.attrb.is_empty() {
+                    // For now, just add/remove Norm
+                    if increase {
+                        if !field.attrb.contains(&FieldAttribute::Norm) {
+                            field.attrb.push(FieldAttribute::Norm);
+                        }
+                    } else {
+                        field.attrb.retain(|a| a != &FieldAttribute::Norm);
+                    }
+                } else if increase {
+                    field.attrb.push(FieldAttribute::Norm);
+                }
+            },
+            PropertyType::TextColor => {
+                field.text_color = Some(if increase {
+                    next_color(field.text_color.clone())
+                } else {
+                    prev_color(field.text_color.clone())
+                });
+            },
+            PropertyType::BorderColor => {
+                field.border_color = Some(if increase {
+                    next_color(field.border_color.clone())
+                } else {
+                    prev_color(field.border_color.clone())
+                });
+            },
+            PropertyType::Initial => {
+                field.initial = Some(if increase {
+                    field.initial.clone().unwrap_or_default() + "+"
+                } else {
+                    let mut val = field.initial.clone().unwrap_or_default();
+                    val.pop();
+                    val
+                });
+            },
+            PropertyType::Pic => {
+                field.pic = Some(if increase {
+                    field.pic.clone().unwrap_or_default() + "X"
+                } else {
+                    let mut val = field.pic.clone().unwrap_or_default();
+                    val.pop();
+                    val
+                });
+            },
+            PropertyType::GrpName => {
+                field.grp_name = Some(if increase {
+                    field.grp_name.clone().unwrap_or_default() + "G"
+                } else {
+                    let mut val = field.grp_name.clone().unwrap_or_default();
+                    val.pop();
+                    val
+                });
+            },
+            PropertyType::Height => {
+                field.height = Some(if increase {
+                    field.height.unwrap_or(1) + 1
+                } else {
+                    (field.height.unwrap_or(1)).saturating_sub(1)
+                });
+            },
+            PropertyType::FieldsetTitle => {
+                field.fieldset_title = Some(if increase {
+                    field.fieldset_title.clone().unwrap_or_default() + "T"
+                } else {
+                    let mut val = field.fieldset_title.clone().unwrap_or_default();
+                    val.pop();
+                    val
+                });
+            },
+            PropertyType::FieldsetHeight => {
+                field.fieldset_height = Some(if increase {
+                    field.fieldset_height.unwrap_or(3) + 1
+                } else {
+                    (field.fieldset_height.unwrap_or(3)).saturating_sub(1).max(3)
+                });
+            },
+            PropertyType::FieldsetDecoration => {
+                field.fieldset_decoration = Some(match field.fieldset_decoration {
+                    Some(DecorationType::Brackets) => if increase { DecorationType::Parentheses } else { DecorationType::Equals },
+                    Some(DecorationType::Parentheses) => if increase { DecorationType::Plus } else { DecorationType::Brackets },
+                    Some(DecorationType::Plus) => if increase { DecorationType::Asterisk } else { DecorationType::Parentheses },
+                    Some(DecorationType::Asterisk) => if increase { DecorationType::Hash } else { DecorationType::Plus },
+                    Some(DecorationType::Hash) => if increase { DecorationType::Dashes } else { DecorationType::Asterisk },
+                    Some(DecorationType::Dashes) => if increase { DecorationType::Equals } else { DecorationType::Hash },
+                    Some(DecorationType::Equals) => if increase { DecorationType::Brackets } else { DecorationType::Dashes },
+                    None => if increase { DecorationType::Brackets } else { DecorationType::Equals },
+                    _ => DecorationType::Brackets,
+                });
+            },
+            PropertyType::FieldsetBorder => {
+                field.fieldset_border = Some(match field.fieldset_border {
+                    Some(DecorationType::Brackets) => if increase { DecorationType::Parentheses } else { DecorationType::Equals },
+                    Some(DecorationType::Parentheses) => if increase { DecorationType::Plus } else { DecorationType::Brackets },
+                    Some(DecorationType::Plus) => if increase { DecorationType::Asterisk } else { DecorationType::Parentheses },
+                    Some(DecorationType::Asterisk) => if increase { DecorationType::Hash } else { DecorationType::Plus },
+                    Some(DecorationType::Hash) => if increase { DecorationType::Dashes } else { DecorationType::Asterisk },
+                    Some(DecorationType::Dashes) => if increase { DecorationType::Equals } else { DecorationType::Hash },
+                    Some(DecorationType::Equals) => if increase { DecorationType::Brackets } else { DecorationType::Dashes },
+                    None => if increase { DecorationType::Dashes } else { DecorationType::Equals },
+                    _ => DecorationType::Dashes,
+                });
+            },
+            PropertyType::FieldsetTitleAlign => {
+                field.fieldset_title_align = Some(match field.fieldset_title_align {
+                    Some(Justify::Left) => if increase { Justify::Center } else { Justify::Right },
+                    Some(Justify::Center) => if increase { Justify::Right } else { Justify::Left },
+                    Some(Justify::Right) => if increase { Justify::Left } else { Justify::Center },
+                    None => if increase { Justify::Left } else { Justify::Right },
+                });
+            },
+            PropertyType::FieldsetTitleFillDecoration => {
+                field.fieldset_title_fill_decoration = Some(match field.fieldset_title_fill_decoration {
+                    Some(DecorationType::Brackets) => if increase { DecorationType::Parentheses } else { DecorationType::Equals },
+                    Some(DecorationType::Parentheses) => if increase { DecorationType::Plus } else { DecorationType::Brackets },
+                    Some(DecorationType::Plus) => if increase { DecorationType::Asterisk } else { DecorationType::Parentheses },
+                    Some(DecorationType::Asterisk) => if increase { DecorationType::Hash } else { DecorationType::Plus },
+                    Some(DecorationType::Hash) => if increase { DecorationType::Dashes } else { DecorationType::Asterisk },
+                    Some(DecorationType::Dashes) => if increase { DecorationType::Equals } else { DecorationType::Hash },
+                    Some(DecorationType::Equals) => if increase { DecorationType::Brackets } else { DecorationType::Dashes },
+                    None => if increase { DecorationType::Brackets } else { DecorationType::Equals },
+                    _ => DecorationType::Brackets,
+                });
+            },
+            PropertyType::FieldsetTitleColor => {
+                field.fieldset_title_color = Some(if increase {
+                    next_color(field.fieldset_title_color.clone())
+                } else {
+                    prev_color(field.fieldset_title_color.clone())
+                });
+            },
+            PropertyType::FieldsetFillTitleColor => {
+                field.fieldset_fill_title_color = Some(if increase {
+                    next_color(field.fieldset_fill_title_color.clone())
+                } else {
+                    prev_color(field.fieldset_fill_title_color.clone())
+                });
+            },
+            PropertyType::FieldsetBorderColor => {
+                field.fieldset_border_color = Some(if increase {
+                    next_color(field.fieldset_border_color.clone())
+                } else {
+                    prev_color(field.fieldset_border_color.clone())
+                });
+            },
+            PropertyType::FieldsetContentColor => {
+                field.fieldset_content_color = Some(if increase {
+                    next_color(field.fieldset_content_color.clone())
+                } else {
+                    prev_color(field.fieldset_content_color.clone())
+                });
+            },
+            PropertyType::AsciiArt => {
+                // Cannot modify ASCII art here - use image import
+            },
+            PropertyType::Justification => {
+                field.justification = Some(match field.justification {
+                    Some(Justify::Left) => if increase { Justify::Center } else { Justify::Right },
+                    Some(Justify::Center) => if increase { Justify::Right } else { Justify::Left },
+                    Some(Justify::Right) => if increase { Justify::Left } else { Justify::Center },
+                    None => if increase { Justify::Left } else { Justify::Right },
+                });
+            },
+            PropertyType::AutoSkip => {
+                field.autoskip = Some(!field.autoskip.unwrap_or(false));
+            },
+            PropertyType::FieldExit => {
+                field.fieldexit = Some(!field.fieldexit.unwrap_or(false));
+            },
+            PropertyType::BlankZero => {
+                field.blank_zero = Some(!field.blank_zero.unwrap_or(false));
+            },
+            PropertyType::Repeat => {
+                field.repeat = Some(if increase {
+                    field.repeat.unwrap_or(1) + 1
+                } else {
+                    (field.repeat.unwrap_or(1)).saturating_sub(1)
+                });
+            },
+            PropertyType::FillChar => {
+                field.fill_char = Some(if increase {
+                    if field.fill_char.unwrap_or(' ') == ' ' { '0' } else { ' ' }
+                } else {
+                    if field.fill_char.unwrap_or('0') == '0' { ' ' } else { '0' }
+                });
+            },
+            PropertyType::Format => {
+                field.format = Some(if increase {
+                    field.format.clone().unwrap_or_default() + "F"
+                } else {
+                    let mut val = field.format.clone().unwrap_or_default();
+                    val.pop();
+                    val
+                });
+            },
+            PropertyType::KeyType => {},
+            PropertyType::DataType => {
+                field.data_type = Some(match field.data_type {
+                    Some(DataType::Alphanumeric) => if increase { DataType::Numeric } else { DataType::Group },
+                    Some(DataType::Numeric) => if increase { DataType::Date } else { DataType::Alphanumeric },
+                    Some(DataType::Date) => if increase { DataType::Time } else { DataType::Numeric },
+                    Some(DataType::Time) => if increase { DataType::Boolean } else { DataType::Date },
+                    Some(DataType::Boolean) => if increase { DataType::Group } else { DataType::Time },
+                    Some(DataType::Group) => if increase { DataType::Alphanumeric } else { DataType::Boolean },
+                    None | Some(_) => if increase { DataType::Alphanumeric } else { DataType::Group },
+                });
+            },
+            PropertyType::Occurs => {
+                field.occurs = Some(if increase {
+                    field.occurs.unwrap_or(1) + 1
+                } else {
+                    (field.occurs.unwrap_or(1)).saturating_sub(1)
+                });
+            },
+            PropertyType::DependingOn => {
+                field.depending_on = Some(if increase {
+                    field.depending_on.clone().unwrap_or_default() + "D"
+                } else {
+                    let mut val = field.depending_on.clone().unwrap_or_default();
+                    val.pop();
+                    val
+                });
+            },
+            PropertyType::Redefines => {
+                field.redefines = Some(if increase {
+                    field.redefines.clone().unwrap_or_default() + "R"
+                } else {
+                    let mut val = field.redefines.clone().unwrap_or_default();
+                    val.pop();
+                    val
+                });
+            },
+            PropertyType::SignLeading => {
+                field.sign_leading = Some(!field.sign_leading.unwrap_or(false));
+            },
+            PropertyType::SignTrailing => {
+                field.sign_trailing = Some(!field.sign_trailing.unwrap_or(false));
+            },
+            PropertyType::DecimalPoint => {
+                field.decimal_point = Some(!field.decimal_point.unwrap_or(false));
+            },
+            PropertyType::Synchronized => {
+                field.synchronized = Some(!field.synchronized.unwrap_or(false));
+            },
+            PropertyType::Usage => {
+                field.usage = Some(if increase {
+                    field.usage.clone().unwrap_or_default() + "U"
+                } else {
+                    let mut val = field.usage.clone().unwrap_or_default();
+                    val.pop();
+                    val
+                });
+            },
+        }
+    }
+}
+
+/// Get the list of properties to display for a field, based on its type
+fn get_properties_for_field(field: &BmsField) -> Vec<PropertyType> {
+    let mut properties = vec![
+        PropertyType::Name,
+        PropertyType::FieldType,
+        PropertyType::PositionRow,
+        PropertyType::PositionCol,
+        PropertyType::Length,
+        PropertyType::Attributes,
+        PropertyType::TextColor,
+        PropertyType::BorderColor,
+        PropertyType::Initial,
+        PropertyType::Pic,
+        PropertyType::GrpName,
+    ];
+    
+    // Add height for multi-row fields (ASCII Art, Fieldset)
+    let is_multi_row = field.height.is_some() || field.fieldset_height.is_some() || field.ascii_art.is_some();
+    if is_multi_row {
+        properties.push(PropertyType::Height);
+    }
+    
+    // Add fieldset-specific properties for Group type
+    if matches!(field.field_type, FieldType::Group) {
+        properties.extend(vec![
+            PropertyType::FieldsetTitle,
+            PropertyType::FieldsetHeight,
+            PropertyType::FieldsetDecoration,
+            PropertyType::FieldsetBorder,
+            PropertyType::FieldsetTitleAlign,
+            PropertyType::FieldsetTitleFillDecoration,
+            PropertyType::FieldsetTitleColor,
+            PropertyType::FieldsetFillTitleColor,
+            PropertyType::FieldsetBorderColor,
+            PropertyType::FieldsetContentColor,
+        ]);
+    }
+    
+    // Add ASCII Art specific properties
+    if field.ascii_art.is_some() {
+        properties.push(PropertyType::AsciiArt);
+    }
+    
+    // Add extended BMS properties
+    properties.extend(vec![
+        PropertyType::Justification,
+        PropertyType::AutoSkip,
+        PropertyType::FieldExit,
+        PropertyType::BlankZero,
+        PropertyType::Repeat,
+        PropertyType::FillChar,
+        PropertyType::Format,
+        PropertyType::KeyType,
+        PropertyType::DataType,
+        PropertyType::Occurs,
+        PropertyType::DependingOn,
+        PropertyType::Redefines,
+        PropertyType::SignLeading,
+        PropertyType::SignTrailing,
+        PropertyType::DecimalPoint,
+        PropertyType::Synchronized,
+        PropertyType::Usage,
+    ]);
+    
+    properties
+}
+
 fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
-    let panel_width = area.width.min(35);
+    let panel_width = area.width.min(40);
     let panel_area = Rect {
         x: area.x + area.width - panel_width,
         y: area.y,
         width: panel_width,
-        height: area.height.min(18),
+        height: area.height.min(22),
     };
     
     let block = Block::default()
@@ -3169,62 +3628,98 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
     };
     
     if let Some(field) = &app.edit_properties_field {
-        let mut lines = vec![
-            Line::from("> Position ".yellow()),
-            Line::from(format!("  Row: {} ", field.pos.0)),
-            Line::from(format!("  Col: {} ", field.pos.1)),
-            Line::from(""),
-            Line::from("> Size ".yellow()),
-            Line::from(format!("  Length: {} ", field.length)),
-            Line::from(""),
-            Line::from("> Value ".yellow()),
-            Line::from(format!("  Initial: {} ", field.initial.as_deref().unwrap_or(""))),
-            Line::from(""),
-            Line::from("> Type ".yellow()),
-            Line::from(format!("  {:?}", field.field_type)),
-            Line::from(""),
-        ];
+        // Get all properties for this field type
+        let properties = get_properties_for_field(field);
+        let mut lines = Vec::new();
         
-        // Add ASCII Art specific properties
-        if field.field_type == FieldType::Literal && field.name == "ASCII_ART" {
-            lines.push(Line::from("> ASCII Art Image ".yellow()));
-            if let Some(ascii_art) = &field.ascii_art {
-                lines.push(Line::from(format!("  Loaded: {}x{} ", ascii_art.width, ascii_art.height)));
-                lines.push(Line::from("  [Press I to import new image]".cyan()));
+        // Add each property to the lines
+        for (i, prop) in properties.iter().enumerate() {
+            let is_selected = i == app.edit_properties_index;
+            let display_name = prop.display_name();
+            let value = prop.get_value(field);
+            
+            let style = if is_selected {
+                Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
             } else {
-                lines.push(Line::from("  [No image loaded - Press I to import]".dim()));
+                Style::default().fg(TuiColor::White)
+            };
+            
+            // Group properties with headers
+            if i == 0 || is_property_group_start(i, &properties) {
+                lines.push(Line::from(format!("> {} ", display_name).yellow()));
+            } else {
+                lines.push(Line::from(" "));
             }
-            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled(format!("  {}: {} ", display_name, value), style)));
         }
         
-        // Add color properties
-        lines.push(Line::from("> Color (TEXT) ".yellow()));
-        lines.push(Line::from(format!("  {:?} ", field.text_color)));
-        lines.push(Line::from(""));
-        
-        lines.push(Line::from("> HighLight (HLIGHT) ".yellow()));
-        lines.push(Line::from(format!("  {:?} ", field.border_color)));
-        lines.push(Line::from(""));
-        
+        // Add help text
         lines.extend(vec![
+            Line::from(""),
             Line::from("Up/Down: Navigate".dim()),
             Line::from(r#"+/- : Modify"#.dim()),
             Line::from("Enter: Save".dim()),
             Line::from("Esc: Cancel".dim()),
         ]);
         
-        // Highlight current property
-        if app.edit_properties_index < lines.len() {
-            if let Some(line) = lines.get_mut(app.edit_properties_index) {
-                *line = Line::from(Span::styled(line.spans[0].content.clone(), Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)));
-            }
-        }
-        
         let text = Text::from(lines);
         let paragraph = Paragraph::new(text)
             .block(Block::default().borders(Borders::NONE));
         f.render_widget(paragraph, inner);
     }
+}
+
+/// Check if a property should start a new group
+fn is_property_group_start(index: usize, properties: &[PropertyType]) -> bool {
+    if index == 0 {
+        return false;
+    }
+    
+    let current = &properties[index];
+    let prev = &properties[index - 1];
+    
+    // Define property groups
+    let current_group = match current {
+        PropertyType::Name | PropertyType::FieldType | PropertyType::PositionRow | 
+        PropertyType::PositionCol | PropertyType::Length | PropertyType::Attributes => 0,
+        PropertyType::TextColor | PropertyType::BorderColor => 1,
+        PropertyType::Initial | PropertyType::Pic | PropertyType::GrpName => 2,
+        PropertyType::Height => 3,
+        PropertyType::FieldsetTitle | PropertyType::FieldsetHeight | PropertyType::FieldsetDecoration | 
+        PropertyType::FieldsetBorder | PropertyType::FieldsetTitleAlign | 
+        PropertyType::FieldsetTitleFillDecoration | PropertyType::FieldsetTitleColor | 
+        PropertyType::FieldsetFillTitleColor | PropertyType::FieldsetBorderColor | 
+        PropertyType::FieldsetContentColor => 4,
+        PropertyType::AsciiArt => 5,
+        PropertyType::Justification | PropertyType::AutoSkip | PropertyType::FieldExit | 
+        PropertyType::BlankZero | PropertyType::Repeat | PropertyType::FillChar | 
+        PropertyType::Format | PropertyType::KeyType | PropertyType::DataType => 6,
+        PropertyType::Occurs | PropertyType::DependingOn | PropertyType::Redefines | 
+        PropertyType::SignLeading | PropertyType::SignTrailing | PropertyType::DecimalPoint | 
+        PropertyType::Synchronized | PropertyType::Usage => 7,
+    };
+    
+    let prev_group = match prev {
+        PropertyType::Name | PropertyType::FieldType | PropertyType::PositionRow | 
+        PropertyType::PositionCol | PropertyType::Length | PropertyType::Attributes => 0,
+        PropertyType::TextColor | PropertyType::BorderColor => 1,
+        PropertyType::Initial | PropertyType::Pic | PropertyType::GrpName => 2,
+        PropertyType::Height => 3,
+        PropertyType::FieldsetTitle | PropertyType::FieldsetHeight | PropertyType::FieldsetDecoration | 
+        PropertyType::FieldsetBorder | PropertyType::FieldsetTitleAlign | 
+        PropertyType::FieldsetTitleFillDecoration | PropertyType::FieldsetTitleColor | 
+        PropertyType::FieldsetFillTitleColor | PropertyType::FieldsetBorderColor | 
+        PropertyType::FieldsetContentColor => 4,
+        PropertyType::AsciiArt => 5,
+        PropertyType::Justification | PropertyType::AutoSkip | PropertyType::FieldExit | 
+        PropertyType::BlankZero | PropertyType::Repeat | PropertyType::FillChar | 
+        PropertyType::Format | PropertyType::KeyType | PropertyType::DataType => 6,
+        PropertyType::Occurs | PropertyType::DependingOn | PropertyType::Redefines | 
+        PropertyType::SignLeading | PropertyType::SignTrailing | PropertyType::DecimalPoint | 
+        PropertyType::Synchronized | PropertyType::Usage => 7,
+    };
+    
+    current_group != prev_group
 }
 
 fn render_map_type_picker(f: &mut Frame, app: &App, area: Rect) {

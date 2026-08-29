@@ -39,17 +39,18 @@ Ou créez une nouvelle map vide avec **`n`** (minuscule).
 ### Etape 4: Modifier les proprietes du titre
 
 1. Appuyez sur **`e`** pour editer les proprietes
-2. Avec **+** et **-** modifiez:
+2. Avec **Up/Down** naviguez entre les proprietes
+3. Avec **+** et **-** modifiez les valeurs:
    - Row: 1
    - Col: 25
    - Length: 30
-3. Appuyez sur **`Esc`** pour fermer
-4. Appuyez sur **`C`** pour changer la couleur
-5. Selectionnez **White** avec la touche **`w`**
-6. Validez avec **Enter**
-7. Appuyez sur **`t`** pour changer les attributs
-8. Selectionnez **PROT** (p) et **INTENS** (i)
-9. Validez avec **Enter**
+4. Appuyez sur **`Enter`** pour sauvegarder ou **`Esc`** pour annuler
+5. Appuyez sur **`C`** pour changer la couleur rapidement
+6. Selectionnez **White** avec la touche **`w`**
+7. Validez avec **Enter**
+8. Appuyez sur **`t`** pour changer les attributs rapidement
+9. Selectionnez **PROT** (p) et **INTENS** (i)
+10. Validez avec **Enter**
 
 ### Etape 5: Ajouter un label "Customer:"
 
@@ -82,6 +83,27 @@ Repetez les etapes 5-6 pour ajouter:
 3. Changez la couleur en **Blue** (`b`)
 4. Ajoutez les attributs **PROT** (`p`) et **REVERSE** (`v`)
 5. Initialisez avec "F1=Help F3=Exit F12=Save" (a modifier manuellement dans le fichier BMS)
+
+### Utilisation de la Boite de Proprietes Avancee
+
+La boite de proprietes ( accessible via **`e`**) permet de modifier toutes les proprietes d'un champ:
+
+- **Navigation**: Utilisez **Up/Down** pour vous deplacer entre les proprietes
+- **Modification**: Utilisez **+** et **-** pour modifier les valeurs
+- **Groupes de proprietes**: Les proprietes sont regroupees par categorie:
+  - **Commun**: Nom, Type, Position (Row/Col), Longueur, Attributs
+  - **Couleurs**: Couleur du texte, Couleur de bordure
+  - **Valeurs**: Initial, PIC, Nom de groupe
+  - **Multi-ligne**: Hauteur (pour les Fieldsets et ASCII Art)
+  - **Fieldset**: Titre, Hauteur, Decoration, Bordure, Alignement du titre, Couleurs personnalisees
+  - **ASCII Art**: Donnees ASCII Art
+  - **BMS Avance**: Justification, AutoSkip, FieldExit, BlankZero, Repeat, etc.
+
+Pour les **Fieldsets** (Group):
+- La premiere ligne contient: (decoration) (titre) (decoration)
+- La derniere ligne contient: (decoration)
+- Minimum 3 lignes requis
+- Le titre peut etre aligne a gauche, centre ou droite
 
 ### Etape 9: Sauvegarder
 
@@ -239,6 +261,7 @@ Appuyez sur **`Ctrl+Y`** pour refaire.
 
 | Action | Raccourci |
 |--------|-----------|
+| Nouveau champ (menu) | Ctrl+A |
 | Nouveau champ | `a` (10) ou `A` (20) |
 | Supprimer champ | `d` |
 | Deplacer champ | `m` + fleches + Enter |
@@ -248,11 +271,14 @@ Appuyez sur **`Ctrl+Y`** pour refaire.
 | Coller | `v` |
 | Couleur | `C` + lettre couleur + Enter |
 | Attributs | `t` + lettre attribut + Enter |
+| Editer proprietes | `e` + Up/Down nav + +/- modify |
 | Sauvegarder | Ctrl+S |
 | Generer COBOL | `g` |
 | Undo | Ctrl+Z |
 | Redo | Ctrl+Y |
-| Aide | `?` |
+| Preview Canvas/Code | Ctrl+M |
+| Aide | Ctrl+H ou `?` |
+| Preview/Edit | Ctrl+Space ou ` ` (espace) |
 | Quitter | Ctrl+Q |
 
 ---

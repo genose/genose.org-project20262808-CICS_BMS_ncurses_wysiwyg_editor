@@ -16,6 +16,10 @@
 - **Deplacement** de champs avec le clavier
 - **Redimensionnement** interactif
 - **Modification des proprietes**: couleur, attributs, type, PIC, INITIAL
+- **Boite de proprietes avancee**: Toutes les proprietes par type d'objet (Field, Group/Fieldset, ASCII Art, Image)
+  - Proprietes communes: Nom, Type, Position, Longueur, Attributs, Couleurs
+  - Fieldset: Titre, Hauteur, Decoration, Alignement titre, Couleurs (titre, bordure, contenu)
+  - ASCII Art: Import et conversion d'images
 - **Undo/Redo** illimite
 - **Clipboard**: Copier/Couper/Coller
 
@@ -132,6 +136,7 @@ Lance l'editeur WYSIWYG avec la commande `edit` ou `new -e`.
 | `j`/`k` / `↓`/`↑` | Deplacer le curseur |
 | `h`/`l` / `←`/`→` | Deplacer le curseur |
 | `Tab` / `Shift+Tab` | Champ suivant/precedent |
+| `Ctrl+A` | Ajouter un champ/object avec boite de selection |
 | `a` | Ajouter un champ (longueur 10) |
 | `A` | Ajouter un champ (longueur 20) |
 | `d` | Supprimer le champ selectionne |
@@ -151,6 +156,9 @@ Lance l'editeur WYSIWYG avec la commande `edit` ou `new -e`.
 | `Ctrl+Y` | Redo |
 | `Ctrl+C` | Copier dans le presse-papier |
 | `Ctrl+Q` | Quitter (avec confirmation si modifie) |
+| `Ctrl+M` | Basculer Preview Canvas/Code |
+| `Ctrl+H` | Basculer ecran Aide/Normal |
+| `Ctrl+Space` | Basculer Preview/Edit |
 | `?` | Aide |
 | ` ` (espace) | Basculer mode Preview/Edit |
 
@@ -300,6 +308,13 @@ DFHMND POS=(23,1),LENGTH=80,ATTRB=(PROT,REVERSE),COLOR=BLUE
 - [x] Undo/Redo
 - [x] Clipboard
 - [x] Plugin VSCode de base
+- [x] **Boite de proprietes avancee** avec toutes les proprietes par type d'objet
+- [x] **Support Fieldset/Group** avec titre, decoration, bordures
+- [x] **Gestion des couleurs** (texte, bordure, titre, contenu)
+- [x] **ASCII Art** import et conversion d'images
+- [x] **Image to ASCII** avec file chooser et assistant
+- [x] **Gestion des erreurs** avec messages en bas de l'ecran
+- [x] **Coordonnees du curseur** affichees en bas de l'ecran
 - [ ] **Selection multiple**
 - [ ] **Alignement automatique**
 - [ ] **Grille magnetique** (snap to grid)
