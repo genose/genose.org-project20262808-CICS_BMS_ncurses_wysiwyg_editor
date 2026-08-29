@@ -30,6 +30,7 @@ use ratatui::widgets::ScrollbarState;
 use ratatui::widgets::ScrollbarOrientation;
 use ratatui::style::Color as TuiColor;
 use std::{
+    collections::HashMap,
     fs,
     io::stdout,
     path::PathBuf,
@@ -443,8 +444,161 @@ impl SidebarAction {
     }
 }
 
+/// Object type metadata with ASCII model and properties
+#[derive(Debug, Clone)]
+struct ObjectTypeMetadata {
+    /// ASCII art representation of the object (multi-line)
+    ascii_model: Vec<&'static str>,
+    /// Default properties for this object type
+    default_properties: Vec<PropertyType>,
+    /// Minimum height for this object type
+    min_height: u16,
+    /// Default length for this object type
+    default_length: u16,
+}
+
+/// Internal dictionary of object types with their ASCII models and properties
+fn get_object_type_metadata() -> HashMap<InsertableObject, ObjectTypeMetadata> {
+    let mut map = HashMap::new();
+    
+    // Alphanumeric Field: single line text field
+    map.insert(InsertableObject::AlphanumericField, ObjectTypeMetadata {
+        ascii_model: vec!["[ALNUM]"],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Attributes, PropertyType::TextColor,
+            PropertyType::Initial, PropertyType::Pic,
+        ],
+        min_height: 1,
+        default_length: 10,
+    });
+    
+    // Numeric Field: single line numeric field
+    map.insert(InsertableObject::NumericField, ObjectTypeMetadata {
+        ascii_model: vec!["[NUM]"],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Attributes, PropertyType::TextColor,
+            PropertyType::Initial, PropertyType::Pic,
+        ],
+        min_height: 1,
+        default_length: 10,
+    });
+    
+    // Date Field: single line date field
+    map.insert(InsertableObject::DateField, ObjectTypeMetadata {
+        ascii_model: vec!["[DATE]"],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Attributes, PropertyType::TextColor,
+            PropertyType::Initial, PropertyType::Pic,
+        ],
+        min_height: 1,
+        default_length: 8,
+    });
+    
+    // Time Field: single line time field
+    map.insert(InsertableObject::TimeField, ObjectTypeMetadata {
+        ascii_model: vec!["[TIME]"],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Attributes, PropertyType::TextColor,
+            PropertyType::Initial, PropertyType::Pic,
+        ],
+        min_height: 1,
+        default_length: 6,
+    });
+    
+    // Boolean Field: single line boolean field
+    map.insert(InsertableObject::BooleanField, ObjectTypeMetadata {
+        ascii_model: vec!["[BOOL]"],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Attributes, PropertyType::TextColor,
+            PropertyType::Initial,
+        ],
+        min_height: 1,
+        default_length: 1,
+    });
+    
+    // Literal: single line literal text
+    map.insert(InsertableObject::Literal, ObjectTypeMetadata {
+        ascii_model: vec!["[LITERAL]"],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Attributes, PropertyType::TextColor,
+            PropertyType::Initial,
+        ],
+        min_height: 1,
+        default_length: 10,
+    });
+    
+    // Protected Literal: single line protected literal
+    map.insert(InsertableObject::ProtectedLiteral, ObjectTypeMetadata {
+        ascii_model: vec!["[PROT LIT]"],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Attributes, PropertyType::TextColor,
+            PropertyType::Initial,
+        ],
+        min_height: 1,
+        default_length: 10,
+    });
+    
+    // Fieldset/Group: multi-line with title and border
+    map.insert(InsertableObject::Fieldset, ObjectTypeMetadata {
+        ascii_model: vec![
+            "╭────────────╮",
+            "│  FIELDSET   │",
+            "╰────────────╯",
+        ],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::FieldType, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Height,
+            PropertyType::FieldsetTitle, PropertyType::FieldsetHeight,
+            PropertyType::FieldsetDecoration, PropertyType::FieldsetBorder,
+            PropertyType::FieldsetTitleAlign, PropertyType::FieldsetTitleFillDecoration,
+            PropertyType::TextColor, PropertyType::BorderColor,
+            PropertyType::FieldsetTitleColor, PropertyType::FieldsetFillTitleColor,
+            PropertyType::FieldsetBorderColor, PropertyType::FieldsetContentColor,
+        ],
+        min_height: 3,
+        default_length: 20,
+    });
+    
+    // Horizontal Line: single line separator
+    map.insert(InsertableObject::Line, ObjectTypeMetadata {
+        ascii_model: vec!["──────────"],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::TextColor,
+        ],
+        min_height: 1,
+        default_length: 80,
+    });
+    
+    // ASCII Art: multi-line art
+    map.insert(InsertableObject::AsciiArt, ObjectTypeMetadata {
+        ascii_model: vec![
+            "  ___  ",
+            " /   \\ ",
+            "|     |",
+            " \\___/ ",
+        ],
+        default_properties: vec![
+            PropertyType::Name, PropertyType::PositionRow, PropertyType::PositionCol,
+            PropertyType::Length, PropertyType::Height,
+            PropertyType::TextColor, PropertyType::AsciiArt,
+        ],
+        min_height: 1,
+        default_length: 10,
+    });
+    
+    map
+}
+
 /// Types d'objets insérables dans le Canvas
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InsertableObject {
     AlphanumericField,
     NumericField,
@@ -3602,8 +3756,63 @@ impl PropertyType {
     }
 }
 
+/// Get InsertableObject from a BmsField
+fn get_insertable_object_from_field(field: &BmsField) -> Option<InsertableObject> {
+    // Determine which InsertableObject this field corresponds to
+    if matches!(field.field_type, FieldType::Group) && field.fieldset_height.is_some() {
+        Some(InsertableObject::Fieldset)
+    } else if field.ascii_art.is_some() {
+        Some(InsertableObject::AsciiArt)
+    } else if field.attrb.contains(&FieldAttribute::Prot) && field.initial.is_some() {
+        Some(InsertableObject::ProtectedLiteral)
+    } else if field.attrb.contains(&FieldAttribute::Prot) {
+        Some(InsertableObject::ProtectedLiteral)
+    } else if field.attrb.contains(&FieldAttribute::Num) {
+        Some(InsertableObject::NumericField)
+    } else if field.attrb.contains(&FieldAttribute::Alph) || field.attrb.contains(&FieldAttribute::AlphaNum) {
+        Some(InsertableObject::AlphanumericField)
+    } else if field.attrb.contains(&FieldAttribute::Date) {
+        Some(InsertableObject::DateField)
+    } else if field.attrb.contains(&FieldAttribute::Time) {
+        Some(InsertableObject::TimeField)
+    } else if field.attrb.contains(&FieldAttribute::Bool) {
+        Some(InsertableObject::BooleanField)
+    } else if field.pic.is_some() {
+        // Fields with PIC are likely literals or formatted fields
+        Some(InsertableObject::Literal)
+    } else {
+        // Default to Literal for simple fields
+        Some(InsertableObject::Literal)
+    }
+}
+
+/// Get the ASCII model for an object type
+fn get_ascii_model(obj_type: &InsertableObject) -> Vec<&'static str> {
+    get_object_type_metadata()
+        .get(obj_type)
+        .map(|m| m.ascii_model.clone())
+        .unwrap_or_else(|| vec!["[UNKNOWN]"])
+}
+
+/// Get the minimum height for an object type
+fn get_object_min_height(obj_type: &InsertableObject) -> u16 {
+    get_object_type_metadata()
+        .get(obj_type)
+        .map(|m| m.min_height)
+        .unwrap_or(1)
+}
+
 /// Get the list of properties to display for a field, based on its type
+/// Uses the internal object type dictionary to determine relevant properties
 fn get_properties_for_field(field: &BmsField) -> Vec<PropertyType> {
+    // Try to get the object type metadata
+    if let Some(obj_type) = get_insertable_object_from_field(field) {
+        if let Some(metadata) = get_object_type_metadata().get(&obj_type) {
+            return metadata.default_properties.clone();
+        }
+    }
+    
+    // Fallback to default implementation
     let mut properties = vec![
         PropertyType::Name,
         PropertyType::FieldType,
