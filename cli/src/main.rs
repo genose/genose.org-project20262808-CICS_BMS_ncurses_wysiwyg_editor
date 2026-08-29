@@ -190,6 +190,41 @@ fn scan_directory_files(directory: &str, image_only: bool) -> Vec<String> {
     }
 }
 
+/// Scan directory files with a specific filter
+fn scan_directory_files_with_filter(directory: &str, filter: FileFilter) -> Vec<String> {
+    let all_files = scan_directory_files(directory, false);
+    all_files.into_iter()
+        .filter(|f| filter.matches(f))
+        .collect()
+}
+
+/// Get subdirectories in a directory
+fn scan_directory_dirs(directory: &str) -> Vec<String> {
+    let path = std::path::Path::new(directory);
+    
+    if !path.exists() || !path.is_dir() {
+        return Vec::new();
+    }
+    
+    std::fs::read_dir(path)
+        .ok()
+        .map(|entries| {
+            entries.filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path();
+                if path.is_dir() {
+                    let dirname = path.file_name()
+                        .and_then(|n| n.to_str())
+                        .map(|s| s.to_string());
+                    dirname
+                } else {
+                    None
+                }
+            }).collect()
+        })
+        .unwrap_or_default()
+}
+
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
 #[derive(Parser, Debug)]
 #[command(name = "cobol-bms")]
@@ -591,6 +626,12 @@ struct App {
     save_path: String,
     // Pour le mode open
     open_path: String,
+    // File browser state for open/save dialogs
+    file_browser_directory: String,
+    file_browser_files: Vec<String>,
+    file_browser_selected_index: usize,
+    file_browser_filter: FileFilter,
+    file_browser_scroll: usize,
     // Pour le mode add object
     selected_object_for_add: Option<InsertableObject>,
     // Pour le mode text input
@@ -634,6 +675,58 @@ enum ConfirmAction {
     ClearMap,
 }
 
+/// File type filter for file browser
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FileFilter {
+    /// Show all files
+    AllFiles,
+    /// Show only BMS files (.bms)
+    BmsFiles,
+    /// Show only COBOL files (.cob, .cbl)
+    CobolFiles,
+    /// Show only text files (.txt)
+    TextFiles,
+}
+
+impl FileFilter {
+    fn next(self) -> Self {
+        match self {
+            FileFilter::AllFiles => FileFilter::BmsFiles,
+            FileFilter::BmsFiles => FileFilter::CobolFiles,
+            FileFilter::CobolFiles => FileFilter::TextFiles,
+            FileFilter::TextFiles => FileFilter::AllFiles,
+        }
+    }
+
+    fn display_name(self) -> &'static str {
+        match self {
+            FileFilter::AllFiles => "All Files",
+            FileFilter::BmsFiles => "BMS Files (*.bms)",
+            FileFilter::CobolFiles => "COBOL Files (*.cob, *.cbl)",
+            FileFilter::TextFiles => "Text Files (*.txt)",
+        }
+    }
+
+    fn file_extensions(self) -> Vec<&'static str> {
+        match self {
+            FileFilter::AllFiles => vec![],
+            FileFilter::BmsFiles => vec![".bms"],
+            FileFilter::CobolFiles => vec![".cob", ".cbl"],
+            FileFilter::TextFiles => vec![".txt"],
+        }
+    }
+
+    fn matches(self, filename: &str) -> bool {
+        match self {
+            FileFilter::AllFiles => true,
+            _ => {
+                let filename_lower = filename.to_lowercase();
+                self.file_extensions().iter().any(|ext| filename_lower.ends_with(ext))
+            }
+        }
+    }
+}
+
 impl App {
     fn new(editor: BmsEditor) -> Self {
         Self {
@@ -659,6 +752,12 @@ impl App {
             selected_attribute: None,
             save_path: String::new(),
             open_path: String::new(),
+            // File browser state
+            file_browser_directory: String::new(),
+            file_browser_files: Vec::new(),
+            file_browser_selected_index: 0,
+            file_browser_filter: FileFilter::AllFiles,
+            file_browser_scroll: 0,
             selected_object_for_add: None,
             text_input_prompt: String::new(),
             text_input_value: String::new(),
@@ -754,7 +853,10 @@ impl App {
     
     fn set_message(&mut self, msg: &str) {
         self.message = Some(msg.to_string());
-        self.message_timeout = Some(60);
+        // Error messages are persistent (no timeout)
+        // Regular messages have a timeout of 60 frames
+        let is_error = msg.starts_with("Error:") || msg.starts_with("Cannot") || msg.starts_with("Failed");
+        self.message_timeout = if is_error { None } else { Some(60) };
     }
     
     fn clear_message(&mut self) {
@@ -1020,8 +1122,19 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 // Ctrl+O: Open file dialog
                 if app.mode == AppMode::Edit {
                     app.mode = AppMode::OpenDialog;
-                    app.save_path = String::new(); // Reuse save_path for open path
-                    app.set_message("Open file - Enter path");
+                    // Initialize file browser for open dialog
+                    app.file_browser_directory = std::env::current_dir()
+                        .ok()
+                        .map(|p| p.to_string_lossy().to_string())
+                        .unwrap_or_else(|| ".".to_string());
+                    app.file_browser_files = scan_directory_files_with_filter(
+                        &app.file_browser_directory,
+                        app.file_browser_filter
+                    );
+                    app.file_browser_selected_index = 0;
+                    app.file_browser_scroll = 0;
+                    app.open_path = String::new();
+                    app.set_message("Open file - Use arrows to select, Tab to change filter");
                 }
                 return;
             }
@@ -2020,6 +2133,12 @@ fn handle_save_dialog_mode(app: &mut App, key: event::KeyEvent) {
                 app.set_message(&format!("Cannot save: {}", errors.join("; ")));
                 return;
             }
+            
+            // Prevent saving empty BMS maps (no fields)
+            if app.editor.map.fields.is_empty() {
+                app.set_message("Cannot save: Empty BMS map has no fields");
+                return;
+            }
             let path = PathBuf::from(&app.save_path);
             match fs::write(&path, app.editor.export_to_bms()) {
                 Ok(_) => {
@@ -2047,24 +2166,86 @@ fn handle_open_dialog_mode(app: &mut App, key: event::KeyEvent) {
         KeyCode::Esc => {
             app.mode = AppMode::Edit;
             app.open_path.clear();
+            app.file_browser_directory.clear();
+            app.file_browser_files.clear();
         }
         KeyCode::Enter => {
-            let path = PathBuf::from(&app.open_path);
-            if path.exists() {
-                match parse_bms_file(path.to_str().unwrap()) {
-                    Ok(map) => {
-                        app.editor = BmsEditor::from_map(map);
-                        app.current_file = Some(path.clone());
-                        app.mode = AppMode::Edit;
-                        app.open_path.clear();
-                        app.set_message(&format!("Opened: {}", path.display()));
+            // Open selected file or use manual path
+            if !app.file_browser_files.is_empty() && app.file_browser_selected_index < app.file_browser_files.len() {
+                let filename = &app.file_browser_files[app.file_browser_selected_index];
+                let full_path = std::path::Path::new(&app.file_browser_directory).join(filename);
+                let path = PathBuf::from(full_path);
+                
+                if path.exists() {
+                    match parse_bms_file(path.to_str().unwrap()) {
+                        Ok(map) => {
+                            app.editor = BmsEditor::from_map(map);
+                            app.current_file = Some(path.clone());
+                            app.mode = AppMode::Edit;
+                            app.open_path.clear();
+                            app.file_browser_directory.clear();
+                            app.file_browser_files.clear();
+                            app.set_message(&format!("Opened: {}", path.display()));
+                        }
+                        Err(e) => {
+                            app.set_message(&format!("Failed to open: {}", e));
+                        }
                     }
-                    Err(e) => {
-                        app.set_message(&format!("Failed to open: {}", e));
+                } else {
+                    app.set_message("File does not exist");
+                }
+            } else if !app.open_path.is_empty() {
+                // Try manual path entry
+                let path = PathBuf::from(&app.open_path);
+                if path.exists() {
+                    match parse_bms_file(path.to_str().unwrap()) {
+                        Ok(map) => {
+                            app.editor = BmsEditor::from_map(map);
+                            app.current_file = Some(path.clone());
+                            app.mode = AppMode::Edit;
+                            app.open_path.clear();
+                            app.file_browser_directory.clear();
+                            app.file_browser_files.clear();
+                            app.set_message(&format!("Opened: {}", path.display()));
+                        }
+                        Err(e) => {
+                            app.set_message(&format!("Failed to open: {}", e));
+                        }
+                    }
+                } else {
+                    app.set_message("File does not exist");
+                }
+            }
+        }
+        KeyCode::Tab => {
+            // Cycle through file filters
+            app.file_browser_filter = app.file_browser_filter.next();
+            app.file_browser_files = scan_directory_files_with_filter(
+                &app.file_browser_directory,
+                app.file_browser_filter
+            );
+            app.file_browser_selected_index = 0;
+            app.file_browser_scroll = 0;
+        }
+        KeyCode::Up => {
+            if !app.file_browser_files.is_empty() {
+                if app.file_browser_selected_index > 0 {
+                    app.file_browser_selected_index -= 1;
+                    if app.file_browser_selected_index < app.file_browser_scroll {
+                        app.file_browser_scroll = app.file_browser_selected_index;
                     }
                 }
-            } else {
-                app.set_message("File does not exist");
+            }
+        }
+        KeyCode::Down => {
+            if !app.file_browser_files.is_empty() {
+                if app.file_browser_selected_index + 1 < app.file_browser_files.len() {
+                    app.file_browser_selected_index += 1;
+                    // Scroll down if selected item is below visible area
+                    if app.file_browser_selected_index >= app.file_browser_scroll + 10 {
+                        app.file_browser_scroll = app.file_browser_selected_index.saturating_sub(9);
+                    }
+                }
             }
         }
         KeyCode::Backspace => {
@@ -3230,8 +3411,8 @@ fn render_save_dialog(f: &mut Frame, app: &App, area: Rect) {
 }
 
 fn render_open_dialog(f: &mut Frame, app: &App, area: Rect) {
-    let dialog_width = 40;
-    let dialog_height = 5;
+    let dialog_width = area.width.min(60);
+    let dialog_height = area.height.min(16);
     let dialog_area = Rect {
         x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
         y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
@@ -3240,7 +3421,7 @@ fn render_open_dialog(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Open File ")
+        .title(" Open File [Enter:Select|Esc:Cancel|Tab:Filter|Arrows:Nav] ")
         .borders(Borders::ALL);
     f.render_widget(block, dialog_area);
     
@@ -3251,17 +3432,63 @@ fn render_open_dialog(f: &mut Frame, app: &App, area: Rect) {
         height: dialog_area.height.saturating_sub(2),
     };
     
-    let prompt = Paragraph::new("File path: ")
-        .style(Style::default().fg(TuiColor::Yellow));
-    f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
+    let mut current_y = inner.y;
     
-    let path_text = Paragraph::new(app.open_path.as_str())
-        .style(Style::default().fg(TuiColor::White));
-    f.render_widget(path_text, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
-    
-    let help = Paragraph::new("Enter: Open | Esc: Cancel")
+    // Display current directory
+    let dir_display = if app.file_browser_directory.is_empty() {
+        ".".to_string()
+    } else {
+        app.file_browser_directory.clone()
+    };
+    let dir_para = Paragraph::new(format!("Directory: {}", dir_display))
         .style(Style::default().fg(TuiColor::Cyan));
-    f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
+    f.render_widget(dir_para, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
+    current_y += 1;
+    
+    // Display filter mode at the bottom
+    let filter_text = Paragraph::new(format!("Filter: {}", app.file_browser_filter.display_name()))
+        .style(Style::default().fg(TuiColor::Yellow));
+    let filter_height = 1;
+    let filter_y = inner.y + inner.height.saturating_sub(filter_height + 1);
+    
+    // Display file list with scroll
+    let file_list_height = (filter_y - current_y) as usize;
+    if !app.file_browser_files.is_empty() {
+        for (idx, filename) in app.file_browser_files.iter().enumerate() {
+            if idx >= app.file_browser_scroll && idx < app.file_browser_scroll + file_list_height {
+                let is_selected = idx == app.file_browser_selected_index;
+                let file_style = if is_selected {
+                    Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
+                } else {
+                    Style::default().fg(TuiColor::White)
+                };
+                
+                let file_para = Paragraph::new(format!("  {}", filename))
+                    .style(file_style);
+                f.render_widget(file_para, Rect { x: inner.x, y: current_y as u16, width: inner.width, height: 1 });
+                current_y += 1;
+            }
+        }
+    } else {
+        let no_files = Paragraph::new("  No files found")
+            .style(Style::default().fg(TuiColor::Gray));
+        f.render_widget(no_files, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
+        current_y += 1;
+    }
+    
+    // Display filter info at bottom
+    f.render_widget(filter_text, Rect { x: inner.x, y: filter_y, width: inner.width, height: 1 });
+    
+    // Display manual path entry
+    if !app.open_path.is_empty() {
+        let path_display = format!("Path: {}", app.open_path);
+        let path_para = Paragraph::new(path_display)
+            .style(Style::default().fg(TuiColor::Green));
+        let path_y = filter_y + 1;
+        if path_y < dialog_area.y + dialog_area.height {
+            f.render_widget(path_para, Rect { x: inner.x, y: path_y, width: inner.width, height: 1 });
+        }
+    }
 }
 
 fn render_add_object_dialog(f: &mut Frame, app: &App, area: Rect) {
