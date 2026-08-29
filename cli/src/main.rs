@@ -333,7 +333,7 @@ impl InsertableObject {
             InsertableObject::TimeField => 6,
             InsertableObject::BooleanField => 1,
             InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
-            InsertableObject::Group => 1,
+            InsertableObject::Group => 10,  // Minimum reasonable size for a group
             InsertableObject::Line | InsertableObject::Box => 40,
         };
         field.name = match self {
@@ -348,7 +348,10 @@ impl InsertableObject {
             InsertableObject::Line => "HLINE".to_string(),
             InsertableObject::Box => "BOX".to_string(),
         };
-        field.field_type = FieldType::Field;
+        field.field_type = match self {
+            InsertableObject::Group => FieldType::Group,
+            _ => FieldType::Field,
+        };
         field.attrb = match self {
             InsertableObject::ProtectedLiteral => vec![FieldAttribute::Prot],
             InsertableObject::NumericField => vec![FieldAttribute::Num],
