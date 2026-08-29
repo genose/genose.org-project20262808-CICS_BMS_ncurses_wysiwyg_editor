@@ -181,7 +181,7 @@ fn parse_dfhmnd(input: &str) -> IResult<&str, BmsField> {
         
         // COLOR=value
         if let Ok((new_input, color)) = parse_color(input) {
-            field.color = Some(color);
+            field.text_color = Some(color);
             remaining = new_input;
             continue;
         }

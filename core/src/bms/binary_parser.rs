@@ -247,7 +247,7 @@ impl BmsFieldDescriptor {
         field.attrb = self.decode_attributes();
         
         // Convert color byte to Color enum
-        field.color = self.decode_color();
+        field.text_color = self.decode_color();
         
         // Convert initial value from EBCDIC to ASCII
         if !self.initial.is_empty() {

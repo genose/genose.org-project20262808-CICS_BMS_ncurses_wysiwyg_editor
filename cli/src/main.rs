@@ -1472,7 +1472,7 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
         KeyCode::Char('C') => {
             if let Some(idx) = app.editor.selected_field {
                 app.mode = AppMode::ColorPicker;
-                app.selected_color = app.editor.map.fields[idx].color.clone();
+                app.selected_color = app.editor.map.fields[idx].text_color.clone();
             } else {
                 app.set_message("Error: No field selected to change color (use arrows to select)");
             }
@@ -1558,7 +1558,7 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
                     2 => app.editor.map.fields[idx].length += 1, // Length
                     3 => { // Color
                         app.mode = AppMode::ColorPicker;
-                        app.selected_color = app.editor.map.fields[idx].color.clone();
+                        app.selected_color = app.editor.map.fields[idx].text_color.clone();
                         return;
                     }
                     4 => { // Attributes
@@ -2466,7 +2466,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                         } else if let Some(border_color) = &field.border_color {
                             style = style.fg(bms_color_to_tui(border_color));
                         } else {
-                            match field.color {
+                            match field.text_color {
                                 Some(BmsColor::Blue) => style = style.fg(TuiColor::Blue),
                                 Some(BmsColor::Green) => style = style.fg(TuiColor::Green),
                                 Some(BmsColor::Red) => style = style.fg(TuiColor::Red),
@@ -2678,7 +2678,7 @@ fn render_properties_panel(f: &mut Frame, app: &App, area: Rect) {
             Line::from(format!("  Length: {} ", field.length)),
             Line::from(""),
             Line::from(" Appearance ".yellow()),
-            Line::from(format!("  Color: {:?}", field.color)),
+            Line::from(format!("  Color: {:?}", field.text_color)),
             Line::from(format!("  Attrs: {:?}", field.attrb)),
             Line::from(""),
             Line::from(" Type ".yellow()),

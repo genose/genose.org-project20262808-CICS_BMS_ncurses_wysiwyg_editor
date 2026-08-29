@@ -122,7 +122,6 @@ pub struct BmsField {
     pub pos: (u16, u16),      // (line, column) - 1-based
     pub length: u16,
     pub attrb: Vec<FieldAttribute>,
-    pub color: Option<Color>,
     pub text_color: Option<Color>,
     pub border_color: Option<Color>,
     pub initial: Option<String>,
@@ -464,7 +463,6 @@ impl Default for BmsField {
             pos: (1, 1),
             length: 1,
             attrb: vec![],
-            color: None,
             text_color: None,
             border_color: None,
             initial: None,

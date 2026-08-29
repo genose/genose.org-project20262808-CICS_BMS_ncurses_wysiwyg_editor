@@ -195,7 +195,7 @@ pub fn render_bms_text(map: &BmsMap) -> String {
             field.pos.0, field.pos.1,
             field.length,
             field.attrb,
-            field.color
+            field.text_color
         ).unwrap();
     }
     

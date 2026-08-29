@@ -180,7 +180,7 @@ impl BmsEditor {
         field.pos = self.cursor_pos;
         field.length = length;
         field.attrb = vec![FieldAttribute::Norm];
-        field.color = Some(Color::Yellow);
+        field.text_color = Some(Color::Yellow);
         self.add_field(field)
     }
     
@@ -526,8 +526,8 @@ impl BmsEditor {
     /// Modifier la couleur du champ selectionne
     pub fn set_selected_field_color(&mut self, color: Option<Color>) {
         if let Some(index) = self.selected_field {
-            let old_color = self.map.fields[index].color.clone();
-            self.map.fields[index].color = color.clone();
+            let old_color = self.map.fields[index].text_color.clone();
+            self.map.fields[index].text_color = color.clone();
             self.history.push(EditOperation::ChangeColor { field_index: index, old_color, new_color: color });
         }
     }
@@ -636,7 +636,7 @@ impl BmsEditor {
                 }
                 EditOperation::ChangeColor { field_index, old_color, new_color: _ } => {
                     if field_index < self.map.fields.len() {
-                        self.map.fields[field_index].color = old_color;
+                        self.map.fields[field_index].text_color = old_color;
                     }
                 }
                 EditOperation::ChangeAttributes { field_index, old_attrs, new_attrs: _ } => {
@@ -683,7 +683,7 @@ impl BmsEditor {
                 }
                 EditOperation::ChangeColor { field_index, old_color: _, new_color } => {
                     if field_index < self.map.fields.len() {
-                        self.map.fields[field_index].color = new_color;
+                        self.map.fields[field_index].text_color = new_color;
                     }
                 }
                 EditOperation::ChangeAttributes { field_index, old_attrs: _, new_attrs } => {
@@ -734,7 +734,7 @@ impl BmsEditor {
             line.push_str(&format!(",ATTRB=({})", attrs.join(",")));
         }
         
-        if let Some(ref color) = field.color {
+        if let Some(ref color) = field.text_color {
             line.push_str(&format!(",COLOR={}", color));
         }
         
@@ -799,7 +799,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             pos: (1, 25),
             length: 30,
             attrb: vec![FieldAttribute::Prot, FieldAttribute::Intens],
-            color: Some(Color::White),
+            text_color: Some(Color::White),
             initial: Some("NEW BMS SCREEN".to_string()),
             pic: None,
             grp_name: None,
@@ -812,7 +812,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             pos: (3, 10),
             length: 2,
             attrb: vec![FieldAttribute::Prot],
-            color: Some(Color::Green),
+            text_color: Some(Color::Green),
             initial: Some("1.".to_string()),
             pic: None,
             grp_name: None,
@@ -824,7 +824,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             pos: (3, 13),
             length: 20,
             attrb: vec![FieldAttribute::Prot],
-            color: Some(Color::Green),
+            text_color: Some(Color::Green),
             initial: Some("Option 1".to_string()),
             pic: None,
             grp_name: None,
@@ -837,7 +837,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             pos: (5, 10),
             length: 20,
             attrb: vec![FieldAttribute::Norm, FieldAttribute::Alph],
-            color: Some(Color::Yellow),
+            text_color: Some(Color::Yellow),
             initial: None,
             pic: None,
             grp_name: None,
@@ -850,7 +850,7 @@ pub fn create_preset_fields() -> Vec<BmsField> {
             pos: (23, 1),
             length: 80,
             attrb: vec![FieldAttribute::Prot, FieldAttribute::Reverse],
-            color: Some(Color::Blue),
+            text_color: Some(Color::Blue),
             initial: Some("F1=Help F3=Exit F12=Save".to_string()),
             pic: None,
             grp_name: None,
