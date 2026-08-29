@@ -141,13 +141,16 @@ pub struct BmsField {
     pub pic: Option<String>,
     pub grp_name: Option<String>,
     
+    // General field properties for multi-row elements
+    pub height: Option<u16>,        // Height for multi-row elements (AsciiArt, etc.)
+    
     // Group/Fieldset specific properties
-    pub title: Option<String>,       // Title for group/fieldset
-    pub height: Option<u16>,        // Height for multi-row elements (e.g., groups)
-    pub decoration: Option<DecorationType>,  // Decoration style for fieldset title (open/close chars)
-    pub border: Option<DecorationType>,      // Border style for fieldset bottom line
-    pub title_align: Option<Justify>,  // Text alignment for fieldset title (Left, Center, Right)
-    pub title_fill_decoration: Option<DecorationType>,  // Fill decoration for title line empty spaces
+    pub fieldset_title: Option<String>,       // Title for group/fieldset
+    pub fieldset_height: Option<u16>,        // Height for multi-row fieldset
+    pub fieldset_decoration: Option<DecorationType>,  // Decoration style for fieldset title (open/close chars)
+    pub fieldset_border: Option<DecorationType>,      // Border style for fieldset bottom line
+    pub fieldset_title_align: Option<Justify>,  // Text alignment for fieldset title (Left, Center, Right)
+    pub fieldset_title_fill_decoration: Option<DecorationType>,  // Fill decoration for title line empty spaces
     
     // Fieldset color properties
     pub fieldset_title_color: Option<Color>,      // Color for fieldset title text
@@ -491,7 +494,6 @@ impl Default for BmsField {
             initial: None,
             pic: None,
             grp_name: None,
-            title: None,
             height: None,
             ascii_art: None,
             justification: None,
@@ -511,10 +513,12 @@ impl Default for BmsField {
             decimal_point: None,
             synchronized: None,
             usage: None,
-            decoration: None,
-            border: None,
-            title_align: None,
-            title_fill_decoration: None,
+            fieldset_title: None,
+            fieldset_height: None,
+            fieldset_decoration: None,
+            fieldset_border: None,
+            fieldset_title_align: None,
+            fieldset_title_fill_decoration: None,
             fieldset_title_color: None,
             fieldset_fill_title_color: None,
             fieldset_border_color: None,

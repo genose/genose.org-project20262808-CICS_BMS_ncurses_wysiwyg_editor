@@ -32,14 +32,14 @@ fn test_parse_map_with_fields() {
     assert_eq!(map.fields[0].length, 10);
     assert!(map.fields[0].attrb.contains(&FieldAttribute::Prot));
     assert!(map.fields[0].attrb.contains(&FieldAttribute::Num));
-    assert_eq!(map.fields[0].color, Some(Color::Blue));
+    assert_eq!(map.fields[0].text_color, Some(Color::Blue));
     
     // Second field
     assert_eq!(map.fields[1].pos, (2, 1));
     assert_eq!(map.fields[1].length, 20);
     assert!(map.fields[1].attrb.contains(&FieldAttribute::Norm));
     assert!(map.fields[1].attrb.contains(&FieldAttribute::Alph));
-    assert_eq!(map.fields[1].color, None);
+    assert_eq!(map.fields[1].text_color, None);
 }
 
 #[test]
@@ -116,7 +116,7 @@ fn test_case_insensitive_parsing() {
     let map = parse_bms(source).unwrap();
     assert_eq!(map.name, "MENU01");
     assert_eq!(map.mapset, "MAPSET1");
-    assert_eq!(map.fields[0].color, Some(Color::Blue));
+    assert_eq!(map.fields[0].text_color, Some(Color::Blue));
 }
 
 #[test]

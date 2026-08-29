@@ -520,11 +520,11 @@ impl InsertableObject {
         
         // Set Fieldset-specific properties (minimum 3 rows)
         if matches!(self, InsertableObject::Fieldset) {
-            field.height = Some(3);  // Minimum height for Fieldset
-            field.decoration = Some(DecorationType::Brackets);  // Default decoration for title
-            field.border = Some(DecorationType::Dashes);  // Default border for bottom line
-            field.title_align = Some(Justify::Left);  // Default title alignment: Left
-            field.title_fill_decoration = None;  // Default: space fill (no decoration)
+            field.fieldset_height = Some(3);  // Minimum height for Fieldset
+            field.fieldset_decoration = Some(DecorationType::Brackets);  // Default decoration for title
+            field.fieldset_border = Some(DecorationType::Dashes);  // Default border for bottom line
+            field.fieldset_title_align = Some(Justify::Left);  // Default title alignment: Left
+            field.fieldset_title_fill_decoration = None;  // Default: space fill (no decoration)
         }
         
         field
@@ -2434,7 +2434,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                 let field_end_col = field_col + field.length as usize - 1;
                 
                 // Check if this cell is within the field's area (considering height for multi-row fields)
-                let field_end_row = if let Some(height) = field.height {
+                let field_end_row = if let Some(height) = field.height.or(field.fieldset_height) {
                     field_row + height as usize - 1
                 } else {
                     field_row
@@ -2450,11 +2450,11 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                     let is_last_row = grid_row + 1 == field_end_row;
                     
                     // Pre-compute fieldset decoration for color handling
-                    let fieldset_chars = if matches!(field.field_type, FieldType::Group) && field.height.is_some() {
-                        let dec_type = field.decoration.clone().unwrap_or(DecorationType::Brackets);
-                        let border_type = field.border.clone().unwrap_or(DecorationType::Dashes);
-                        let title_align = field.title_align.clone().unwrap_or(Justify::Left);
-                        let fill_char = if let Some(fill_dec) = field.title_fill_decoration.clone() {
+                    let fieldset_chars = if matches!(field.field_type, FieldType::Group) && field.fieldset_height.is_some() {
+                        let dec_type = field.fieldset_decoration.clone().unwrap_or(DecorationType::Brackets);
+                        let border_type = field.fieldset_border.clone().unwrap_or(DecorationType::Dashes);
+                        let title_align = field.fieldset_title_align.clone().unwrap_or(Justify::Left);
+                        let fill_char = if let Some(fill_dec) = field.fieldset_title_fill_decoration.clone() {
                             match fill_dec {
                                 DecorationType::Brackets => '[',
                                 DecorationType::Parentheses => '(',
@@ -2549,7 +2549,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                                         close_dec
                                     } else {
                                         // In the title row, check if we should display title text
-                                        if let Some(title) = &field.title {
+                                        if let Some(title) = &field.fieldset_title {
                                             let title_len = title.len();
                                             let field_width = (field_end_col - field_start + 1) as usize;
                                             let col_in_field = col - field_start;
@@ -2652,7 +2652,7 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                         if let Some((open_dec, close_dec, line_dec, fill_char, title_align)) = fieldset_chars.clone() {
                             if is_first_row {
                                 // Title line: use fieldset_title_color or fieldset_fill_title_color based on position
-                                if let Some(title) = &field.title {
+                                if let Some(title) = &field.fieldset_title {
                                     let title_len = title.len();
                                     let field_width = (field_end_col - field_start + 1) as usize;
                                     let col_in_field = col - field_start;

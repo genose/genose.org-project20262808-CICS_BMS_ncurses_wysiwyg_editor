@@ -27,7 +27,7 @@ fn test_new_editor_from_map() {
         pos: (1, 1),
         length: 10,
         attrb: vec![FieldAttribute::Norm],
-        color: Some(Color::Yellow),
+        text_color: Some(Color::Yellow),
         initial: None,
         pic: None,
         grp_name: None, ..Default::default()
@@ -69,7 +69,7 @@ fn test_add_field_at_cursor() {
     assert_eq!(editor.map.fields[0].pos, (5, 10));
     assert_eq!(editor.map.fields[0].length, 15);
     assert_eq!(editor.map.fields[0].attrb, vec![FieldAttribute::Norm]);
-    assert_eq!(editor.map.fields[0].color, Some(Color::Yellow));
+    assert_eq!(editor.map.fields[0].text_color, Some(Color::Yellow));
     assert_eq!(editor.selected_field, Some(0));
     
     // Vérifier l'historique
@@ -305,7 +305,7 @@ fn test_copy_cut_paste() {
     // Copier
     editor.copy_selected();
     assert!(!editor.clipboard.is_empty());
-    assert_eq!(editor.clipboard[0].color, Some(Color::Blue));
+    assert_eq!(editor.clipboard[0].text_color, Some(Color::Blue));
     assert_eq!(editor.map.fields.len(), 1);
     
     // Couper
@@ -313,7 +313,7 @@ fn test_copy_cut_paste() {
     let cut_field = editor.cut_selected();
     assert!(cut_field.is_some());
     assert_eq!(editor.map.fields.len(), 0);
-    assert_eq!(editor.clipboard[0].color, Some(Color::Blue));
+    assert_eq!(editor.clipboard[0].text_color, Some(Color::Blue));
     
     // Coller
     editor.set_cursor((5, 5));
@@ -321,7 +321,7 @@ fn test_copy_cut_paste() {
     assert!(new_idx.is_some());
     assert_eq!(editor.map.fields.len(), 1);
     assert_eq!(editor.map.fields[0].pos, (5, 5));
-    assert_eq!(editor.map.fields[0].color, Some(Color::Blue));
+    assert_eq!(editor.map.fields[0].text_color, Some(Color::Blue));
 }
 
 #[test]
@@ -394,10 +394,10 @@ fn test_set_selected_field_color() {
     editor.selected_field = Some(0);
     
     editor.set_selected_field_color(Some(Color::Red));
-    assert_eq!(editor.map.fields[0].color, Some(Color::Red));
+    assert_eq!(editor.map.fields[0].text_color, Some(Color::Red));
     
     editor.set_selected_field_color(None);
-    assert_eq!(editor.map.fields[0].color, None);
+    assert_eq!(editor.map.fields[0].text_color, None);
 }
 
 #[test]
@@ -554,7 +554,7 @@ fn test_export_field_with_attributes() {
     field.pos = (2, 5);
     field.length = 15;
     field.attrb = vec![FieldAttribute::Prot, FieldAttribute::Num];
-    field.color = Some(Color::Blue);
+    field.text_color = Some(Color::Blue);
     field.initial = Some("TEST".to_string());
     field.name = "INPUT1".to_string();
     
@@ -691,7 +691,7 @@ fn test_export_import_map_to_json() {
         pos: (5, 10),
         length: 20,
         attrb: vec![FieldAttribute::Norm, FieldAttribute::Intens],
-        color: Some(Color::Green),
+        text_color: Some(Color::Green),
         initial: Some("DEFAULT VALUE".to_string()),
         pic: Some("X(20)".to_string()),
         grp_name: None, ..Default::default()
@@ -764,7 +764,7 @@ fn test_mapset_json_serialization() {
         pos: (1, 1),
         length: 10,
         attrb: vec![FieldAttribute::Norm],
-        color: None,
+        text_color: None,
         initial: None,
         pic: None,
         grp_name: None, ..Default::default()
