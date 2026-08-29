@@ -765,8 +765,17 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                 return;
             }
             KeyCode::Char('g') | KeyCode::Char('G') => {
-                // Ctrl+G: Generate COBOL
-                if app.mode == AppMode::Edit {
+                // Ctrl+G: Generate COBOL OR Ctrl+Shift+G: Toggle grid snap
+                if key.modifiers.contains(KeyModifiers::SHIFT) && app.mode == AppMode::Edit {
+                    app.editor.toggle_snap_to_grid();
+                    let msg = if app.editor.is_snap_to_grid_enabled() {
+                        format!("Grid snap ON (size: {})", app.editor.get_grid_size())
+                    } else {
+                        "Grid snap OFF".to_string()
+                    };
+                    app.set_message(&msg);
+                } else if app.mode == AppMode::Edit {
+                    // Ctrl+G: Generate COBOL
                     let cobol = generate_cobol(&app.editor.map);
                     let path = app.current_file.as_ref()
                         .map(|p| p.with_extension("cbl"))
@@ -791,6 +800,19 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
                     return;
                 }
                 // Ctrl+V: Fall through to allow other handlers
+            }
+            KeyCode::Char('l') | KeyCode::Char('L') => {
+                // Ctrl+Shift+L: Align selected fields to grid
+                if key.modifiers.contains(KeyModifiers::SHIFT) && app.mode == AppMode::Edit {
+                    if app.editor.snap_to_grid && app.editor.get_grid_size() > 0 {
+                        let count = app.editor.align_selected_to_grid();
+                        app.set_message(&format!("Aligned {} field(s) to grid", count));
+                    } else {
+                        app.set_message("Enable grid snap first (Ctrl+Shift+G)");
+                    }
+                    return;
+                }
+                // Ctrl+L: Fall through
             }
             KeyCode::Char('o') | KeyCode::Char('O') => {
                 // Ctrl+O: Open file dialog
@@ -2818,6 +2840,10 @@ fn render_help(f: &mut Frame, _app: &App, area: Rect) {
         Line::from(" Selection: ".yellow()),
         Line::from("  Ctrl+Shift+A: Select all fields"),
         Line::from("  Shift+Arrow: Multi-select fields"),
+        Line::from(""),
+        Line::from(" Grid: ".yellow()),
+        Line::from("  Ctrl+Shift+G: Toggle grid snap"),
+        Line::from("  Ctrl+Shift+L: Align selected to grid"),
         Line::from(""),
         Line::from(" Field Ops: ".yellow()),
         Line::from("  a/A: Add field (10/20 chars) - legacy"),

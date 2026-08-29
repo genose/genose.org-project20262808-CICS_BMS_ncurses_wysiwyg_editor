@@ -1034,3 +1034,94 @@ fn test_field_at() {
     assert_eq!(editor.field_at((5, 15)), None);
     assert_eq!(editor.field_at((6, 10)), None);
 }
+
+// ==================== TESTS: Grid Snap ====================
+
+#[test]
+fn test_snap_to_grid() {
+    let mut editor = BmsEditor::new();
+    
+    // Initially disabled - snapping should return original position
+    assert!(!editor.is_snap_to_grid_enabled());
+    assert_eq!(editor.get_grid_size(), 1);
+    assert_eq!(editor.snap_to_grid((3, 3)), (3, 3));
+    
+    // Enable with grid size 5
+    editor.enable_snap_to_grid(5);
+    assert!(editor.is_snap_to_grid_enabled());
+    assert_eq!(editor.get_grid_size(), 5);
+    
+    // Test snapping (rounds to nearest multiple of grid size)
+    // Positions are 1-indexed, so 1-2 snap to 1, 3-7 snap to 5, 8-12 snap to 10, etc.
+    assert_eq!(editor.snap_to_grid((1, 1)), (1, 1));  // 1 is closest to 1 (0 would be 0, but we clamp to 1)
+    assert_eq!(editor.snap_to_grid((2, 2)), (1, 1));  // 2 is closer to 1 than to 5
+    assert_eq!(editor.snap_to_grid((3, 3)), (5, 5));  // 3 is closer to 5 than to 1
+    assert_eq!(editor.snap_to_grid((7, 7)), (5, 5));  // 7 is closer to 5 than to 10
+    assert_eq!(editor.snap_to_grid((8, 8)), (10, 10)); // 8 is closer to 10 than to 5
+    assert_eq!(editor.snap_to_grid((5, 5)), (5, 5));  // 5 stays 5
+    
+    // Disable
+    editor.disable_snap_to_grid();
+    assert!(!editor.is_snap_to_grid_enabled());
+    assert_eq!(editor.snap_to_grid((3, 3)), (3, 3));
+}
+
+#[test]
+fn test_align_selected_to_grid() {
+    let mut editor = BmsEditor::new();
+    
+    // Add fields at non-grid positions
+    editor.add_field(BmsField {
+        name: "FIELD1".to_string(),
+        pos: (2, 3),
+        length: 10,
+        ..Default::default()
+    });
+    editor.add_field(BmsField {
+        name: "FIELD2".to_string(),
+        pos: (7, 12),
+        length: 10,
+        ..Default::default()
+    });
+    
+    // Select both fields
+    editor.select_all_fields();
+    
+    // Enable grid snap with size 5
+    editor.enable_snap_to_grid(5);
+    
+    // Align to grid
+    let count = editor.align_selected_to_grid();
+    assert_eq!(count, 2);
+    
+    // Check that fields are now aligned to grid
+    // (2, 3) with grid 5: row 2 -> 1 (2/5=0.4 rounds to 0, *5=0, clamp to 1), col 3 -> 5 (3/5=0.6 rounds to 1, *5=5)
+    // (7, 12) with grid 5: row 7 -> 5 (7/5=1.4 rounds to 1, *5=5), col 12 -> 10 (12/5=2.4 rounds to 2, *5=10)
+    assert_eq!(editor.map.fields[0].pos, (1, 5));
+    assert_eq!(editor.map.fields[1].pos, (5, 10));
+}
+
+#[test]
+fn test_set_grid_size() {
+    let mut editor = BmsEditor::new();
+    
+    editor.set_grid_size(10);
+    assert_eq!(editor.get_grid_size(), 10);
+    
+    // Grid size cannot be 0
+    editor.set_grid_size(0);
+    assert_eq!(editor.get_grid_size(), 1);
+}
+
+#[test]
+fn test_toggle_snap_to_grid() {
+    let mut editor = BmsEditor::new();
+    
+    assert!(!editor.is_snap_to_grid_enabled());
+    
+    editor.toggle_snap_to_grid();
+    assert!(editor.is_snap_to_grid_enabled());
+    
+    editor.toggle_snap_to_grid();
+    assert!(!editor.is_snap_to_grid_enabled());
+}

@@ -90,6 +90,10 @@ pub struct BmsEditor {
     pub mode: EditorMode,
     pub history: EditHistory,
     pub clipboard: Vec<BmsField>,
+    /// Grid size for snap-to-grid functionality (0 = no grid snapping)
+    pub grid_size: u16,
+    /// Snap to grid during field operations
+    pub snap_to_grid: bool,
 }
 
 /// Mode de l'editeur
@@ -130,6 +134,8 @@ impl BmsEditor {
             mode: EditorMode::Navigate,
             history: EditHistory::new(100),
             clipboard: Vec::new(),
+            grid_size: 1, // Default grid size of 1 (no snapping if snap_to_grid is false)
+            snap_to_grid: false,
         }
     }
     
@@ -144,6 +150,8 @@ impl BmsEditor {
             mode: EditorMode::Navigate,
             history: EditHistory::new(100),
             clipboard: Vec::new(),
+            grid_size: 1,
+            snap_to_grid: false,
         }
     }
     
@@ -410,6 +418,72 @@ impl BmsEditor {
         } else {
             Vec::new()
         }
+    }
+    
+    /// Snap a position to the grid
+    /// Uses rounding to nearest grid point, ensuring positions are at least 1
+    pub fn snap_to_grid(&self, pos: (u16, u16)) -> (u16, u16) {
+        if !self.snap_to_grid || self.grid_size == 0 || self.grid_size == 1 {
+            return pos;
+        }
+        
+        let grid = self.grid_size as f32;
+        let row = ((pos.0 as f32 / grid).round() * grid) as u16;
+        let col = ((pos.1 as f32 / grid).round() * grid) as u16;
+        
+        // Ensure positions are at least 1 (BMS is 1-indexed)
+        (row.max(1), col.max(1))
+    }
+    
+    /// Enable snap to grid
+    pub fn enable_snap_to_grid(&mut self, grid_size: u16) {
+        self.grid_size = grid_size.max(1);
+        self.snap_to_grid = true;
+    }
+    
+    /// Disable snap to grid
+    pub fn disable_snap_to_grid(&mut self) {
+        self.snap_to_grid = false;
+    }
+    
+    /// Toggle snap to grid
+    pub fn toggle_snap_to_grid(&mut self) {
+        self.snap_to_grid = !self.snap_to_grid;
+    }
+    
+    /// Set grid size
+    pub fn set_grid_size(&mut self, size: u16) {
+        self.grid_size = size.max(1);
+    }
+    
+    /// Get current grid size
+    pub fn get_grid_size(&self) -> u16 {
+        self.grid_size
+    }
+    
+    /// Check if snap to grid is enabled
+    pub fn is_snap_to_grid_enabled(&self) -> bool {
+        self.snap_to_grid
+    }
+    
+    /// Align selected fields to a grid
+    pub fn align_selected_to_grid(&mut self) -> usize {
+        if !self.snap_to_grid || self.grid_size == 0 {
+            return 0;
+        }
+        
+        let indices = self.get_selected_indices();
+        for idx in &indices {
+            let old_field = self.map.fields[*idx].clone();
+            let snapped_pos = self.snap_to_grid(self.map.fields[*idx].pos);
+            self.map.fields[*idx].pos = snapped_pos;
+            self.history.push(EditOperation::MoveField {
+                field_index: *idx,
+                old_pos: old_field.pos,
+                new_pos: snapped_pos,
+            });
+        }
+        indices.len()
     }
     
     /// Selectionner une plage de champs de start a end (inclus)
