@@ -522,6 +522,11 @@ impl InsertableObject {
             field.height = Some(5);  // Default height for ASCII art
         }
         
+        // Set Box-specific properties
+        if matches!(self, InsertableObject::Box) {
+            field.height = Some(5);  // Default height for Box
+        }
+        
         field
     }
 }
@@ -2428,12 +2433,21 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                 let field_col = field_col as usize;
                 let field_end_col = field_col + field.length as usize - 1;
                 
-                if grid_row + 1 == field_row && col >= field_col && col <= field_end_col {
+                // Check if this cell is within the field's area (considering height for multi-row fields)
+                let field_end_row = if let Some(height) = field.height {
+                    field_row + height as usize - 1
+                } else {
+                    field_row
+                };
+                
+                if (grid_row + 1 >= field_row && grid_row + 1 <= field_end_row) && col >= field_col && col <= field_end_col {
                     // Determine the character based on field type and position within field
                     let field_start = field_col;
                     let field_end = field_end_col;
                     let is_first_col = col == field_start;
                     let is_last_col = col == field_end;
+                    let is_first_row = grid_row + 1 == field_row;
+                    let is_last_row = grid_row + 1 == field_end_row;
                     
                     c = if *is_preview {
                         // Preview fields use special characters
@@ -2484,29 +2498,44 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             }
                         } else {
                             // Regular field type handling
-                            c = match field.field_type {
-                                FieldType::Map => {
-                                    if is_first_col { '┏' } else if is_last_col { '┓' } else { '━' }
-                                }
-                                FieldType::Field => {
-                                    if field.attrb.contains(&FieldAttribute::Prot) {
-                                        if is_first_col { '╭' } else if is_last_col { '╮' } else { '─' }
-                                    } else if field.attrb.contains(&FieldAttribute::Num) {
-                                        if is_first_col { '[' } else if is_last_col { ']' } else { '═' }
-                                    } else if field.attrb.contains(&FieldAttribute::Alph) || field.attrb.contains(&FieldAttribute::AlphaNum) {
-                                        if is_first_col { '⟦' } else if is_last_col { '⟧' } else { '─' }
-                                    } else {
+                            // For multi-row fields like Box, use proper box-drawing characters
+                            let is_box_like = field.name == "BOX" || matches!(field.field_type, FieldType::Group);
+                            
+                            c = if is_box_like && field.height.is_some() {
+                                // Multi-row box/fieldset rendering
+                                if is_first_row && is_first_col { '┌' }
+                                else if is_first_row && is_last_col { '┐' }
+                                else if is_last_row && is_first_col { '└' }
+                                else if is_last_row && is_last_col { '┘' }
+                                else if is_first_row || is_last_row { '─' }
+                                else if is_first_col || is_last_col { '│' }
+                                else { ' ' }
+                            } else {
+                                // Single-row field handling
+                                match field.field_type {
+                                    FieldType::Map => {
+                                        if is_first_col { '┏' } else if is_last_col { '┓' } else { '━' }
+                                    }
+                                    FieldType::Field => {
+                                        if field.attrb.contains(&FieldAttribute::Prot) {
+                                            if is_first_col { '╭' } else if is_last_col { '╮' } else { '─' }
+                                        } else if field.attrb.contains(&FieldAttribute::Num) {
+                                            if is_first_col { '[' } else if is_last_col { ']' } else { '═' }
+                                        } else if field.attrb.contains(&FieldAttribute::Alph) || field.attrb.contains(&FieldAttribute::AlphaNum) {
+                                            if is_first_col { '⟦' } else if is_last_col { '⟧' } else { '─' }
+                                        } else {
+                                            if is_first_col { '┌' } else if is_last_col { '┐' } else { '─' }
+                                        }
+                                    }
+                                    FieldType::Literal => {
+                                        if is_first_col { '«' } else if is_last_col { '»' } else { '─' }
+                                    }
+                                    FieldType::Group => {
                                         if is_first_col { '┌' } else if is_last_col { '┐' } else { '─' }
                                     }
-                                }
-                                FieldType::Literal => {
-                                    if is_first_col { '«' } else if is_last_col { '»' } else { '─' }
-                                }
-                                FieldType::Group => {
-                                    if is_first_col { '┌' } else if is_last_col { '┐' } else { '─' }
-                                }
-                                _ => {
-                                    if is_first_col { '[' } else if is_last_col { ']' } else { '-' }
+                                    _ => {
+                                        if is_first_col { '[' } else if is_last_col { ']' } else { '-' }
+                                    }
                                 }
                             };
                             c

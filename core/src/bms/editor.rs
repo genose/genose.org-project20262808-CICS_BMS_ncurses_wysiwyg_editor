@@ -202,13 +202,16 @@ impl BmsEditor {
             let old_pos = self.map.fields[index].pos;
             let field_type = self.map.fields[index].field_type.clone();
             let field_name = self.map.fields[index].name.clone();
+            let field_height = self.map.fields[index].height;
+            let field_length = self.map.fields[index].length;
             
             // Calculate the offset
             let offset_row = new_pos.0 as i32 - old_pos.0 as i32;
             let offset_col = new_pos.1 as i32 - old_pos.1 as i32;
             
-            // If this is a Group/Fieldset, move all child fields with the same grp_name first
+            // If this is a Group/Fieldset or Box, move all child fields within the container
             if field_type == FieldType::Group {
+                // For Group, move all fields with matching grp_name
                 for (child_idx, child_field) in self.map.fields.iter_mut().enumerate() {
                     if child_idx != index && child_field.grp_name.as_ref() == Some(&field_name) {
                         let old_child_pos = child_field.pos;
@@ -223,6 +226,34 @@ impl BmsEditor {
                             old_pos: old_child_pos, 
                             new_pos: new_child_pos 
                         });
+                    }
+                }
+            } else if field_name == "BOX" && field_height.is_some() {
+                // For Box, move all fields that are positioned within its area
+                let box_start_row = old_pos.0;
+                let box_end_row = old_pos.0 + field_height.unwrap_or(1) - 1;
+                let box_start_col = old_pos.1;
+                let box_end_col = old_pos.1 + field_length - 1;
+                
+                for (child_idx, child_field) in self.map.fields.iter_mut().enumerate() {
+                    if child_idx != index {
+                        let child_pos = child_field.pos;
+                        // Check if child is within the Box's area
+                        if child_pos.0 >= box_start_row && child_pos.0 <= box_end_row &&
+                           child_pos.1 >= box_start_col && child_pos.1 <= box_end_col {
+                            let old_child_pos = child_field.pos;
+                            let new_child_pos = (
+                                (old_child_pos.0 as i32 + offset_row).max(1) as u16,
+                                (old_child_pos.1 as i32 + offset_col).max(1) as u16,
+                            );
+                            child_field.pos = new_child_pos;
+                            // Record history for each child move
+                            self.history.push(EditOperation::MoveField { 
+                                field_index: child_idx, 
+                                old_pos: old_child_pos, 
+                                new_pos: new_child_pos 
+                            });
+                        }
                     }
                 }
             }
