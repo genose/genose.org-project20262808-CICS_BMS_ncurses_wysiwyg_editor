@@ -618,6 +618,7 @@ struct App {
     // Pour le mode edit properties
     edit_properties_field: Option<BmsField>,
     edit_properties_index: usize,
+    edit_properties_scroll_offset: usize,
     // Pour le mode color picker
     selected_color: Option<BmsColor>,
     // Pour le mode attribute picker
@@ -748,6 +749,7 @@ impl App {
             pending_position: (0, 0),
             edit_properties_field: None,
             edit_properties_index: 0,
+            edit_properties_scroll_offset: 0,
             selected_color: None,
             selected_attribute: None,
             save_path: String::new(),
@@ -1411,6 +1413,7 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
                 let field = app.editor.map.fields[idx].clone();
                 app.edit_properties_field = Some(field);
                 app.edit_properties_index = 0;
+                app.edit_properties_scroll_offset = 0;
                 app.mode = AppMode::EditProperties;
                 app.set_message("Edit properties - Enter to save");
             }
@@ -1903,11 +1906,44 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
             KeyCode::Up => {
                 if app.edit_properties_index > 0 {
                     app.edit_properties_index -= 1;
+                    // Scroll up if index is at or above scroll offset
+                    if app.edit_properties_index < app.edit_properties_scroll_offset {
+                        app.edit_properties_scroll_offset = app.edit_properties_index;
+                    }
                 }
             }
             KeyCode::Down => {
                 if app.edit_properties_index + 1 < properties.len() {
                     app.edit_properties_index += 1;
+                    // Scroll down if index is near bottom
+                    if app.edit_properties_index >= app.edit_properties_scroll_offset + 18 {
+                        app.edit_properties_scroll_offset = app.edit_properties_index.saturating_sub(17);
+                    }
+                }
+            }
+            KeyCode::PageUp => {
+                if app.edit_properties_scroll_offset > 0 {
+                    let step = 10.min(app.edit_properties_scroll_offset);
+                    app.edit_properties_scroll_offset = app.edit_properties_scroll_offset.saturating_sub(step);
+                    // Keep index visible
+                    if app.edit_properties_index < app.edit_properties_scroll_offset {
+                        app.edit_properties_index = app.edit_properties_scroll_offset;
+                    } else if app.edit_properties_index > app.edit_properties_scroll_offset + 14 {
+                        app.edit_properties_index = (app.edit_properties_scroll_offset + 14).min(properties.len().saturating_sub(1));
+                    }
+                }
+            }
+            KeyCode::PageDown => {
+                let max_scroll = properties.len().saturating_sub(15);
+                if app.edit_properties_scroll_offset < max_scroll {
+                    let step = 10.min(max_scroll - app.edit_properties_scroll_offset);
+                    app.edit_properties_scroll_offset = (app.edit_properties_scroll_offset + step).min(max_scroll);
+                    // Keep index visible
+                    if app.edit_properties_index < app.edit_properties_scroll_offset {
+                        app.edit_properties_index = app.edit_properties_scroll_offset;
+                    } else if app.edit_properties_index < app.edit_properties_scroll_offset + 14 && app.edit_properties_index + 10 < properties.len() {
+                        app.edit_properties_index = (app.edit_properties_scroll_offset + 14).min(properties.len().saturating_sub(1));
+                    }
                 }
             }
             KeyCode::Char('+') | KeyCode::Right => {
@@ -3617,7 +3653,7 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
     };
     
     let block = Block::default()
-        .title(" Edit Properties [Up/Down:Nav|+/-:Modify|Enter:Save|Esc:Cancel|Live Preview]")
+        .title(" Edit Properties [Up/Down:Nav|PgUp/PgDn:Scroll|+/-:Modify|Enter:Save|Esc:Cancel]")
         .borders(Borders::ALL);
     f.render_widget(block, panel_area);
     
@@ -3633,8 +3669,15 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
         let properties = get_properties_for_field(field);
         let mut lines = Vec::new();
         
-        // Add each property to the lines
-        for (i, prop) in properties.iter().enumerate() {
+        let visible_height = inner.height as usize;
+        let max_visible_items = visible_height.saturating_sub(6); // Reserve space for help text + scrollbar
+        
+        // Only render visible properties based on scroll offset
+        let start_idx = app.edit_properties_scroll_offset;
+        let end_idx = (start_idx + max_visible_items).min(properties.len());
+        
+        for i in start_idx..end_idx {
+            let prop = &properties[i];
             let is_selected = i == app.edit_properties_index;
             let display_name = prop.display_name();
             let value = prop.get_value(field);
@@ -3645,8 +3688,8 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
                 Style::default().fg(TuiColor::White)
             };
             
-            // Group properties with headers
-            if i == 0 || is_property_group_start(i, &properties) {
+            // Group properties with headers (only for first visible or when group starts)
+            if i == start_idx || is_property_group_start(i, &properties) {
                 lines.push(Line::from(format!("> {} ", display_name).yellow()));
             } else {
                 lines.push(Line::from(" "));
@@ -3654,10 +3697,26 @@ fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
             lines.push(Line::from(Span::styled(format!("  {}: {} ", display_name, value), style)));
         }
         
+        // Add scrollbar indicator
+        if properties.len() > max_visible_items {
+            let max_scroll = properties.len().saturating_sub(max_visible_items);
+            let scroll_percent = if max_scroll > 0 {
+                (app.edit_properties_scroll_offset as f32 / max_scroll as f32 * 100.0).clamp(0.0, 100.0)
+            } else {
+                0.0
+            };
+            let scrollbar_width = 10;
+            let filled = (scroll_percent / 100.0 * scrollbar_width as f32).round() as usize;
+            let empty = scrollbar_width - filled;
+            let scrollbar = format!("▮{}{}", "█".repeat(filled), "░".repeat(empty));
+            lines.push(Line::from(format!("{}", scrollbar).dim()));
+        }
+        
         // Add help text
         lines.extend(vec![
             Line::from(""),
             Line::from("Up/Down: Navigate".dim()),
+            Line::from("PgUp/PgDn: Scroll".dim()),
             Line::from(r#"+/- : Modify"#.dim()),
             Line::from("Enter: Save".dim()),
             Line::from("Esc: Cancel".dim()),
