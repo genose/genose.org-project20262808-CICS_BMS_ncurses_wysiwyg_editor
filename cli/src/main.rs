@@ -3352,9 +3352,15 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         .block(Block::default().borders(Borders::NONE));
     f.render_widget(mode, status_layout[0]);
     
-    // Message
+    // Message and cursor position
     let message_text = app.message.as_deref().unwrap_or("");
-    let message = Paragraph::new(message_text)
+    let cursor_info = format!(" Row:{} Col:{} ", app.editor.cursor_pos.0, app.editor.cursor_pos.1);
+    let status_text = if message_text.is_empty() {
+        cursor_info
+    } else {
+        format!("{}{}", cursor_info, message_text)
+    };
+    let message = Paragraph::new(status_text)
         .style(Style::default().fg(TuiColor::Red))
         .block(Block::default().borders(Borders::NONE));
     f.render_widget(message, status_layout[1]);
