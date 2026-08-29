@@ -3137,6 +3137,30 @@ fn render_insert_position_dialog(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(paragraph, inner);
 }
 
+/// Minimum height per field type
+/// Fieldset/Group requires minimum 3 rows (first line = title, last line = border, middle = content)
+/// ASCII Art requires minimum 1 row
+fn get_min_height(field_type: &FieldType) -> u16 {
+    match field_type {
+        FieldType::Group => 3,  // Fieldset requires 3 minimum
+        FieldType::Map => 1,
+        FieldType::Field => 1,
+        FieldType::Literal => 1,
+        FieldType::Attribute => 1,
+        FieldType::Symbolic => 1,
+        // BMS statement types - most don't need height
+        FieldType::DFHMSD | FieldType::DFHMDF | FieldType::DFHMDI | 
+        FieldType::DFHMDA | FieldType::DFHMND | FieldType::DFHMNT | 
+        FieldType::DFHMDC | FieldType::DFHMDL => 1,
+        // Physical vs Symbolic
+        FieldType::PhysicalMap | FieldType::SymbolicMap | FieldType::MapSet => 1,
+        // Special field types
+        FieldType::InputOnly | FieldType::OutputOnly | FieldType::InputOutput => 1,
+        FieldType::SymbolicMap | FieldType::PhysicalMap => 1,
+        _ => 1,  // Default minimum height
+    }
+}
+
 /// Property types for edit properties panel
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum PropertyType {
@@ -3374,10 +3398,11 @@ impl PropertyType {
                 });
             },
             PropertyType::Height => {
+                let min_height = get_min_height(&field.field_type);
                 field.height = Some(if increase {
-                    field.height.unwrap_or(1) + 1
+                    field.height.unwrap_or(min_height) + 1
                 } else {
-                    (field.height.unwrap_or(1)).saturating_sub(1)
+                    (field.height.unwrap_or(min_height)).saturating_sub(1).max(min_height)
                 });
             },
             PropertyType::FieldsetTitle => {
@@ -3390,10 +3415,11 @@ impl PropertyType {
                 });
             },
             PropertyType::FieldsetHeight => {
+                let min_height = get_min_height(&field.field_type).max(3);  // Fieldset always has min 3
                 field.fieldset_height = Some(if increase {
-                    field.fieldset_height.unwrap_or(3) + 1
+                    field.fieldset_height.unwrap_or(min_height) + 1
                 } else {
-                    (field.fieldset_height.unwrap_or(3)).saturating_sub(1).max(3)
+                    (field.fieldset_height.unwrap_or(min_height)).saturating_sub(1).max(min_height)
                 });
             },
             PropertyType::FieldsetDecoration => {
