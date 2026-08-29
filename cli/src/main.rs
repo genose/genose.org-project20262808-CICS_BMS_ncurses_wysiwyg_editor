@@ -522,9 +522,9 @@ impl InsertableObject {
             field.height = Some(5);  // Default height for ASCII art
         }
         
-        // Set Box-specific properties
+        // Set Box-specific properties (same as Group - minimum 3 rows for fieldset)
         if matches!(self, InsertableObject::Box) {
-            field.height = Some(5);  // Default height for Box
+            field.height = Some(3);  // Minimum height for Box as fieldset
         }
         
         // Set Group-specific properties (minimum 3 rows for fieldset)
@@ -2503,30 +2503,20 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                             }
                         } else {
                             // Regular field type handling
-                            // For multi-row fields, use proper box-drawing characters
-                            let is_box = field.name == "BOX";
-                            let is_group = matches!(field.field_type, FieldType::Group);
+                            // For multi-row fieldset-like objects (Box and Group), use fieldset rendering
+                            let is_fieldset = (field.name == "BOX" && field.height.is_some()) || 
+                                            (matches!(field.field_type, FieldType::Group) && field.height.is_some());
                             
-                            c = if is_box && field.height.is_some() {
-                                // Box rendering - full border
-                                if is_first_row && is_first_col { '┌' }
-                                else if is_first_row && is_last_col { '┐' }
-                                else if is_last_row && is_first_col { '└' }
-                                else if is_last_row && is_last_col { '┘' }
-                                else if is_first_row || is_last_row { '─' }
-                                else if is_first_col || is_last_col { '│' }
-                                else { ' ' }
-                            } else if is_group && field.height.is_some() {
-                                // Group/Fieldset rendering with title in first row
-                                // First row format: ┌─ title ─┐
+                            c = if is_fieldset {
+                                // Fieldset rendering: first line = decoration+title+decoration, middle = decoration, last = decoration
                                 if is_first_row {
+                                    // First row: ┌ title ┐
                                     if is_first_col {
                                         '┌'
                                     } else if is_last_col {
                                         '┐'
                                     } else {
                                         // In the title row, check if we should display title text
-                                        // Display title character if available and not at border
                                         if let Some(title) = &field.title {
                                             let title_len = title.len();
                                             let field_width = (field_end_col - field_start + 1) as usize;
