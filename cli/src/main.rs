@@ -49,6 +49,36 @@ fn is_vscode_terminal() -> bool {
     term_program == "vscode" || term_program.contains("vscode")
 }
 
+/// Convert BmsColor enum to TuiColor
+fn bms_color_to_tui(color: &BmsColor) -> TuiColor {
+    use BmsColor::*;
+    match color {
+        Black => TuiColor::Black,
+        Blue => TuiColor::Blue,
+        Green => TuiColor::Green,
+        Cyan => TuiColor::Cyan,
+        Red => TuiColor::Red,
+        Magenta => TuiColor::Magenta,
+        Yellow => TuiColor::Yellow,
+        White => TuiColor::White,
+        Turquoise => TuiColor::Cyan,
+        Pink => TuiColor::Magenta,
+        Orange => TuiColor::Rgb(255, 165, 0),
+        Purple => TuiColor::Rgb(128, 0, 128),
+        Gray => TuiColor::Gray,
+        LightGreen => TuiColor::LightGreen,
+        LightBlue => TuiColor::LightBlue,
+        LightCyan => TuiColor::LightCyan,
+        LightRed => TuiColor::LightRed,
+        LightMagenta => TuiColor::LightMagenta,
+        LightYellow => TuiColor::LightYellow,
+        Neutral => TuiColor::White,
+        Custom(_) => TuiColor::White,
+        Default => TuiColor::White,
+        Unknown(_) => TuiColor::White,
+    }
+}
+
 /// Convert color string to TuiColor for ASCII art rendering
 fn color_string_to_tui(color_str: &Option<String>) -> TuiColor {
     if let Some(color) = color_str {
@@ -2419,20 +2449,30 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
                         }
                     }
                     
-                    // Use special style for preview fields (blinking or different color)
+                    // Use special style for preview fields (different color, no background)
                     if *is_preview {
-                        style = style.fg(TuiColor::Cyan).bg(TuiColor::DarkGray);
+                        style = style.fg(TuiColor::Cyan).underlined();
                     } else if is_selected {
-                        style = style.fg(TuiColor::Black).bg(TuiColor::Yellow);
+                        // Use border color if set, otherwise use yellow foreground
+                        if let Some(border_color) = &field.border_color {
+                            style = style.fg(bms_color_to_tui(border_color)).bold();
+                        } else {
+                            style = style.fg(TuiColor::Yellow).bold();
+                        }
                     } else {
-                        match field.color {
-                            Some(BmsColor::Blue) => style = style.fg(TuiColor::Blue),
-                            Some(BmsColor::Green) => style = style.fg(TuiColor::Green),
-                            Some(BmsColor::Red) => style = style.fg(TuiColor::Red),
-                            Some(BmsColor::Yellow) => style = style.fg(TuiColor::Yellow),
-                            Some(BmsColor::Cyan) => style = style.fg(TuiColor::Cyan),
-                            Some(BmsColor::Magenta) => style = style.fg(TuiColor::Magenta),
-                            _ => style = style.fg(TuiColor::White),
+                        // Use border color if set as foreground, otherwise use field color
+                        if let Some(border_color) = &field.border_color {
+                            style = style.fg(bms_color_to_tui(border_color));
+                        } else {
+                            match field.color {
+                                Some(BmsColor::Blue) => style = style.fg(TuiColor::Blue),
+                                Some(BmsColor::Green) => style = style.fg(TuiColor::Green),
+                                Some(BmsColor::Red) => style = style.fg(TuiColor::Red),
+                                Some(BmsColor::Yellow) => style = style.fg(TuiColor::Yellow),
+                                Some(BmsColor::Cyan) => style = style.fg(TuiColor::Cyan),
+                                Some(BmsColor::Magenta) => style = style.fg(TuiColor::Magenta),
+                                _ => style = style.fg(TuiColor::White),
+                            }
                         }
                     }
                     break;
