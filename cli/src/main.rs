@@ -1992,6 +1992,12 @@ fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
                     app.image_import_directory = current_dir;
                     app.image_import_files = scan_directory_files(&app.image_import_directory, true); // Show image files by default
                     app.image_import_selected_index = 0;
+                    // Ensure index is valid if no files found
+                    if app.image_import_files.is_empty() {
+                        app.image_import_selected_index = 0;
+                    } else {
+                        app.image_import_selected_index = app.image_import_selected_index.min(app.image_import_files.len() - 1);
+                    }
                     app.image_import_error = None;
                     app.image_import_show_all_files = false;
                     app.selected_object_for_add = None;
@@ -3240,7 +3246,6 @@ fn render_image_import_dialog(f: &mut Frame, app: &App, area: Rect) {
     // Display file list
     if !app.image_import_files.is_empty() {
         let visible_files = &app.image_import_files;
-        let start_idx = app.image_import_selected_index.min(visible_files.len().saturating_sub(1));
         
         // Show files in a scrollable list
         for (idx, filename) in visible_files.iter().enumerate() {
@@ -3248,7 +3253,7 @@ fn render_image_import_dialog(f: &mut Frame, app: &App, area: Rect) {
                 break; // Stop if we run out of space
             }
             
-            let is_selected = idx == app.image_import_selected_index;
+            let is_selected = idx == app.image_import_selected_index && app.image_import_selected_index < visible_files.len();
             let file_style = if is_selected {
                 Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
             } else {
@@ -3435,10 +3440,10 @@ fn handle_image_import_mode(app: &mut App, key: event::KeyEvent) {
                 } else {
                     app.image_import_selected_index = app.image_import_files.len() - 1;
                 }
+                // Clamp index to valid range
+                app.image_import_selected_index = app.image_import_selected_index.min(app.image_import_files.len().saturating_sub(1));
                 // Update the path to show the selected file
-                if app.image_import_selected_index < app.image_import_files.len() {
-                    app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
-                }
+                app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
                 app.image_import_error = None;
             }
         }
@@ -3449,10 +3454,10 @@ fn handle_image_import_mode(app: &mut App, key: event::KeyEvent) {
                 } else {
                     app.image_import_selected_index = 0;
                 }
+                // Clamp index to valid range
+                app.image_import_selected_index = app.image_import_selected_index.min(app.image_import_files.len().saturating_sub(1));
                 // Update the path to show the selected file
-                if app.image_import_selected_index < app.image_import_files.len() {
-                    app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
-                }
+                app.image_import_path = app.image_import_files[app.image_import_selected_index].clone();
                 app.image_import_error = None;
             }
         }
@@ -3464,6 +3469,10 @@ fn handle_image_import_mode(app: &mut App, key: event::KeyEvent) {
                 app.image_import_files = scan_directory_files(&app.image_import_directory, !app.image_import_show_all_files);
             }
             app.image_import_selected_index = 0;
+            // Ensure index is valid after filter change
+            if !app.image_import_files.is_empty() {
+                app.image_import_selected_index = app.image_import_selected_index.min(app.image_import_files.len() - 1);
+            }
             app.image_import_error = None;
         }
         KeyCode::Char(c) => {
