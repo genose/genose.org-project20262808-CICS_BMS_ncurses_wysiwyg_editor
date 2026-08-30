@@ -175,6 +175,24 @@ OBJECTS_DEFINITIONS = {
             Image = 5,
             Line = 1,
             Fieldset = 3
+        },
+        min = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 3,
+            Image = 5,
+            Line = 1,
+            Fieldset = 3
+        },
+        max = {
+            Field = 80,
+            Literal = 80,
+            ProtectedLiteral = 80,
+            BooleanField = 3,
+            Image = 40,
+            Line = 1,
+            Fieldset = 80
         }, --  Default height for each field type
         initial = nil, -- Default height for the initial field type
         edited = nil
@@ -198,6 +216,24 @@ OBJECTS_DEFINITIONS = {
             Image = 40,
             Line = 40,
             Fieldset = 40
+        },
+        min = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 10,
+            Image = 1,
+            Line = 1,
+            Fieldset = 3
+        },
+        max = {
+            Field = 255,
+            Literal = 255,
+            ProtectedLiteral = 255,
+            BooleanField = 255,
+            Image = 255,
+            Line = 255,
+            Fieldset = 255
         }, -- Default length for each field type
         initial = nil, -- Default length for the initial field type
         edited = nil -- Length after editing
@@ -946,16 +982,16 @@ OBJECTS_DEFINITIONS = {
             dash = "─"
         },
         default = {
-            Field = "space",
-            Literal = "space",
-            ProtectedLiteral = "space",
-            BooleanField = "space",
-            Image = "space",
-            Line = "dash",
-            Fieldset = "dash"
+            Field = " ",
+            Literal = " ",
+            ProtectedLiteral = " ",
+            BooleanField = " ",
+            Image = " ",
+            Line = "─",
+            Fieldset = "─"
         },
-        initial = "dash",
-        edited = "dash"
+        initial = "─",
+        edited = "─"
     },
 
     -- Caractère de remplissage pour les champs vides (ex: "_" pour Field)
@@ -966,13 +1002,13 @@ OBJECTS_DEFINITIONS = {
             dash = "─"
         },
         default = {
-            Field = "underscore",
-            Literal = "space",
-            ProtectedLiteral = "space",
-            BooleanField = "space",
-            Image = "space",
-            Line = "dash",
-            Fieldset = "space"
+            Field = "_",
+            Literal = " ",
+            ProtectedLiteral = " ",
+            BooleanField = " ",
+            Image = " ",
+            Line = "─",
+            Fieldset = " "
         },
         initial = nil,
         edited = nil
@@ -1940,13 +1976,31 @@ OBJECTS_DEFINITIONS = {
         -- line 1 to N-1: reserved for border left/right + content/value
         -- line N: reserved for border bottom + footer
         default = {
+            Field = function(obj)
+                return render_bordered_field(obj)
+            end,
+            Literal = function(obj)
+                return render_bordered_field(obj)
+            end,
+            ProtectedLiteral = function(obj)
+                return render_bordered_field(obj)
+            end,
+            BooleanField = function(obj)
+                return render_bordered_field(obj)
+            end,
             Image = function(obj)
                 -- Display ASCII art from option_value.ascii_code
                 local ascii = obj.field_initial.initial.option_value.ascii_code
                 if ascii and type(ascii) == "table" then
                     return table.concat(ascii, "\n")
                 end
-                return "[Image]"
+                return render_bordered_field(obj, "[Image]")
+            end,
+            Line = function(obj)
+                return render_line(obj)
+            end,
+            Fieldset = function(obj)
+                return render_fieldset(obj)
             end
         }, -- Default visual representation for each field type
         initial = nil, -- Default visual representation for the initial field type
@@ -1996,6 +2050,207 @@ OBJECTS_DEFINITIONS.field_border = {
     initial = nil, -- Default border for the initial field type
     edited = nil -- Border after editing
 }
+
+-- ===== FONCTIONS HELPERS POUR LE RENDU =====
+
+-- Helper: Get the current value for a property (edited if set, otherwise initial)
+local function get_property(obj, prop_name)
+    local prop = obj[prop_name]
+    if not prop then return nil end
+    if type(prop) == "table" and prop.edited ~= nil then
+        return prop.edited
+    elseif type(prop) == "table" and prop.initial ~= nil then
+        return prop.initial
+    else
+        return prop
+    end
+end
+
+-- Helper: Get border characters for a given style
+local function get_border_chars(obj)
+    local border_style = get_property(obj, "field_border_style") or "none"
+    local obj_type = get_property(obj, "field_type") or "Field"
+    local chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default[obj_type]
+    if chars and chars[border_style] then
+        return chars[border_style]
+    end
+    -- Fallback to single style
+    if chars and chars.single then
+        return chars.single
+    end
+    -- Ultimate fallback
+    return {
+        top_left = "+", top = "-", top_right = "+",
+        left = "|", right = "|",
+        bottom_left = "+", bottom = "-", bottom_right = "+"
+    }
+end
+
+-- Helper: Render a simple bordered field (Field, Literal, ProtectedLiteral, BooleanField, Image)
+function render_bordered_field(obj, custom_content)
+    local height = get_property(obj, "field_height") or 3
+    local width = get_property(obj, "field_width") or 10
+    local border_style = get_property(obj, "field_border_style") or "none"
+    local border_chars = get_border_chars(obj)
+    local fill_char = get_property(obj, "field_fill_char") or " "
+    local obj_type = get_property(obj, "field_type") or "Field"
+    
+    -- Determine content
+    local content
+    if custom_content then
+        content = custom_content
+    elseif obj_type == "BooleanField" then
+        local initial_value = get_property(obj, "field_initial")
+        if initial_value and type(initial_value) == "table" then
+            content = initial_value.initial_value and "[X]" or "[ ]"
+        else
+            content = "[ ]"
+        end
+    else
+        local initial_value = get_property(obj, "field_initial")
+        if initial_value and type(initial_value) == "table" and initial_value.initial_value then
+            content = tostring(initial_value.initial_value)
+        else
+            content = ""
+        end
+    end
+    
+    local lines = {}
+    
+    -- If no border, just return content centered
+    if border_style == "none" then
+        if height >= 1 then
+            local line = string.rep(fill_char, width)
+            -- Try to center content in the line
+            if content and #content > 0 and #content <= width then
+                local padding = math.floor((width - #content) / 2)
+                line = string.rep(" ", padding) .. content .. string.rep(" ", width - padding - #content)
+            else
+                line = content or line
+            end
+            table.insert(lines, line)
+        end
+        return table.concat(lines, "\n")
+    end
+    
+    -- Top border
+    if height >= 1 then
+        local top_line = border_chars.top_left .. string.rep(border_chars.top, width) .. border_chars.top_right
+        table.insert(lines, top_line)
+    end
+    
+    -- Content area
+    local content_lines = {}
+    if content and #content > 0 then
+        -- Split content by newlines
+        for subline in content:gmatch("[^\n]+") do
+            table.insert(content_lines, subline)
+        end
+    else
+        table.insert(content_lines, "")
+    end
+    
+    -- Center content vertically
+    local content_height = #content_lines
+    local content_start = 1
+    if height > 2 then
+        content_start = math.floor((height - 1 - content_height) / 2) + 1
+    end
+    
+    for i = 1, height - 2 do
+        if i >= content_start and i < content_start + content_height then
+            local content_line = content_lines[i - content_start + 1]
+            local padding = width - #content_line
+            if padding > 0 then
+                local left_pad = math.floor(padding / 2)
+                local right_pad = padding - left_pad
+                content_line = string.rep(" ", left_pad) .. content_line .. string.rep(" ", right_pad)
+            end
+            -- Truncate if too long
+            content_line = content_line:sub(1, width)
+            -- Pad with fill_char if still too short
+            content_line = content_line .. string.rep(fill_char, width - #content_line)
+            table.insert(lines, border_chars.left .. content_line .. border_chars.right)
+        else
+            table.insert(lines, border_chars.left .. string.rep(fill_char, width) .. border_chars.right)
+        end
+    end
+    
+    -- Bottom border
+    if height >= 2 then
+        local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) .. border_chars.bottom_right
+        table.insert(lines, bottom_line)
+    end
+    
+    return table.concat(lines, "\n")
+end
+
+-- Helper: Render a Line (horizontal line)
+function render_line(obj)
+    local width = get_property(obj, "field_width") or 40
+    local border_style = get_property(obj, "field_border_style") or "none"
+    local border_chars = get_border_chars(obj)
+    local line_char = border_chars.top -- Use top border char for horizontal line
+    
+    if border_style == "none" then
+        return string.rep("-", width)
+    end
+    
+    return string.rep(line_char, width)
+end
+
+-- Helper: Render a Fieldset (container with title)
+function render_fieldset(obj)
+    local height = get_property(obj, "field_height") or 3
+    local width = get_property(obj, "field_width") or 40
+    local border_style = get_property(obj, "field_border_style") or "double"
+    local border_chars = get_border_chars(obj)
+    local fill_char = get_property(obj, "field_fill_char") or " "
+    local title = get_property(obj, "field_name") or get_property(obj, "field_initial")
+    
+    -- Get actual title
+    if title and type(title) == "table" then
+        title = title.initial or title.edited or "Fieldset"
+    else
+        title = "Fieldset"
+    end
+    
+    local lines = {}
+    
+    -- Top border with title
+    local title_fill = get_property(obj, "field_title_fill_char") or " "
+    if height >= 1 then
+        local title_str = " " .. title .. " "
+        local title_len = #title_str
+        local content_width = width - 2
+        
+        if title_len > content_width then
+            title_str = title_str:sub(1, content_width)
+            title_len = content_width
+        end
+        
+        local padding = content_width - title_len
+        local left_fill = math.floor(padding / 2)
+        local right_fill = padding - left_fill
+        title_str = string.rep(title_fill, left_fill) .. title_str .. string.rep(title_fill, right_fill)
+        
+        local top_line = border_chars.top_left .. title_str .. border_chars.top_right
+        table.insert(lines, top_line)
+    end
+    
+    -- Content area
+    for i = 1, height - 2 do
+        table.insert(lines, border_chars.left .. string.rep(fill_char, width) .. border_chars.right)
+    end
+    
+    -- Bottom border
+    if height >= 2 then
+        local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) .. border_chars.bottom_right
+        table.insert(lines, bottom_line)
+    end
+    
+    return table.concat(lines, "\n")
+end
 
 -- ===== CONSTRUCTEUR D'OBJETS =====
 function OBJECTS_DEFINITIONS.new(obj_type, overrides)
@@ -2052,6 +2307,7 @@ function OBJECTS_DEFINITIONS.new(obj_type, overrides)
 
     return self
 end
+
 
 -- ===== FONCTION DE RENDU GENÉRIQUE =====
 -- Rend n'importe quel objet (Field, Fieldset, etc.) selon ses propriétés
