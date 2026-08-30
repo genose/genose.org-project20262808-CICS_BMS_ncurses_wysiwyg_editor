@@ -347,16 +347,29 @@ typedef OBJECTS_DEFINITIONS={
         -- line 1 to N-1: reserved for border left/right + content/value
         -- line N: reserved for border bottom + footer
         
+        -- Helper function to get property value respecting the hierarchy: edited -> initial -> avail_initial[field_type]
+        property_value = function(prop, field_type)
+            if prop == nil then return nil end
+            local edited_val = (type(prop.edited) == "table" and prop.edited[field_type] or prop.edited)
+            if edited_val ~= nil then return edited_val end
+            local initial_val = (type(prop.initial) == "table" and prop.initial[field_type] or prop.initial)
+            if initial_val ~= nil then return initial_val end
+            if prop.avail_initial and prop.avail_initial[field_type] then
+                return prop.avail_initial[field_type]
+            end
+            return nil
+        end,
+        
         avail_default={
             ["Field"] = {
                 0 = nil,
                 1 = function(obj)
-                    local label = "[" .. (obj.field_name.initial or "Field") .. "]"
-                    local width = obj.field_width.initial or 10
-                    local fill_char = obj.field_fill_char.avail_initial[obj.field_type.initial] or
-                                     obj.field_fill_char.initial or "_"
-                    local value = obj.field_initial.initial_value or string.rep(fill_char, width - #label)
-                    local required_marker = obj.field_required.initial and (obj.field_required_marker.initial or "") or ""
+                    local label = "[" .. (obj.field_name.edited or obj.field_name.initial or obj.field_type.initial) .. "]"
+                    local width = obj.visual_representation.property_value(obj.field_width, obj.field_type.initial) or obj.field_width_min.avail_initial[obj.field_type.initial]
+                    local fill_char = obj.visual_representation.property_value(obj.field_fill_char, obj.field_type.initial)
+                    local initial_val = obj.visual_representation.property_value(obj.field_initial, obj.field_type.initial) or {initial_value = ""}
+                    local value = initial_val.initial_value or string.rep(fill_char, width - #label)
+                    local required_marker = obj.field_required.initial and obj.visual_representation.property_value(obj.field_required_marker, obj.field_type.initial) or ""
                     return label .. value .. required_marker
                 end,
                 2 = nil
@@ -364,30 +377,34 @@ typedef OBJECTS_DEFINITIONS={
             ["Literal"] = {
                 0 = nil,
                 1 = function(obj)
-                    return "[" .. (obj.field_name.initial or "Literal") .. "]" .. (obj.field_initial.initial_value or "Static Text")
+                    local initial_val = obj.visual_representation.property_value(obj.field_initial, obj.field_type.initial) or {initial_value = "Static Text"}
+                    return "[" .. (obj.field_name.edited or obj.field_name.initial or obj.field_type.initial) .. "]" .. initial_val.initial_value
                 end,
                 2 = nil
             },
             ["ProtectedLiteral"] = {
                 0 = nil,
                 1 = function(obj)
-                    local prefix = obj.field_protected.initial and "(Protected) " or ""
-                    return "[" .. (obj.field_name.initial or "ProtectedLiteral") .. "]" .. prefix .. (obj.field_initial.initial_value or "Text")
+                    local prefix = obj.field_protected.edited and "(Protected) " or obj.field_protected.initial and "(Protected) " or ""
+                    local initial_val = obj.visual_representation.property_value(obj.field_initial, obj.field_type.initial) or {initial_value = "Text"}
+                    return "[" .. (obj.field_name.edited or obj.field_name.initial or obj.field_type.initial) .. "]" .. prefix .. initial_val.initial_value
                 end,
                 2 = nil
             },
             ["BooleanField"] = {
                 0 = nil,
                 1 = function(obj)
-                    local checked = obj.field_initial.initial_value and "✓" or " "
-                    return "[ " .. checked .. " ] " .. (obj.field_name.initial or "Boolean")
+                    local initial_val = obj.visual_representation.property_value(obj.field_initial, obj.field_type.initial) or {initial_value = false}
+                    local checked = initial_val.initial_value and "✓" or " "
+                    return "[ " .. checked .. " ] " .. (obj.field_name.edited or obj.field_name.initial or obj.field_type.initial)
                 end,
                 2 = nil
             },
             ["Image"] = {
                 0 = nil,
                 1 = function(obj)
-                    local content = obj.field_initial.initial_value or {"[Image Placeholder]"}
+                    local initial_val = obj.visual_representation.property_value(obj.field_initial, obj.field_type.initial) or {initial_value = {"[Image Placeholder]"}}
+                    local content = initial_val.initial_value
                     if type(content) == "string" then content = {content} end
                     return table.concat(content, "\n")
                 end,
@@ -396,27 +413,26 @@ typedef OBJECTS_DEFINITIONS={
             ["Line"] = {
                 0 = nil,
                 1 = function(obj)
-                    local fill_char = obj.field_fill_char.avail_initial[obj.field_type.initial] or
-                                     obj.field_fill_char.initial or "─"
-                    return string.rep(fill_char, obj.field_width.initial or 40)
+                    local fill_char = obj.visual_representation.property_value(obj.field_fill_char, obj.field_type.initial)
+                    local width = obj.visual_representation.property_value(obj.field_width, obj.field_type.initial) or obj.field_width_min.avail_initial[obj.field_type.initial]
+                    return string.rep(fill_char, width)
                 end,
                 2 = nil
             },
             ["Fieldset"] = {
                 0 = function(obj)
-                    local title = obj.field_initial.initial_value or obj.field_name.initial or "Untitled"
-                    local prefix = obj.field_required.initial and (obj.field_title_prefix.avail_initial["Fieldset"] or "✱ ") or ""
-                    local align = obj.field_title_align.initial or "left"
-                    local width = obj.field_width.initial or 40
+                    local initial_val = obj.visual_representation.property_value(obj.field_initial, obj.field_type.initial) or {initial_value = "Untitled"}
+                    local title = initial_val.initial_value or obj.field_name.edited or obj.field_name.initial or obj.field_type.initial
+                    local prefix = obj.field_required.initial and obj.visual_representation.property_value(obj.field_title_prefix, obj.field_type.initial) or ""
+                    local align = obj.visual_representation.property_value(obj.field_title_align, obj.field_type.initial)
+                    local width = obj.visual_representation.property_value(obj.field_width, obj.field_type.initial) or obj.field_width_min.avail_initial[obj.field_type.initial]
                     
-                    local border_chars = obj.field_border_chars.avail_initial[obj.field_type.initial] or
-                                       obj.field_border_chars.initial
+                    local border_chars = obj.visual_representation.property_value(obj.field_border_chars, obj.field_type.initial)
                     local top_left = border_chars.top_left or "┌"
                     local top = border_chars.top or "─"
                     local top_right = border_chars.top_right or "┐"
                     
-                    local fill_char = obj.field_title_fill_char.avail_initial[obj.field_type.initial] or
-                                    obj.field_title_fill_char.initial or "─"
+                    local fill_char = obj.visual_representation.property_value(obj.field_title_fill_char, obj.field_type.initial)
                     
                     local title_block = "[" .. prefix .. title .. "]"
                     local padding_left, padding_right = 0, 0
@@ -432,13 +448,13 @@ typedef OBJECTS_DEFINITIONS={
                 end,
                 
                 1 = function(obj)
-                    local width = obj.field_width.initial or 40
-                    local border_chars = obj.field_border_chars.avail_initial[obj.field_type.initial] or
-                                       obj.field_border_chars.initial
+                    local width = obj.visual_representation.property_value(obj.field_width, obj.field_type.initial) or obj.field_width_min.avail_initial[obj.field_type.initial]
+                    local border_chars = obj.visual_representation.property_value(obj.field_border_chars, obj.field_type.initial)
                     local vert_char = border_chars.left or "│"
-                    local vertical_align = obj.field_vertical_align.initial or "top"
-                    local margin = obj.field_vertical_margin.initial or 0
-                    local available_lines = obj.field_height.initial[obj.field_type.initial] - 2 - margin
+                    local vertical_align = obj.visual_representation.property_value(obj.field_vertical_align, obj.field_type.initial)
+                    local margin = obj.visual_representation.property_value(obj.field_vertical_margin, obj.field_type.initial)
+                    local height = obj.visual_representation.property_value(obj.field_height, obj.field_type.initial) or obj.field_min_height.avail_initial[obj.field_type.initial]
+                    local available_lines = (height - 2 - margin)
                     
                     if obj.field_children and obj.field_children.initial and #obj.field_children.initial > 0 then
                         local child_lines = {}
@@ -495,17 +511,15 @@ typedef OBJECTS_DEFINITIONS={
                 end,
                 
                 2 = function(obj)
-                    local width = obj.field_width.initial or 40
-                    local border_chars = obj.field_border_chars.avail_initial[obj.field_type.initial] or
-                                       obj.field_border_chars.initial
+                    local width = obj.visual_representation.property_value(obj.field_width, obj.field_type.initial) or obj.field_width_min.avail_initial[obj.field_type.initial]
+                    local border_chars = obj.visual_representation.property_value(obj.field_border_chars, obj.field_type.initial)
                     local bottom_left = border_chars.bottom_left or "└"
                     local bottom = border_chars.bottom or "─"
                     local bottom_right = border_chars.bottom_right or "┘"
-                    local footer = obj.field_footer.initial or ""
+                    local footer = obj.visual_representation.property_value(obj.field_footer, obj.field_type.initial) or ""
                     
                     if footer ~= "" then
-                        local fill_char = obj.field_title_fill_char.avail_initial[obj.field_type.initial] or
-                                        obj.field_title_fill_char.initial or "─"
+                        local fill_char = obj.visual_representation.property_value(obj.field_title_fill_char, obj.field_type.initial)
                         local footer_padding = width - #footer - 2
                         return bottom_left .. string.rep(fill_char, footer_padding) .. " " .. footer .. " " .. bottom_right
                     else
@@ -576,7 +590,7 @@ function render_object(obj)
     end
     
     if #lines == 0 then
-        return "[" .. (obj.field_name.initial or type) .. "]"
+        return "[" .. (obj.field_name.edited or obj.field_name.initial or obj.field_type.initial) .. "]"
     end
     
     return table.concat(lines, "\n")
