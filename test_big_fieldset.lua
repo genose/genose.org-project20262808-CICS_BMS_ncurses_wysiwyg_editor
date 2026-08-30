@@ -1,7 +1,7 @@
 -- Test script for big-fieldset with visual rendering of ALL field types
 -- Tests the hierarchical data access pattern and visual representation after refactoring
 
-dofile('core/src/bms/OBJECTS-DEFINITIONS.lua')
+dofile('OBJECTS-DEFINITIONS.lua')
 
 print("=== VISUAL TEST: Big Fieldset with All Field Types ===\n")
 
