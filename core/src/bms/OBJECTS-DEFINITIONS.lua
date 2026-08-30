@@ -15,144 +15,207 @@
 -- Description : an instance of OBJECTS_DEFINITIONS handle initial value and editing value state, which allow less code and memory usage, and allow to easily manage the properties and attributes of each field type. The initial value represents the default state of the field, while the edited value represents the modified state of the field after user input or other changes. The initial and edited values can be used to determine the current state of the field, allowing for easy management of the properties and attributes of each field type.
 --     -- ***********************************************************
 -- All OBJECTS_DEFINITIONS Field have at least 3 row (field_height, field_height_min) and 3 col (field_width).
-
 -- 
 -- ***********************************************************
-OBJECTS_DEFINITIONS={
-    field_name={-- Name of the object
-        enum={
-            Field="Field",
-            Literal="Literal",
-            ProtectedLiteral="ProtectedLiteral",
-            BooleanField="BooleanField",
-            Image="Image",
-            Line="Line",
-            Fieldset="Fieldset"
+OBJECTS_DEFINITIONS = {
+    field_name = { -- Name of the object
+        enum = {
+            Field = "Field",
+            Literal = "Literal",
+            ProtectedLiteral = "ProtectedLiteral",
+            BooleanField = "BooleanField",
+            Image = "Image",
+            Line = "Line",
+            Fieldset = "Fieldset"
         },
-        default={Field="Field", Literal="Literal", ProtectedLiteral="ProtectedLiteral", BooleanField="BooleanField", Image="Image", Line="Line", Fieldset="Fieldset"},-- Available field names
-        initial=nil, -- Default field name
-        edited=nil, -- Field name after editing
+        default = {
+            Field = "Field",
+            Literal = "Literal",
+            ProtectedLiteral = "ProtectedLiteral",
+            BooleanField = "BooleanField",
+            Image = "Image",
+            Line = "Line",
+            Fieldset = "Fieldset"
+        }, -- Available field names
+        initial = nil, -- Default field name
+        edited = nil -- Field name after editing
     },
 
-    field_type={-- Type of the field, can be Field, Literal, ProtectedLiteral, BooleanField, Image, Line, Fieldset
-        enum={
-            Field="Field",
-            Literal="Literal",
-            ProtectedLiteral="ProtectedLiteral",
-            BooleanField="BooleanField",
-            Image="Image",
-            Line="Line",
-            Fieldset="Fieldset"
+    field_type = { -- Type of the field, can be Field, Literal, ProtectedLiteral, BooleanField, Image, Line, Fieldset
+        enum = {
+            Field = "Field",
+            Literal = "Literal",
+            ProtectedLiteral = "ProtectedLiteral",
+            BooleanField = "BooleanField",
+            Image = "Image",
+            Line = "Line",
+            Fieldset = "Fieldset"
         },
-        default={Field="Field", Literal="Literal", ProtectedLiteral="ProtectedLiteral", BooleanField="BooleanField", Image="Image", Line="Line", Fieldset="Fieldset"},-- Available field types    
-        initial=nil, -- Default field type
-        edited=nil,
+        default = {
+            Field = "Field",
+            Literal = "Literal",
+            ProtectedLiteral = "ProtectedLiteral",
+            BooleanField = "BooleanField",
+            Image = "Image",
+            Line = "Line",
+            Fieldset = "Fieldset"
+        }, -- Available field types    
+        initial = nil, -- Default field type
+        edited = nil
     },
 
-    field_min_height={-- Height of the field, can be any positive integer
-        enum={
-            Field=3,
-            Literal=3,
-            ProtectedLiteral=3,
-            BooleanField=3,
-            Image=5,
-            Line=1,
-            Fieldset=3
+    field_min_height = { -- Height of the field, can be any positive integer
+        enum = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 3,
+            Image = 5,
+            Line = 1,
+            Fieldset = 3
         },
-        default={Field=3, Literal=3, ProtectedLiteral=3, BooleanField=3, Image=5, Line=1, Fieldset=3},--  Default height for each field type
-        initial=nil, -- Default height for the initial field type
-        edited=nil,
-    },
-    
-    field_max_height={-- Maximum height of the field, can be any positive integer
-        enum={
-            Field=80,
-            Literal=80,
-            ProtectedLiteral=80,
-            BooleanField=3,
-            Image=40,
-            Line=1,
-            Fieldset=80
-        },
-        default={Field=80, Literal=80, ProtectedLiteral=80, BooleanField=3, Image=40, Line=1, Fieldset=80},--  Default max height for each field type
-        initial=nil, -- Default max height for the initial field type
-        edited=nil,
+        default = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 3,
+            Image = 5,
+            Line = 1,
+            Fieldset = 3
+        }, --  Default height for each field type
+        initial = nil, -- Default height for the initial field type
+        edited = nil
     },
 
-    field_width_max={-- Maximum length of the field, can be any positive integer
-        enum={
-            Field=255,
-            Literal=255,
-            ProtectedLiteral=255,
-            BooleanField=255,
-            Image=255,
-            Line=255,
-            Fieldset=255
+    field_max_height = { -- Maximum height of the field, can be any positive integer
+        enum = {
+            Field = 80,
+            Literal = 80,
+            ProtectedLiteral = 80,
+            BooleanField = 3,
+            Image = 40,
+            Line = 1,
+            Fieldset = 80
         },
-        default={Field=255, Literal=255, ProtectedLiteral=255, BooleanField=255, Image=255, Line=255, Fieldset=255},-- Default max length for each field type
-        initial=nil, -- Default max length for the initial field type
-        edited=nil, -- Max length after editing
+        default = {
+            Field = 80,
+            Literal = 80,
+            ProtectedLiteral = 80,
+            BooleanField = 3,
+            Image = 40,
+            Line = 1,
+            Fieldset = 80
+        }, --  Default max height for each field type
+        initial = nil, -- Default max height for the initial field type
+        edited = nil
     },
-    
-    field_width_min={-- Minimum length of the field, can be any positive integer
-        enum={
-            Field=3,
-            Literal=3,
-            ProtectedLiteral=3,
-            BooleanField=10,
-            Image=1,
-            Line=1,
-            Fieldset=3
+
+    field_width_max = { -- Maximum length of the field, can be any positive integer
+        enum = {
+            Field = 255,
+            Literal = 255,
+            ProtectedLiteral = 255,
+            BooleanField = 255,
+            Image = 255,
+            Line = 255,
+            Fieldset = 255
         },
-        default={Field=3, Literal=3, ProtectedLiteral=3, BooleanField=10, Image=1, Line=1, Fieldset=3},-- Default min length for each field type
-        initial=nil, -- Default min length for the initial field type
-        edited=nil, -- Min length after editing
+        default = {
+            Field = 255,
+            Literal = 255,
+            ProtectedLiteral = 255,
+            BooleanField = 255,
+            Image = 255,
+            Line = 255,
+            Fieldset = 255
+        }, -- Default max length for each field type
+        initial = nil, -- Default max length for the initial field type
+        edited = nil -- Max length after editing
+    },
+
+    field_width_min = { -- Minimum length of the field, can be any positive integer
+        enum = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 10,
+            Image = 1,
+            Line = 1,
+            Fieldset = 3
+        },
+        default = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 10,
+            Image = 1,
+            Line = 1,
+            Fieldset = 3
+        }, -- Default min length for each field type
+        initial = nil, -- Default min length for the initial field type
+        edited = nil -- Min length after editing
     },
 
     ----- ===== DIMENSIONS DU CHAMP =====
-    field_height={-- Height of the field, can be any positive integer
-        enum={
-            Field=3,
-            Literal=3,
-            ProtectedLiteral=3,
-            BooleanField=3,
-            Image=5,
-            Line=1,
-            Fieldset=3
+    field_height = { -- Height of the field, can be any positive integer
+        enum = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 3,
+            Image = 5,
+            Line = 1,
+            Fieldset = 3
         },
-        default={Field=3, Literal=3, ProtectedLiteral=3, BooleanField=3, Image=5, Line=1, Fieldset=3},--  Default height for each field type
-        initial=nil, -- Default height for the initial field type
-        edited=nil,
+        default = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 3,
+            Image = 5,
+            Line = 1,
+            Fieldset = 3
+        }, --  Default height for each field type
+        initial = nil, -- Default height for the initial field type
+        edited = nil
     },
     ----- ===== DIMENSIONS DU CHAMP =====
-    field_width={-- Length of the field, can be any positive integer
-        enum={
-            Field=10,
-            Literal=20,
-            ProtectedLiteral=20,
-            BooleanField=10,
-            Image=40,
-            Line=40,
-            Fieldset=40
+    field_width = { -- Length of the field, can be any positive integer
+        enum = {
+            Field = 10,
+            Literal = 20,
+            ProtectedLiteral = 20,
+            BooleanField = 10,
+            Image = 40,
+            Line = 40,
+            Fieldset = 40
         },
-        default={Field=10, Literal=20, ProtectedLiteral=20, BooleanField=10, Image=40, Line=40, Fieldset=40},-- Default length for each field type
-        initial=nil, -- Default length for the initial field type
-        edited=nil, -- Length after editing
+        default = {
+            Field = 10,
+            Literal = 20,
+            ProtectedLiteral = 20,
+            BooleanField = 10,
+            Image = 40,
+            Line = 40,
+            Fieldset = 40
+        }, -- Default length for each field type
+        initial = nil, -- Default length for the initial field type
+        edited = nil -- Length after editing
     },
-    
+
     -- ===== COULEURS =====
 
-    field_avail_color={
-        enum={
-            default="default",
-            black="black",
-            red="red",
-            green="green",
-            yellow="yellow",
-            blue="blue",
-            magenta="magenta",
-            cyan="cyan",
-            white="white"
+    field_avail_color = {
+        enum = {
+            default = "default",
+            black = "black",
+            red = "red",
+            green = "green",
+            yellow = "yellow",
+            blue = "blue",
+            magenta = "magenta",
+            cyan = "cyan",
+            white = "white"
         },
 
         -- Table de mapping des couleurs (à initialiser avec start_color() en ncurses)
@@ -178,179 +241,183 @@ OBJECTS_DEFINITIONS={
             cyan = "Cyan color (recommended for placeholders/lines)",
             white = "White color (default for read-only)"
         },
-        default={
+        default = {
             -- Field : Couleurs pour champs de saisie (default = neutre, white = visible sur fond sombre)
-            Field={"default", "white", "green", "yellow", "blue", "cyan"},
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
 
             -- Literal : Texte statique (default = neutre, white/yellow = lisible, green = accent)
-            Literal={"default", "white", "yellow", "green", "cyan", "blue"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
 
             -- ProtectedLiteral : Texte protege (white = par defaut pour read-only, green = protege, cyan = informatif)
-            ProtectedLiteral={"white", "green", "cyan", "yellow", "default"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
 
             -- BooleanField : Cases a cocher (default = neutre, green = coche/valide, white = non coche)
-            BooleanField={"default", "green", "white", "yellow", "blue"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
 
             -- Image : Placeholder (default = transparent, white/blue = contour visible, cyan = water mark)
-            Image={"default", "white", "blue", "cyan"},
+            Image = {"default", "white", "blue", "cyan"},
 
             -- Line : Separateurs (default = invisible, white/blue/cyan = visibles mais discrets)
-            Line={"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
 
             -- Fieldset : Conteneurs (blue = standard pour bordures, default = neutre, white/cyan = alternatifs)
-            Fieldset={"blue", "default", "white", "cyan", "green"},
-        },-- Combinaisons UX par type (1ere = valeur par defaut pour .initial)
-        initial=nil,
-        edited=nil
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
+        }, -- Combinaisons UX par type (1ere = valeur par defaut pour .initial)
+        initial = nil,
+        edited = nil
     },
-    
 
+    field_border_color = {
+        enum = {
+            default = "default",
+            black = "black",
+            red = "red",
+            green = "green",
+            yellow = "yellow",
+            blue = "blue",
+            magenta = "magenta",
+            cyan = "cyan",
+            white = "white"
+        },
+        default = {
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
+            Image = {"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
+        }, -- Default border color for each field type
+        initial = nil,
+        edited = nil
+    },
 
-    field_border_color={
-        enum={
-            default="default",
-            black="black",
-            red="red",
-            green="green",
-            yellow="yellow",
-            blue="blue",
-            magenta="magenta",
-            cyan="cyan",
-            white="white"
+    field_title_color = {
+        enum = {
+            default = "default",
+            black = "black",
+            red = "red",
+            green = "green",
+            yellow = "yellow",
+            blue = "blue",
+            magenta = "magenta",
+            cyan = "cyan",
+            white = "white"
         },
-        default={
-            Field={"default", "white", "green", "yellow", "blue", "cyan"}, 
-            Literal={"default", "white", "yellow", "green", "cyan", "blue"}, 
-            ProtectedLiteral={"white", "green", "cyan", "yellow", "default"}, 
-            BooleanField={"default", "green", "white", "yellow", "blue"}, 
-            Image={"default", "white", "blue", "cyan"}, 
-            Line={"default", "white", "blue", "cyan"}, 
-            Fieldset={"blue", "default", "white", "cyan", "green"}
-        },-- Default border color for each field type
-        initial=nil,
-        edited=nil
+        default = {
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
+            Image = {"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
+        },
+        initial = nil,
+        edited = nil
     },
-    
-    field_title_color={
-        enum={
-            default="default",
-            black="black",
-            red="red",
-            green="green",
-            yellow="yellow",
-            blue="blue",
-            magenta="magenta",
-            cyan="cyan",
-            white="white"
+
+    field_text_color = {
+        enum = {
+            default = "default",
+            black = "black",
+            red = "red",
+            green = "green",
+            yellow = "yellow",
+            blue = "blue",
+            magenta = "magenta",
+            cyan = "cyan",
+            white = "white"
         },
-        default={
-            Field={"default", "white", "green", "yellow", "blue", "cyan"}, 
-            Literal={"default", "white", "yellow", "green", "cyan", "blue"}, 
-            ProtectedLiteral={"white", "green", "cyan", "yellow", "default"}, 
-            BooleanField={"default", "green", "white", "yellow", "blue"}, 
-            Image={"default", "white", "blue", "cyan"}, 
-            Line={"default", "white", "blue", "cyan"}, 
-            Fieldset={"blue", "default", "white", "cyan", "green"}
+        default = {
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
+            Image = {"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
         },
-        initial=nil,
-        edited=nil
+        initial = nil,
+        edited = nil
     },
-    
-    field_text_color={
-        enum={
-            default="default",
-            black="black",
-            red="red",
-            green="green",
-            yellow="yellow",
-            blue="blue",
-            magenta="magenta",
-            cyan="cyan",
-            white="white"
+
+    field_footer_color = {
+        enum = {
+            default = "default",
+            black = "black",
+            red = "red",
+            green = "green",
+            yellow = "yellow",
+            blue = "blue",
+            magenta = "magenta",
+            cyan = "cyan",
+            white = "white"
         },
-        default={
-            Field={"default", "white", "green", "yellow", "blue", "cyan"}, 
-            Literal={"default", "white", "yellow", "green", "cyan", "blue"}, 
-            ProtectedLiteral={"white", "green", "cyan", "yellow", "default"}, 
-            BooleanField={"default", "green", "white", "yellow", "blue"}, 
-            Image={"default", "white", "blue", "cyan"}, 
-            Line={"default", "white", "blue", "cyan"}, 
-            Fieldset={"blue", "default", "white", "cyan", "green"}
+        default = {
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
+            Image = {"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
         },
-        initial=nil,
-        edited=nil
-    },
-    
-    field_footer_color={
-        enum={
-            default="default",
-            black="black",
-            red="red",
-            green="green",
-            yellow="yellow",
-            blue="blue",
-            magenta="magenta",
-            cyan="cyan",
-            white="white"
-        },
-        default={
-            Field={"default", "white", "green", "yellow", "blue", "cyan"}, 
-            Literal={"default", "white", "yellow", "green", "cyan", "blue"}, 
-            ProtectedLiteral={"white", "green", "cyan", "yellow", "default"}, 
-            BooleanField={"default", "green", "white", "yellow", "blue"}, 
-            Image={"default", "white", "blue", "cyan"}, 
-            Line={"default", "white", "blue", "cyan"}, 
-            Fieldset={"blue", "default", "white", "cyan", "green"}
-        },
-        initial=nil,
-        edited=nil
+        initial = nil,
+        edited = nil
     },
     ----- ===== POLICE DU TEXTE =====
     -- enum for font family: 3270/BMS terminals have ONLY ONE fixed-width font
-    field_avail_font_family={
-        enum={
-            default="default"
+    field_avail_font_family = {
+        enum = {
+            default = "default"
         },
-        default={
-            ncurses={default="default"}, -- ncurses: uses terminal's current single font
-            tn3270={default="default"}, -- 3270: IBM 3270 character set (single fixed-width font)
-            bms={default="default"} -- BMS: single fixed-width font (no selection available)
+        default = {
+            ncurses = {
+                default = "default"
+            }, -- ncurses: uses terminal's current single font
+            tn3270 = {
+                default = "default"
+            }, -- 3270: IBM 3270 character set (single fixed-width font)
+            bms = {
+                default = "default"
+            } -- BMS: single fixed-width font (no selection available)
         },
-        initial="default", -- Default font family for the initial field type
+        initial = "default" -- Default font family for the initial field type
     },
 
     -- Font family for each field type, referencing field_avail_font_family enum
     -- Note: 3270 terminals use a single fixed-width font; no font family selection in BMS
-    field_font_family={
-        enum={
-            default="default"
+    field_font_family = {
+        enum = {
+            default = "default"
         },
-        default={
+        default = {
             -- All BMS field types reference the same single font (3270 has only one physical font)
-            Field="default",
-            Literal="default",
-            ProtectedLiteral="default",
-            BooleanField="default",
-            Image="default",
-            Line="default",
-            Fieldset="default"
-        },-- Default font family for each field type
-        initial="default", -- Default font family for the initial field type
-        edited=nil, -- Font family after editing
+            Field = "default",
+            Literal = "default",
+            ProtectedLiteral = "default",
+            BooleanField = "default",
+            Image = "default",
+            Line = "default",
+            Fieldset = "default"
+        }, -- Default font family for each field type
+        initial = "default", -- Default font family for the initial field type
+        edited = nil -- Font family after editing
     },
     ----- ===== STYLE DU TEXTE =====
     -- enum for text style: default, bold, italic, underline, strikethrough, blink, reverse
-    field_avail_style={
-        enum={
-            default="default", 
-            bold="bold", 
-            italic="italic", 
-            underline="underline", 
-            strikethrough="strikethrough",
-            blink="blink",
-            reverse="reverse"
+    field_avail_style = {
+        enum = {
+            default = "default",
+            bold = "bold",
+            italic = "italic",
+            underline = "underline",
+            strikethrough = "strikethrough",
+            blink = "blink",
+            reverse = "reverse"
         },
-        avail_style_help={
+        avail_style_help = {
             default = "Default style (no attributes)",
             bold = "Bold style (intensity on 3270)",
             italic = "Italic style (not supported by 3270 hardware)",
@@ -359,233 +426,526 @@ OBJECTS_DEFINITIONS={
             blink = "Blinking text",
             reverse = "Reverse video"
         },
-        avail_style_exported_value={
-                default = 0,      -- No attributes
-                bold = 1,         -- A_BOLD (intensity on 3270)
-                italic = 2,       -- A_ITALIC (not supported by 3270 hardware)
-                underline = 4,    -- A_UNDERLINE
-                strikethrough = 8, -- Custom extension
-                blink = 16,       -- A_BLINK
-                reverse = 32      -- A_REVERSE
+        avail_style_exported_value = {
+            default = 0, -- No attributes
+            bold = 1, -- A_BOLD (intensity on 3270)
+            italic = 2, -- A_ITALIC (not supported by 3270 hardware)
+            underline = 4, -- A_UNDERLINE
+            strikethrough = 8, -- Custom extension
+            blink = 16, -- A_BLINK
+            reverse = 32 -- A_REVERSE
         },
-        default={
+        default = {
             -- Field: Tous les styles disponibles
-            Field={"default", "bold", "italic", "underline", "strikethrough", "blink", "reverse"},
+            Field = {"default", "bold", "italic", "underline", "strikethrough", "blink", "reverse"},
 
             -- Literal: Tous les styles (texte statique peut etre mis en valeur)
-            Literal={"default", "bold", "italic", "underline", "blink", "reverse"},
+            Literal = {"default", "bold", "italic", "underline", "blink", "reverse"},
 
             -- ProtectedLiteral: Pas de italic/strikethrough/blink (distrayant pour read-only)
-            ProtectedLiteral={"default", "bold", "underline", "reverse"},
+            ProtectedLiteral = {"default", "bold", "underline", "reverse"},
 
             -- BooleanField: Pas de italic/strikethrough; blink pour attention
-            BooleanField={"default", "bold", "underline", "blink", "reverse"},
+            BooleanField = {"default", "bold", "underline", "blink", "reverse"},
 
             -- Image: Pas de italic/strikethrough/blink (distrayant pour placeholder)
-            Image={"default", "bold", "underline", "reverse"},
+            Image = {"default", "bold", "underline", "reverse"},
 
             -- Line: underline pour effet tirete, strikethrough pour ligne brisee
-            Line={"underline", "strikethrough", "default", "bold", "reverse"},
+            Line = {"underline", "strikethrough", "default", "bold", "reverse"},
 
             -- Fieldset: Tous les styles sauf strikethrough (peu pertinent pour bordures)
-            Fieldset={"default", "bold", "underline", "blink", "reverse"}
-        },-- Styles disponibles par type (1er = valeur par defaut pour .initial)
+            Fieldset = {"default", "bold", "underline", "blink", "reverse"}
+        } -- Styles disponibles par type (1er = valeur par defaut pour .initial)
     },
     -- Represents the style for each field type, referencing field_avail_style enum for consistency
     -- Adapted per field type considering user visual experience (UX)
-    field_style={
-        enum={
-            default="default", 
-            bold="bold", 
-            italic="italic", 
-            underline="underline", 
-            strikethrough="strikethrough",
-            blink="blink",
-            reverse="reverse"
+    field_style = {
+        enum = {
+            default = "default",
+            bold = "bold",
+            italic = "italic",
+            underline = "underline",
+            strikethrough = "strikethrough",
+            blink = "blink",
+            reverse = "reverse"
         },
-        default={
+        default = {
             -- Field: Input field - style par defaut
-            Field="default",
+            Field = "default",
             -- Literal: Static text - style par defaut
-            Literal="default",
+            Literal = "default",
             -- ProtectedLiteral: Protected static text - UX optimized
-            ProtectedLiteral="default",
+            ProtectedLiteral = "default",
             -- BooleanField: Checkbox - style par defaut
-            BooleanField="default",
+            BooleanField = "default",
             -- Image: Placeholder - style par defaut
-            Image="default",
+            Image = "default",
             -- Line: Horizontal rule - underline par defaut pour effet de ligne
-            Line="underline",
+            Line = "underline",
             -- Fieldset: Container - style par defaut
-            Fieldset="default"
-        },-- Style par defaut pour chaque type
-        initial=nil, -- Default style for the initial field type
-        edited=nil, -- Style after editing
+            Fieldset = "default"
+        }, -- Style par defaut pour chaque type
+        initial = nil, -- Default style for the initial field type
+        edited = nil -- Style after editing
     },
     ----- ===== ALIGNEMENT DU TEXTE =====
     -- enum for text alignment: left, center, right
-    field_avail_text_align={
-        enum={
-            left="left",
-            center="center",
-            right="right"
+    field_avail_text_align = {
+        enum = {
+            left = "left",
+            center = "center",
+            right = "right"
         },
-        default={
-            Field={"left", "center", "right"},
-            Literal={"left", "center", "right"},
-            ProtectedLiteral={"left", "center", "right"},
-            BooleanField={"left", "center", "right"},
-            Image={"left", "center", "right"},
-            Line={"left", "center", "right"},
-            Fieldset={"left", "center", "right"}, 
-        },-- Available text alignment for each field type
-        initial=nil, -- Default text alignment for the initial field type
-        edited=nil, -- Text alignment after editing
+        default = {
+            Field = {"left", "center", "right"},
+            Literal = {"left", "center", "right"},
+            ProtectedLiteral = {"left", "center", "right"},
+            BooleanField = {"left", "center", "right"},
+            Image = {"left", "center", "right"},
+            Line = {"left", "center", "right"},
+            Fieldset = {"left", "center", "right"}
+        }, -- Available text alignment for each field type
+        initial = nil, -- Default text alignment for the initial field type
+        edited = nil -- Text alignment after editing
     },
-   -- field_text_align represents the text alignment for each field type, which can be left, center, or right
-    field_text_align={
-        enum={
-            left="left",
-            center="center",
-            right="right"
+    -- field_text_align represents the text alignment for each field type, which can be left, center, or right
+    field_text_align = {
+        enum = {
+            left = "left",
+            center = "center",
+            right = "right"
         },
-        default= {
-            Field={"left", "center", "right"},
-            Literal={"left", "center", "right"},
-            ProtectedLiteral={"left", "center", "right"},
-            BooleanField={"left", "center", "right"},
-            Image={"left", "center", "right"},
-            Line={"left", "center", "right"},
-            Fieldset={"left", "center", "right"},
-        },-- Default text alignment for each field type
-        initial=nil, -- Default text alignment for the initial field type
-        edited=nil, -- Text alignment after editing
+        default = {
+            Field = {"left", "center", "right"},
+            Literal = {"left", "center", "right"},
+            ProtectedLiteral = {"left", "center", "right"},
+            BooleanField = {"left", "center", "right"},
+            Image = {"left", "center", "right"},
+            Line = {"left", "center", "right"},
+            Fieldset = {"left", "center", "right"}
+        }, -- Default text alignment for each field type
+        initial = nil, -- Default text alignment for the initial field type
+        edited = nil -- Text alignment after editing
     },
-    
-    field_pos={ -- Represents the position of the field in the BMS screen (row, col)
-        enum={
-            zero=0
+
+    field_pos = { -- Represents the position of the field in the BMS screen (row, col)
+        enum = {
+            zero = 0
         },
-        default={
-            Field={col="zero", row="zero", rowend="zero", colend="zero"},
-            Literal={col="zero", row="zero", rowend="zero", colend="zero"},
-            ProtectedLiteral={col="zero", row="zero", rowend="zero", colend="zero"},
-            BooleanField={col="zero", row="zero", rowend="zero", colend="zero"},
-            Image={col="zero", row="zero", rowend="zero", colend="zero"},
-            Line={col="zero", row="zero", rowend="zero", colend="zero"},
-            Fieldset={col="zero", row="zero", rowend="zero", colend="zero"}
-        },-- Default position for each field type
-        initial=nil, -- Default position for the initial field type
-        edited=nil, -- Position after editing
+        default = {
+            Field = {
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
+            },
+            Literal = {
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
+            },
+            ProtectedLiteral = {
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
+            },
+            BooleanField = {
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
+            },
+            Image = {
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
+            },
+            Line = {
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
+            },
+            Fieldset = {
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
+            }
+        }, -- Default position for each field type
+        initial = nil, -- Default position for the initial field type
+        edited = nil -- Position after editing
     },
-    
+
     -- ===== PERSONNALISATION DES CARACTERES =====
     -- Caractères de bordure personnalisables (pour remplacer ┌─┐│├└┘)
-    field_avail_border_chars={
-        default={
-            Field={single={top_left = "┌", top = "─", top_right = "┐", left = "│", right = "│", bottom_left = "└", bottom = "─", bottom_right = "┘"},
-                        double={top_left = "╔", top = "═", top_right = "╗", left = "║", right = "║", bottom_left = "╚", bottom = "═", bottom_right = "╝"},
-                        dashed={top_left = "+", top = "-", top_right = "+", left = "|", right = "|", bottom_left = "+", bottom = "-", bottom_right = "+"},
-                        none=  {top_left = "", top = "", top_right = "", left = "", right = "", bottom_left = "", bottom = "", bottom_right = ""}
+    field_avail_border_chars = {
+        default = {
+            Field = {
+                single = {
+                    top_left = "┌",
+                    top = "─",
+                    top_right = "┐",
+                    left = "│",
+                    right = "│",
+                    bottom_left = "└",
+                    bottom = "─",
+                    bottom_right = "┘"
+                },
+                double = {
+                    top_left = "╔",
+                    top = "═",
+                    top_right = "╗",
+                    left = "║",
+                    right = "║",
+                    bottom_left = "╚",
+                    bottom = "═",
+                    bottom_right = "╝"
+                },
+                dashed = {
+                    top_left = "+",
+                    top = "-",
+                    top_right = "+",
+                    left = "|",
+                    right = "|",
+                    bottom_left = "+",
+                    bottom = "-",
+                    bottom_right = "+"
+                },
+                none = {
+                    top_left = "",
+                    top = "",
+                    top_right = "",
+                    left = "",
+                    right = "",
+                    bottom_left = "",
+                    bottom = "",
+                    bottom_right = ""
+                }
             },
-            Literal={single={top_left = "┌", top = "─", top_right = "┐", left = "│", right = "│", bottom_left = "└", bottom = "─", bottom_right = "┘"},
-                        double={top_left = "╔", top = "═", top_right = "╗", left = "║", right = "║", bottom_left = "╚", bottom = "═", bottom_right = "╝"},
-                        dashed={top_left = "+", top = "-", top_right = "+", left = "|", right = "|", bottom_left = "+", bottom = "-", bottom_right = "+"},
-                        none=  {top_left = "", top = "", top_right = "", left = "", right = "", bottom_left = "", bottom = "", bottom_right = ""}
+            Literal = {
+                single = {
+                    top_left = "┌",
+                    top = "─",
+                    top_right = "┐",
+                    left = "│",
+                    right = "│",
+                    bottom_left = "└",
+                    bottom = "─",
+                    bottom_right = "┘"
+                },
+                double = {
+                    top_left = "╔",
+                    top = "═",
+                    top_right = "╗",
+                    left = "║",
+                    right = "║",
+                    bottom_left = "╚",
+                    bottom = "═",
+                    bottom_right = "╝"
+                },
+                dashed = {
+                    top_left = "+",
+                    top = "-",
+                    top_right = "+",
+                    left = "|",
+                    right = "|",
+                    bottom_left = "+",
+                    bottom = "-",
+                    bottom_right = "+"
+                },
+                none = {
+                    top_left = "",
+                    top = "",
+                    top_right = "",
+                    left = "",
+                    right = "",
+                    bottom_left = "",
+                    bottom = "",
+                    bottom_right = ""
+                }
             },
-            ProtectedLiteral={single={top_left = "┌", top = "─", top_right = "┐", left = "│", right = "│", bottom_left = "└", bottom = "─", bottom_right = "┘"},
-                        double={top_left = "╔", top = "═", top_right = "╗", left = "║", right = "║", bottom_left = "╚", bottom = "═", bottom_right = "╝"},
-                        dashed={top_left = "+", top = "-", top_right = "+", left = "|", right = "|", bottom_left = "+", bottom = "-", bottom_right = "+"},
-                        none=  {top_left = "", top = "", top_right = "", left = "", right = "", bottom_left = "", bottom = "", bottom_right = ""}
+            ProtectedLiteral = {
+                single = {
+                    top_left = "┌",
+                    top = "─",
+                    top_right = "┐",
+                    left = "│",
+                    right = "│",
+                    bottom_left = "└",
+                    bottom = "─",
+                    bottom_right = "┘"
+                },
+                double = {
+                    top_left = "╔",
+                    top = "═",
+                    top_right = "╗",
+                    left = "║",
+                    right = "║",
+                    bottom_left = "╚",
+                    bottom = "═",
+                    bottom_right = "╝"
+                },
+                dashed = {
+                    top_left = "+",
+                    top = "-",
+                    top_right = "+",
+                    left = "|",
+                    right = "|",
+                    bottom_left = "+",
+                    bottom = "-",
+                    bottom_right = "+"
+                },
+                none = {
+                    top_left = "",
+                    top = "",
+                    top_right = "",
+                    left = "",
+                    right = "",
+                    bottom_left = "",
+                    bottom = "",
+                    bottom_right = ""
+                }
             },
-            BooleanField={single={top_left = "┌", top = "─", top_right = "┐", left = "│", right = "│", bottom_left = "└", bottom = "─", bottom_right = "┘"},
-                        double={top_left = "╔", top = "═", top_right = "╗", left = "║", right = "║", bottom_left = "╚", bottom = "═", bottom_right = "╝"},
-                        dashed={top_left = "+", top = "-", top_right = "+", left = "|", right = "|", bottom_left = "+", bottom = "-", bottom_right = "+"},
-                        none=  {top_left = "", top = "", top_right = "", left = "", right = "", bottom_left = "", bottom = "", bottom_right = ""}
+            BooleanField = {
+                single = {
+                    top_left = "┌",
+                    top = "─",
+                    top_right = "┐",
+                    left = "│",
+                    right = "│",
+                    bottom_left = "└",
+                    bottom = "─",
+                    bottom_right = "┘"
+                },
+                double = {
+                    top_left = "╔",
+                    top = "═",
+                    top_right = "╗",
+                    left = "║",
+                    right = "║",
+                    bottom_left = "╚",
+                    bottom = "═",
+                    bottom_right = "╝"
+                },
+                dashed = {
+                    top_left = "+",
+                    top = "-",
+                    top_right = "+",
+                    left = "|",
+                    right = "|",
+                    bottom_left = "+",
+                    bottom = "-",
+                    bottom_right = "+"
+                },
+                none = {
+                    top_left = "",
+                    top = "",
+                    top_right = "",
+                    left = "",
+                    right = "",
+                    bottom_left = "",
+                    bottom = "",
+                    bottom_right = ""
+                }
             },
-            Image={single={top_left = "┌", top = "─", top_right = "┐", left = "│", right = "│", bottom_left = "└", bottom = "─", bottom_right = "┘"},
-                        double={top_left = "╔", top = "═", top_right = "╗", left = "║", right = "║", bottom_left = "╚", bottom = "═", bottom_right = "╝"},
-                        dashed={top_left = "+", top = "-", top_right = "+", left = "|", right = "|", bottom_left = "+", bottom = "-", bottom_right = "+"},
-                        none=  {top_left = "", top = "", top_right = "", left = "", right = "", bottom_left = "", bottom = "", bottom_right = ""}
+            Image = {
+                single = {
+                    top_left = "┌",
+                    top = "─",
+                    top_right = "┐",
+                    left = "│",
+                    right = "│",
+                    bottom_left = "└",
+                    bottom = "─",
+                    bottom_right = "┘"
+                },
+                double = {
+                    top_left = "╔",
+                    top = "═",
+                    top_right = "╗",
+                    left = "║",
+                    right = "║",
+                    bottom_left = "╚",
+                    bottom = "═",
+                    bottom_right = "╝"
+                },
+                dashed = {
+                    top_left = "+",
+                    top = "-",
+                    top_right = "+",
+                    left = "|",
+                    right = "|",
+                    bottom_left = "+",
+                    bottom = "-",
+                    bottom_right = "+"
+                },
+                none = {
+                    top_left = "",
+                    top = "",
+                    top_right = "",
+                    left = "",
+                    right = "",
+                    bottom_left = "",
+                    bottom = "",
+                    bottom_right = ""
+                }
             },
-            Line={single={top_left = "┌", top = "─", top_right = "┐", left = "│", right = "│", bottom_left = "└", bottom = "─", bottom_right = "┘"},
-                        double={top_left = "╔", top = "═", top_right = "╗", left = "║", right = "║", bottom_left = "╚", bottom = "═", bottom_right = "╝"},
-                        dashed={top_left = "+", top = "-", top_right = "+", left = "|", right = "|", bottom_left = "+", bottom = "-", bottom_right = "+"},
-                        none=  {top_left = "", top = "", top_right = "", left = "", right = "", bottom_left = "", bottom = "", bottom_right = ""}
+            Line = {
+                single = {
+                    top_left = "┌",
+                    top = "─",
+                    top_right = "┐",
+                    left = "│",
+                    right = "│",
+                    bottom_left = "└",
+                    bottom = "─",
+                    bottom_right = "┘"
+                },
+                double = {
+                    top_left = "╔",
+                    top = "═",
+                    top_right = "╗",
+                    left = "║",
+                    right = "║",
+                    bottom_left = "╚",
+                    bottom = "═",
+                    bottom_right = "╝"
+                },
+                dashed = {
+                    top_left = "+",
+                    top = "-",
+                    top_right = "+",
+                    left = "|",
+                    right = "|",
+                    bottom_left = "+",
+                    bottom = "-",
+                    bottom_right = "+"
+                },
+                none = {
+                    top_left = "",
+                    top = "",
+                    top_right = "",
+                    left = "",
+                    right = "",
+                    bottom_left = "",
+                    bottom = "",
+                    bottom_right = ""
+                }
             },
-            Fieldset = { single={top_left = "┌", top = "─", top_right = "┐", left = "│", right = "│", bottom_left = "└", bottom = "─", bottom_right = "┘"},
-                        double={top_left = "╔", top = "═", top_right = "╗", left = "║", right = "║", bottom_left = "╚", bottom = "═", bottom_right = "╝"},
-                        dashed={top_left = "+", top = "-", top_right = "+", left = "|", right = "|", bottom_left = "+", bottom = "-", bottom_right = "+"},
-                        none=  {top_left = "", top = "", top_right = "", left = "", right = "", bottom_left = "", bottom = "", bottom_right = ""}
+            Fieldset = {
+                single = {
+                    top_left = "┌",
+                    top = "─",
+                    top_right = "┐",
+                    left = "│",
+                    right = "│",
+                    bottom_left = "└",
+                    bottom = "─",
+                    bottom_right = "┘"
+                },
+                double = {
+                    top_left = "╔",
+                    top = "═",
+                    top_right = "╗",
+                    left = "║",
+                    right = "║",
+                    bottom_left = "╚",
+                    bottom = "═",
+                    bottom_right = "╝"
+                },
+                dashed = {
+                    top_left = "+",
+                    top = "-",
+                    top_right = "+",
+                    left = "|",
+                    right = "|",
+                    bottom_left = "+",
+                    bottom = "-",
+                    bottom_right = "+"
+                },
+                none = {
+                    top_left = "",
+                    top = "",
+                    top_right = "",
+                    left = "",
+                    right = "",
+                    bottom_left = "",
+                    bottom = "",
+                    bottom_right = ""
+                }
             }
-        },-- Default border characters for each field type
+        }, -- Default border characters for each field type
         initial = nil,
         edited = nil
     },
-    
 
-    field_avail_border_style={ -- Available border styles for each field type: single, double, dashed, none
-        enum={
-            single="single",
-            double="double",
-            dashed="dashed",
-            none="none"
+    field_avail_border_style = { -- Available border styles for each field type: single, double, dashed, none
+        enum = {
+            single = "single",
+            double = "double",
+            dashed = "dashed",
+            none = "none"
         },
-        default={
+        default = {
             -- Field : Bordure simple par defaut (standard pour champs de saisie)
-            Field={"single", "double", "dashed", "none"},
+            Field = {"single", "double", "dashed", "none"},
 
             -- Literal : Pas de bordure par defaut (texte statique n'en a pas besoin)
-            Literal={"none", "single", "dashed"},
+            Literal = {"none", "single", "dashed"},
 
             -- ProtectedLiteral : Bordure pointillee pour indiquer protection
-            ProtectedLiteral={"dashed", "single", "double", "none"},
+            ProtectedLiteral = {"dashed", "single", "double", "none"},
 
             -- BooleanField : Bordure simple pour cases a cocher
-            BooleanField={"single", "double", "dashed"},
+            BooleanField = {"single", "double", "dashed"},
 
             -- Image : Bordure double pour encadrer les placeholders
-            Image={"double", "single", "dashed", "none"},
+            Image = {"double", "single", "dashed", "none"},
 
             -- Line : Pas de bordure (c'est deja une ligne)
-            Line={"none"},
+            Line = {"none"},
 
             -- Fieldset : Bordure double pour conteneurs (standard UI)
-            Fieldset={"double", "single", "dashed"}
-        },-- Combinaisons UX par type (1ere = valeur par defaut pour .initial)
+            Fieldset = {"double", "single", "dashed"}
+        } -- Combinaisons UX par type (1ere = valeur par defaut pour .initial)
     },
-   
-    field_border_style={
-        enum={
-            single="single",
-            double="double",
-            dashed="dashed",
-            none="none"
+
+    field_border_style = {
+        enum = {
+            single = "single",
+            double = "double",
+            dashed = "dashed",
+            none = "none"
         },
-        default={
-            Field={"single", "double", "dashed", "none"},
-            Literal={"none", "single", "dashed"},
-            ProtectedLiteral={"dashed", "single", "double", "none"},
-            BooleanField={"single", "double", "dashed"},
-            Image={"double", "single", "dashed", "none"},
-            Line={"none"},
-            Fieldset={"double", "single", "dashed"}
-        },-- Default border style for each field type
-        initial=nil, -- Default border style for the initial field type
-        edited=nil, -- Border style after editing
-    },    
+        default = {
+            Field = {"single", "double", "dashed", "none"},
+            Literal = {"none", "single", "dashed"},
+            ProtectedLiteral = {"dashed", "single", "double", "none"},
+            BooleanField = {"single", "double", "dashed"},
+            Image = {"double", "single", "dashed", "none"},
+            Line = {"none"},
+            Fieldset = {"double", "single", "dashed"}
+        }, -- Default border style for each field type
+        initial = nil, -- Default border style for the initial field type
+        edited = nil -- Border style after editing
+    },
     ----- ===== BORDURE =====
     -- respresents the border style for each field type, which can be "single", "double", "dashed", or "none". The border style can be customized for each field type, allowing for a flexible and extensible way to create user interfaces for BMS applications. The border style can be used to indicate the state of the field, such as whether it is required or in an error state. The border style can also be used to enhance the visual appearance of the field, providing a more engaging user experience.
     -- this is used to render the border of the field, which can be customized for each field type. The border style can be used to indicate the state of the field, such as whether it is required or in an error state. The border style can also be used to enhance the visual appearance of the field, providing a more engaging user experience.
-    field_border=nil, -- Will be set after table construction to reference field_avail_border_style and field_avail_border_chars
+    field_border = nil, -- Will be set after table construction to reference field_avail_border_style and field_avail_border_chars
 
     -- Caractère de remplissage pour le titre dans la bordure supérieure
-    field_title_fill_char={
-        enum={
-            space=" ",
-            dash="─"
+    field_title_fill_char = {
+        enum = {
+            space = " ",
+            dash = "─"
         },
-        default={
+        default = {
             Field = "space",
             Literal = "space",
             ProtectedLiteral = "space",
@@ -597,15 +957,15 @@ OBJECTS_DEFINITIONS={
         initial = "dash",
         edited = "dash"
     },
-    
+
     -- Caractère de remplissage pour les champs vides (ex: "_" pour Field)
-    field_fill_char={
-        enum={
-            underscore="_",
-            space=" ",
-            dash="─"
+    field_fill_char = {
+        enum = {
+            underscore = "_",
+            space = " ",
+            dash = "─"
         },
-        default={
+        default = {
             Field = "underscore",
             Literal = "space",
             ProtectedLiteral = "space",
@@ -617,13 +977,13 @@ OBJECTS_DEFINITIONS={
         initial = nil,
         edited = nil
     },
-    field_avail_vertical_align={
-        enum={
-            top="top",
-            middle="middle",
-            bottom="bottom"
+    field_avail_vertical_align = {
+        enum = {
+            top = "top",
+            middle = "middle",
+            bottom = "bottom"
         },
-        default={
+        default = {
             Field = "top",
             Literal = "top",
             ProtectedLiteral = "top",
@@ -632,17 +992,17 @@ OBJECTS_DEFINITIONS={
             Line = "top",
             Fieldset = "top"
         },
-        initial=nil,
-        edited=nil
+        initial = nil,
+        edited = nil
     },
     -- ===== ALIGNEMENT VERTICAL =====
-    field_vertical_align={
-        enum={
-            top="top",
-            middle="middle",
-            bottom="bottom"
+    field_vertical_align = {
+        enum = {
+            top = "top",
+            middle = "middle",
+            bottom = "bottom"
         },
-        default={
+        default = {
             Field = "top",
             Literal = "top",
             ProtectedLiteral = "top",
@@ -651,15 +1011,15 @@ OBJECTS_DEFINITIONS={
             Line = "top",
             Fieldset = "top"
         },
-        initial=nil,
-        edited=nil
+        initial = nil,
+        edited = nil
     },
-    
-    field_vertical_margin={
-        enum={
-            none=0
+
+    field_vertical_margin = {
+        enum = {
+            none = 0
         },
-        default={
+        default = {
             Field = "none",
             Literal = "none",
             ProtectedLiteral = "none",
@@ -671,117 +1031,712 @@ OBJECTS_DEFINITIONS={
         initial = "none",
         edited = "none"
     },
-    
+
     -- ===== AUTRES PROPRIETES =====
     -- Prefixe du titre (ex: "✱ " pour Fieldset requis)
 
     -- Marqueur pour les champs requis (ex: " *")
-    field_avail_required_marker={
-        default={
-            Field = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            Literal = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            ProtectedLiteral = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            BooleanField = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            Image = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            Line = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            Fieldset = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
+    field_avail_required_marker = {
+        default = {
+            Field = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            }
         },
-        initial=nil,
-        edited=nil
+        initial = nil,
+        edited = nil
     },
     -- represents the required marker for each field type, which can be used to indicate that a field is required. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
-    field_required_marker={
-        default={
-            Field = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            Literal = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            ProtectedLiteral = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            BooleanField = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            Image = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            Line = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""},
-            Fieldset = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}
-        },
+    field_required_marker = {
+        default = {
+            Field = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            }
+        }
     },
     -- Marqueur pour les champs en erreur (ex: " /!\")
-    field_avail_error_marker={
-        default={
-            Field = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            Literal = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            ProtectedLiteral = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            BooleanField = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            Image = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            Line = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            Fieldset = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
+    field_avail_error_marker = {
+        default = {
+            Field = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            }
         },
-        initial=nil,
-        edited=nil
+        initial = nil,
+        edited = nil
     },
     -- represents the error marker for each field type, which can be used to indicate that a field is in an error state. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
-    field_error_marker={
-        default={
-            Field = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            Literal = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            ProtectedLiteral = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            BooleanField = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            Image = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            Line = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""},
-            Fieldset = {enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}
+    field_error_marker = {
+        default = {
+            Field = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            }
         },
-        initial=nil,
-        edited=nil
+        initial = nil,
+        edited = nil
     },
     -- title of a field is composed of a prefix, a main title, and a suffix, by applying alignment and color properties. The prefix and suffix can be used to indicate required fields or other information, while the main title represents the name of the field. The title can be customized for each field type, allowing for a flexible and extensible way to create user interfaces for BMS applications.
     -- field_title_suffix represents the suffix for the title of each field type, which can be used to indicate required fields or other information
-    field_title_suffix={
-        default={
-            Field =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Literal =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            ProtectedLiteral =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            BooleanField =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Image =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Line =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Fieldset =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""}
+    field_title_suffix = {
+        default = {
+            Field = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            }
         },
         initial = nil,
         edited = nil
     },
     -- field_title_prefix represents the prefix for the title of each field type, which can be used to indicate required fields or other information
-    field_title_prefix={
-        default={
-            Field =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Literal =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            ProtectedLiteral =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            BooleanField =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Image =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Line =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Fieldset =  {enabled=false,required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""}
+    field_title_prefix = {
+        default = {
+            Field = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            }
         },
         initial = nil,
-        edited = nil            
+        edited = nil
     },
-        
+
     -- field_footer represents the footer for the title of each field type, which can be used to indicate required fields or other information
-    field_footer={
-        default={
-            Field=  { enabled=false, required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Literal=  { enabled=false, required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            ProtectedLiteral=  { enabled=false, required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            BooleanField=  { enabled=false, required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Image=  { enabled=false, required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Line=  { enabled=false, required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
-            Fieldset=  { enabled=false, required = {enabled=false, enabled_marker=false, marker = " *", enabled_sentence =false, sentence = "= required fields", none = ""}, errors={enabled=false, enabled_marker=false, marker = " /!\\", enabled_sentence =false, sentence = "= error fields", none = ""}, none = ""},
+    field_footer = {
+        default = {
+            Field = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
+            }
         },
-        initial=nil,
-        edited=nil
+        initial = nil,
+        edited = nil
     },
-    
+
     -- Alignement du titre (left/center/right)
-    field_title_align={
-        enum={
-            left="left",
-            center="center",
-            right="right"
+    field_title_align = {
+        enum = {
+            left = "left",
+            center = "center",
+            right = "right"
         },
-        default={
+        default = {
             -- Field/Literal/ProtectedLiteral/BooleanField/Image: titre a gauche par defaut
             Field = "left",
             Literal = "left",
@@ -796,93 +1751,259 @@ OBJECTS_DEFINITIONS={
         initial = nil,
         edited = nil
     },
-    
+
     -- Champs enfants (pour Fieldset)
-    field_children={
-        default={
-            Field= {authorised = false, none = true},
-            Literal= {authorised = false, none = true},
-            ProtectedLiteral= {authorised = false, none = true},
-            BooleanField= {authorised = false, none = true},
-            Image= {authorised = false, none = true},
-            Line= {authorised = false, none = true},
-            Fieldset= {authorised = true, none = false}
+    field_children = {
+        default = {
+            Field = {
+                authorised = false,
+                none = true
+            },
+            Literal = {
+                authorised = false,
+                none = true
+            },
+            ProtectedLiteral = {
+                authorised = false,
+                none = true
+            },
+            BooleanField = {
+                authorised = false,
+                none = true
+            },
+            Image = {
+                authorised = false,
+                none = true
+            },
+            Line = {
+                authorised = false,
+                none = true
+            },
+            Fieldset = {
+                authorised = true,
+                none = false
+            }
         },
         initial = nil,
         edited = nil
     },
     ----- ===== ATTRIBUTS DU CHAMP =====
     -- represents the attributes of the field, such as whether it is editable, visible, required, readonly, enabled, focused, selected, highlighted, hidden, protected, or numeric
-    field_attrb={
-        default={
-            Field = { field_in_edit_mode=false, field_visible=true, field_required=false, field_has_error=false, field_readonly=false, field_enabled=true, field_focused=false, field_selected=false, field_highlighted=false, field_hidden=false, field_protected=false, field_numeric=false},
-            Literal = { field_in_edit_mode=false, field_visible=true, field_required=false, field_has_error=false, field_readonly=true, field_enabled=true, field_focused=false, field_selected=false, field_highlighted=false, field_hidden=false, field_protected=false, field_numeric=false},
-            ProtectedLiteral = { field_in_edit_mode=false, field_visible=true, field_required=false, field_has_error=false, field_readonly=true, field_enabled=true, field_focused=false, field_selected=false, field_highlighted=false, field_hidden=false, field_protected=true, field_numeric=false},
-            BooleanField = { field_in_edit_mode=false, field_visible=true, field_required=false, field_has_error=false, field_readonly=false, field_enabled=true, field_focused=false, field_selected=false, field_highlighted=false, field_hidden=false, field_protected=false, field_numeric=false},
-            Image = { field_in_edit_mode=false, field_visible=true, field_required=false, field_has_error=false, field_readonly=true, field_enabled=true, field_focused=false, field_selected=false, field_highlighted=false, field_hidden=false, field_protected=false, field_numeric=false},
-            Line = { field_in_edit_mode=false, field_visible=true, field_required=false, field_has_error=false, field_readonly=true, field_enabled=true, field_focused=false, field_selected=false, field_highlighted=false, field_hidden=false, field_protected=false, field_numeric=false},
-            Fieldset = { field_in_edit_mode=false, field_visible=true, field_required=false, field_has_error=false, field_readonly=true, field_enabled=true, field_focused=false, field_selected=false, field_highlighted=false, field_hidden=false, field_protected=false, field_numeric=false}
-            
+    field_attrb = {
+        default = {
+            Field = {
+                field_in_edit_mode = false,
+                field_visible = true,
+                field_required = false,
+                field_has_error = false,
+                field_readonly = false,
+                field_enabled = true,
+                field_focused = false,
+                field_selected = false,
+                field_highlighted = false,
+                field_hidden = false,
+                field_protected = false,
+                field_numeric = false
+            },
+            Literal = {
+                field_in_edit_mode = false,
+                field_visible = true,
+                field_required = false,
+                field_has_error = false,
+                field_readonly = true,
+                field_enabled = true,
+                field_focused = false,
+                field_selected = false,
+                field_highlighted = false,
+                field_hidden = false,
+                field_protected = false,
+                field_numeric = false
+            },
+            ProtectedLiteral = {
+                field_in_edit_mode = false,
+                field_visible = true,
+                field_required = false,
+                field_has_error = false,
+                field_readonly = true,
+                field_enabled = true,
+                field_focused = false,
+                field_selected = false,
+                field_highlighted = false,
+                field_hidden = false,
+                field_protected = true,
+                field_numeric = false
+            },
+            BooleanField = {
+                field_in_edit_mode = false,
+                field_visible = true,
+                field_required = false,
+                field_has_error = false,
+                field_readonly = false,
+                field_enabled = true,
+                field_focused = false,
+                field_selected = false,
+                field_highlighted = false,
+                field_hidden = false,
+                field_protected = false,
+                field_numeric = false
+            },
+            Image = {
+                field_in_edit_mode = false,
+                field_visible = true,
+                field_required = false,
+                field_has_error = false,
+                field_readonly = true,
+                field_enabled = true,
+                field_focused = false,
+                field_selected = false,
+                field_highlighted = false,
+                field_hidden = false,
+                field_protected = false,
+                field_numeric = false
+            },
+            Line = {
+                field_in_edit_mode = false,
+                field_visible = true,
+                field_required = false,
+                field_has_error = false,
+                field_readonly = true,
+                field_enabled = true,
+                field_focused = false,
+                field_selected = false,
+                field_highlighted = false,
+                field_hidden = false,
+                field_protected = false,
+                field_numeric = false
+            },
+            Fieldset = {
+                field_in_edit_mode = false,
+                field_visible = true,
+                field_required = false,
+                field_has_error = false,
+                field_readonly = true,
+                field_enabled = true,
+                field_focused = false,
+                field_selected = false,
+                field_highlighted = false,
+                field_hidden = false,
+                field_protected = false,
+                field_numeric = false
+            }
+
         }, -- BMS available field attributes
-        initial=nil, -- Default field attribute
-        edited=nil, -- Field attribute after editing
+        initial = nil, -- Default field attribute
+        edited = nil -- Field attribute after editing
     },
     ----- ===== VALEURS INITIALES =====
     ----- Represents the initial values for each field type, which can be used to set the default state of the field when it is created
-    field_initial={-- initial_value: for fieldset/group, represents the title of the fieldset/group;; for image, option_value: represents the ASCII code + file path; for other field types, represents the initial value
-        default={
-            Field = {initial_value = "text", option_value = nil},
-            Literal = {initial_value = "text", option_value = nil},
-            ProtectedLiteral = {initial_value = "text", option_value = nil},
-            BooleanField = {initial_value = false, option_value = nil},  -- Case non cochée par défaut
-            Image = {initial_value = nil, option_value = nil},
-            Line = {initial_value = nil, option_value = nil},
-            Fieldset = {initial_value = "title", option_value = nil}
+    field_initial = { -- initial_value: for fieldset/group, represents the title of the fieldset/group;; for image, option_value: represents the ASCII code + file path; for other field types, represents the initial value
+        default = {
+            Field = {
+                initial_value = "text",
+                option_value = nil
+            },
+            Literal = {
+                initial_value = "text",
+                option_value = nil
+            },
+            ProtectedLiteral = {
+                initial_value = "text",
+                option_value = nil
+            },
+            BooleanField = {
+                initial_value = false,
+                option_value = nil
+            }, -- Case non cochée par défaut
+            Image = {
+                initial_value = nil,
+                option_value = {
+                    ascii_code = nil,
+                    file_path = nil
+                }
+            }, -- Valeur initiale pour Image (ASCII code + chemin du fichier)
+            Line = {
+                initial_value = nil,
+                option_value = nil
+            },
+            Fieldset = {
+                initial_value = "title",
+                option_value = nil
+            }
         },
-        
+
         initial_value = nil, -- Default initial value for the initial field type
-        edited_value = nil, -- Initial value after editing
+        edited_value = nil -- Initial value after editing
     },
-    
-    visual_representation={-- Represents the visual representation of each field type
+
+    visual_representation = { -- Represents the visual representation of each field type
         -- line 0: reserved for border top + title (for fieldset/group)
         -- line 1 to N-1: reserved for border left/right + content/value
         -- line N: reserved for border bottom + footer
-        default={}, -- Default visual representation for each field type
-        initial=nil, -- Default visual representation for the initial field type
-        edited=nil, -- Visual representation after editing
-    },
+        default = {
+            Image = function(obj)
+                -- Display ASCII art from option_value.ascii_code
+                local ascii = obj.field_initial.initial.option_value.ascii_code
+                if ascii and type(ascii) == "table" then
+                    return table.concat(ascii, "\n")
+                end
+                return "[Image]"
+            end
+        }, -- Default visual representation for each field type
+        initial = nil, -- Default visual representation for the initial field type
+        edited = nil -- Visual representation after editing
+    }
 }
 
 -- ===== POST-CONSTRUCTION: Dynamic references for field_border =====
 OBJECTS_DEFINITIONS.field_border = {
-    default={
+    default = {
         -- Field : Toutes les combinaisons style+chars disponibles pour Field
-        Field={style=OBJECTS_DEFINITIONS.field_avail_border_style.default.Field, chars=OBJECTS_DEFINITIONS.field_avail_border_chars.default.Field},
+        Field = {
+            style = OBJECTS_DEFINITIONS.field_avail_border_style.default.Field,
+            chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Field
+        },
         -- Literal : Toutes les combinaisons style+chars disponibles pour Literal
-        Literal={style=OBJECTS_DEFINITIONS.field_avail_border_style.default.Literal, chars=OBJECTS_DEFINITIONS.field_avail_border_chars.default.Literal},
+        Literal = {
+            style = OBJECTS_DEFINITIONS.field_avail_border_style.default.Literal,
+            chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Literal
+        },
         -- ProtectedLiteral : Toutes les combinaisons style+chars disponibles pour ProtectedLiteral
-        ProtectedLiteral={style=OBJECTS_DEFINITIONS.field_avail_border_style.default.ProtectedLiteral, chars=OBJECTS_DEFINITIONS.field_avail_border_chars.default.ProtectedLiteral},
+        ProtectedLiteral = {
+            style = OBJECTS_DEFINITIONS.field_avail_border_style.default.ProtectedLiteral,
+            chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default.ProtectedLiteral
+        },
         -- BooleanField : Toutes les combinaisons style+chars disponibles pour BooleanField
-        BooleanField={style=OBJECTS_DEFINITIONS.field_avail_border_style.default.BooleanField, chars=OBJECTS_DEFINITIONS.field_avail_border_chars.default.BooleanField},
+        BooleanField = {
+            style = OBJECTS_DEFINITIONS.field_avail_border_style.default.BooleanField,
+            chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default.BooleanField
+        },
         -- Image : Toutes les combinaisons style+chars disponibles pour Image
-        Image={style=OBJECTS_DEFINITIONS.field_avail_border_style.default.Image, chars=OBJECTS_DEFINITIONS.field_avail_border_chars.default.Image},
+        Image = {
+            style = OBJECTS_DEFINITIONS.field_avail_border_style.default.Image,
+            chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Image
+        },
         -- Line : Toutes les combinaisons style+chars disponibles pour Line
-        Line={style=OBJECTS_DEFINITIONS.field_avail_border_style.default.Line, chars=OBJECTS_DEFINITIONS.field_avail_border_chars.default.Line},
+        Line = {
+            style = OBJECTS_DEFINITIONS.field_avail_border_style.default.Line,
+            chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Line
+        },
         -- Fieldset : Toutes les combinaisons style+chars disponibles pour Fieldset
-        Fieldset={style=OBJECTS_DEFINITIONS.field_avail_border_style.default.Fieldset, chars=OBJECTS_DEFINITIONS.field_avail_border_chars.default.Fieldset}
-    },-- Toutes les combinaisons style+chars disponibles par type (GUI: [style|v] + [chars|v])
-    initial=nil, -- Default border for the initial field type
-    edited=nil, -- Border after editing
+        Fieldset = {
+            style = OBJECTS_DEFINITIONS.field_avail_border_style.default.Fieldset,
+            chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Fieldset
+        }
+    }, -- Toutes les combinaisons style+chars disponibles par type (GUI: [style|v] + [chars|v])
+    initial = nil, -- Default border for the initial field type
+    edited = nil -- Border after editing
 }
 
 -- ===== CONSTRUCTEUR D'OBJETS =====
 function OBJECTS_DEFINITIONS.new(obj_type, overrides)
     local self = {}
-    
+
     -- Copie de toutes les propriétés depuis la définition globale
     for prop_name, prop_def in pairs(OBJECTS_DEFINITIONS) do
-        if type(prop_def) == "table" and prop_def.default and prop_def.default[obj_type] then
+        if type(prop_def) == "table" and prop_def.default and prop_def.default[obj_type] and type(prop_def.default[obj_type]) ~= "function" and prop_name ~= "visual_representation" then
             -- Initialisation : .default[Type] → .initial
             self[prop_name] = {
                 initial = prop_def.default[obj_type],
@@ -899,10 +2020,13 @@ function OBJECTS_DEFINITIONS.new(obj_type, overrides)
             self[prop_name] = prop_def
         end
     end
-    
+
     -- Type de l'objet (forcé)
-    self.field_type = {initial = obj_type, edited = nil}
-    
+    self.field_type = {
+        initial = obj_type,
+        edited = nil
+    }
+
     -- Appliquer les surcharges si fournies (pour compatibilité ascendante)
     if overrides then
         for prop_name, prop_value in pairs(overrides) do
@@ -920,12 +2044,12 @@ function OBJECTS_DEFINITIONS.new(obj_type, overrides)
             end
         end
     end
-    
+
     -- Fonction de rendu attachée à l'objet
     self.render = function()
         return render_object(self)
     end
-    
+
     return self
 end
 
@@ -935,14 +2059,19 @@ function render_object(obj)
     if not obj or not obj.field_type or not obj.field_type.initial then
         return "[Invalid Object]"
     end
-    
-    local type = obj.field_type.initial
-    local template = obj.visual_representation.default[type]
-    
+
+    local obj_type = obj.field_type.initial
+    local template = obj.visual_representation.default[obj_type]
+
     if not template then
-        return "[" .. type .. "]"
+        return "[" .. obj_type .. "]"
     end
-    
+
+    -- If template is a function, call it directly
+    if type(template) == "function" then
+        return template(obj)
+    end
+
     local lines = {}
     for i = 0, 2 do
         if template[i] then
@@ -958,10 +2087,10 @@ function render_object(obj)
             end
         end
     end
-    
+
     if #lines == 0 then
         return "[" .. (obj.field_name.edited or obj.field_name.initial or obj.field_type.initial) .. "]"
     end
-    
+
     return table.concat(lines, "\n")
 end
