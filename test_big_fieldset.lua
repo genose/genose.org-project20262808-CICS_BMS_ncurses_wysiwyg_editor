@@ -14,14 +14,22 @@ local bigFieldset = OBJECTS_DEFINITIONS.new('Fieldset', {
 -- Get fieldset border style (double by default)
 local fs_border = bigFieldset.field_border.initial
 local fs_chars = fs_border.chars.double
+local width = OBJECTS_DEFINITIONS.field_width.default.Fieldset
 
 -- RENDER MAIN FIELDSET CONTAINER
+-- line 0: border top + title
+-- lines 1 to N-1: border left/right + content
+-- line N: border bottom
 print("MAIN FIELDSET CONTAINER:")
-print(fs_chars.top_left .. string.rep(fs_chars.top, 50) .. fs_chars.top_right)
-print(fs_chars.left .. string.rep(" ", 50) .. fs_chars.right)
-local title = bigFieldset.field_initial.initial.initial_value or bigFieldset.field_name.initial or "" 
-print(fs_chars.left .. "  " .. title .. string.rep(" ", 50 - #title - 4) .. fs_chars.right)
-print(fs_chars.left .. string.rep(" ", 50) .. fs_chars.right)
+local title = bigFieldset.field_initial.initial.initial_value or bigFieldset.field_name.initial or ""
+-- Line 0: top border with title centered
+local title_padding = math.floor((width - #title - 2) / 2)
+print(fs_chars.top_left .. string.rep(fs_chars.top, title_padding) .. " " .. title .. " " .. string.rep(fs_chars.top, width - title_padding - #title - 4) .. fs_chars.top_right)
+-- Line 1 to N-1: content
+print(fs_chars.left .. string.rep(" ", width) .. fs_chars.right)
+print(fs_chars.left .. string.rep(" ", width) .. fs_chars.right)
+-- Line N: bottom border
+print(fs_chars.bottom_left .. string.rep(fs_chars.bottom, width) .. fs_chars.bottom_right)
 
 -- CREATE AND RENDER EACH FIELD TYPE
 local fieldTypes = {'Field', 'Literal', 'ProtectedLiteral', 'BooleanField', 'Image', 'Line', 'Fieldset'}
@@ -65,32 +73,35 @@ for i, ftype in ipairs(fieldTypes) do
     local style = border.style[1]
     local b = chars[style] or chars.double or chars.single
     
-    local width = 40
-    if ftype == "Line" then width = 50 end
-    if ftype == "BooleanField" then width = 10 end
+    local fwidth = OBJECTS_DEFINITIONS.field_width.default[ftype]
+    if ftype == "Line" then fwidth = 50 end
+    if ftype == "BooleanField" then fwidth = 15 end
     
-    print("   " .. b.top_left .. string.rep(b.top, width) .. b.top_right)
+    -- Line 0: top border
+    print("   " .. b.top_left .. string.rep(b.top, fwidth) .. b.top_right)
     
+    -- Lines 1 to N-1: content
     if ftype == "Image" then
         local ascii = field.field_initial.initial.option_value.ascii_code
         for _, line in ipairs(ascii) do
-            local padding = width - #line
+            local padding = fwidth - #line
             print("   " .. b.left .. " " .. line .. string.rep(" ", padding) .. " " .. b.right)
         end
     elseif ftype == "BooleanField" then
         local value = field.field_initial.initial.initial_value and "[X]" or "[ ]"
         local label = field.field_name.initial
-        print("   " .. b.left .. " " .. value .. " " .. label .. string.rep(" ", width - #value - #label - 4) .. b.right)
+        print("   " .. b.left .. " " .. value .. " " .. label .. string.rep(" ", fwidth - #value - #label - 4) .. b.right)
     elseif ftype == "Line" then
         local line_char = (b.top ~= "" and b.top or "-")
-        print("   " .. string.rep(line_char, width + 2))
+        print("   " .. string.rep(line_char, fwidth + 2))
     else
         local content = field.field_initial.initial.initial_value or field.field_name.initial
-        print("   " .. b.left .. " " .. content .. string.rep(" ", width - #content - 1) .. b.right)
+        print("   " .. b.left .. " " .. content .. string.rep(" ", fwidth - #content - 1) .. b.right)
     end
     
+    -- Line N: bottom border (skip for Line)
     if ftype ~= "Line" then
-        print("   " .. b.bottom_left .. string.rep(b.bottom, width) .. b.bottom_right)
+        print("   " .. b.bottom_left .. string.rep(b.bottom, fwidth) .. b.bottom_right)
     end
 end
 
