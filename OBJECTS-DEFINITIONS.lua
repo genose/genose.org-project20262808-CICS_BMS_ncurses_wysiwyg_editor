@@ -2350,3 +2350,321 @@ function render_object(obj)
 
     return table.concat(lines, "\n")
 end
+
+-- ===== EXTRACTION DES PROPRIÉTÉS POUR GUI =====
+
+function OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    -->
+    -- Extrait toutes les propriétés d'un type d'objet avec leurs métadonnées
+    -- Retourne une table prête pour une GUI (combobox, property grid, etc.)
+    --
+    -- @param obj_type: Type de l'objet (ex: "Field", "Fieldset"), ou nil pour toutes les propriétés globales
+    -- @return: Table de propriétés au format GUI
+    
+    local function get_category(prop_name)
+        if prop_name:find("color") then return "Colors" end
+        if prop_name:find("border") then return "Border" end
+        if prop_name:find("style") then return "Style" end
+        if prop_name:find("font") then return "Font" end
+        if prop_name:find("align") then return "Alignment" end
+        if prop_name:find("height") or prop_name:find("width") then return "Dimensions" end
+        if prop_name:find("fill") or prop_name:find("char") then return "Characters" end
+        if prop_name:find("initial") or prop_name:find("value") then return "Values" end
+        if prop_name:find("name") or prop_name:find("type") then return "Identity" end
+        if prop_name:find("avail") or prop_name:find("default") then return "Available Options" end
+        if prop_name:find("pos") then return "Position" end
+        if prop_name:find("title") or prop_name:find("footer") or prop_name:find("prefix") or prop_name:find("suffix") then return "Title & Footer" end
+        if prop_name:find("error") or prop_name:find("required") then return "Validation" end
+        if prop_name:find("attrb") then return "Attributes" end
+        if prop_name:find("child") then return "Children" end
+        return "Other"
+    end
+
+    local function get_gui_type(prop_name, prop_def)
+        -- D'abord vérifier par nom de propriété (priorité aux noms explicites)
+        if prop_name:find("color") then return "color" end
+        if prop_name:find("char") then return "char" end
+        if prop_name:find("height") or prop_name:find("width") then return "number" end
+        if prop_name:find("border_style") then return "border_style" end
+        if prop_name:find("align") then return "enum" end
+        if prop_name:find("style") then return "enum" end
+        
+        -- Ensuite vérifier le type des valeurs par défaut
+        if prop_def.default then
+            if type(prop_def.default) == "string" then return "string" end
+            if type(prop_def.default) == "number" then return "number" end
+            if type(prop_def.default) == "boolean" then return "boolean" end
+            if type(prop_def.default) == "table" then
+                -- Vérifier si c'est une table de valeurs par type ou une vraie enum
+                local has_string_values = false
+                local has_number_values = false
+                for _, v in pairs(prop_def.default) do
+                    if type(v) == "string" then has_string_values = true end
+                    if type(v) == "number" then has_number_values = true end
+                end
+                -- Si toutes les valeurs sont des nombres, c'est une propriété numérique
+                if has_number_values and not has_string_values then
+                    return "number"
+                end
+                -- Si toutes les valeurs sont des strings, c'est une enum
+                if has_string_values and not has_number_values then
+                    return "enum"
+                end
+                -- Mixte ou complexe, retourner object
+                return "object"
+            end
+        end
+        
+        -- Enfin vérifier enum (mais après les vérifications par nom)
+        if prop_def.enum and type(prop_def.enum) == "table" then
+            -- Vérifier si enum contient des strings ou des nombres
+            local has_string_enum = false
+            local has_number_enum = false
+            for _, v in pairs(prop_def.enum) do
+                if type(v) == "string" then has_string_enum = true end
+                if type(v) == "number" then has_number_enum = true end
+            end
+            if has_string_enum and not has_number_enum then
+                return "enum"
+            end
+        end
+        
+        return "object"
+    end
+
+    local function get_gui_hint(prop_name)
+        local hints = {
+            field_name = "Name identifier for the object",
+            field_type = "Type of the field (Field, Literal, ProtectedLiteral, BooleanField, Image, Line, Fieldset)",
+            field_height = "Height of the field in rows",
+            field_width = "Width of the field in columns",
+            field_min_height = "Minimum allowed height",
+            field_max_height = "Maximum allowed height",
+            field_width_min = "Minimum allowed width",
+            field_width_max = "Maximum allowed width",
+            field_avail_color = "Available color palette",
+            field_border_color = "Border line color",
+            field_title_color = "Title text color",
+            field_text_color = "Main text color",
+            field_footer_color = "Footer text color",
+            field_fill_char = "Character used to fill empty space",
+            field_avail_style = "Available text styles",
+            field_style = "Current text style",
+            field_avail_text_align = "Available text alignment options",
+            field_text_align = "Text alignment (left, center, right)",
+            field_avail_border_style = "Available border styles",
+            field_border_style = "Current border style",
+            field_avail_border_chars = "Available border character sets",
+            field_border = "Border configuration (style + chars)",
+            field_title_fill_char = "Character to fill title area",
+            field_avail_vertical_align = "Available vertical alignment options",
+            field_vertical_align = "Vertical alignment (top, middle, bottom)",
+            field_vertical_margin = "Vertical margin size",
+            field_pos = "Position coordinates (row, col, rowend, colend)",
+            field_initial = "Initial/starting value",
+            field_children = "Child fields (for Fieldset)",
+            field_attrb = "Field attributes (readonly, required, etc.)",
+            field_required_marker = "Marker for required fields",
+            field_error_marker = "Marker for fields with errors",
+            field_title_prefix = "Prefix for field title",
+            field_title_suffix = "Suffix for field title",
+            field_title_align = "Title text alignment",
+            field_footer = "Footer text",
+            visual_representation = "Visual rendering template"
+        }
+        return hints[prop_name] or prop_name:gsub("_", " "):gsub("^%l", string.upper)
+    end
+
+    local function get_available_values(prop_def, obj_type)
+        if prop_def.enum and obj_type and prop_def.enum[obj_type] then
+            if type(prop_def.enum[obj_type]) == "table" then
+                return prop_def.enum[obj_type]
+            end
+            return {prop_def.enum[obj_type]}
+        elseif prop_def.default and obj_type and prop_def.default[obj_type] then
+            if type(prop_def.default[obj_type]) == "table" then
+                local has_only_string_or_number_keys = true
+                for k, _ in pairs(prop_def.default[obj_type]) do
+                    if type(k) ~= "string" and type(k) ~= "number" then
+                        has_only_string_or_number_keys = false
+                        break
+                    end
+                end
+                if has_only_string_or_number_keys then
+                    return prop_def.default[obj_type]
+                end
+            end
+        elseif prop_def.enum then
+            return prop_def.enum
+        elseif prop_def.default then
+            return prop_def.default
+        end
+        return nil
+    end
+
+    local function get_min_max(prop_def, obj_type)
+        local min_table = prop_def.min
+        local max_table = prop_def.max
+        
+        if min_table and max_table then
+            local min_val = obj_type and min_table[obj_type] or min_table.Field or 1
+            local max_val = obj_type and max_table[obj_type] or max_table.Field or 100
+            if min_val and max_val then
+                return { min = min_val, max = max_val }
+            end
+        end
+        return nil
+    end
+
+    local gui_props = {}
+
+    for prop_name, prop_def in pairs(OBJECTS_DEFINITIONS) do
+        if type(prop_name) == "string" and not prop_name:match("^_") and
+           prop_name ~= "field_border" and prop_name ~= "visual_representation" and
+           type(prop_def) == "table" then
+
+            local has_type_specific = obj_type and prop_def.default and prop_def.default[obj_type]
+
+            if not obj_type or has_type_specific or not prop_def.default then
+                local gui_prop = {
+                    name = prop_name,
+                    gui_name = prop_name:gsub("_", " "):gsub("^%l", string.upper),
+                    category = get_category(prop_name),
+                    gui_type = get_gui_type(prop_name, prop_def),
+                    hint = get_gui_hint(prop_name),
+                    default = prop_def.default and (obj_type and prop_def.default[obj_type] or prop_def.default) or nil,
+                    available_values = get_available_values(prop_def, obj_type),
+                    min_max = get_min_max(prop_def, obj_type),
+                    editable = true,
+                    read_only = prop_name:find("avail_") ~= nil or prop_name:find("_exported") ~= nil or prop_name:find("_help") ~= nil
+                }
+
+                if gui_prop.gui_type == "color" then
+                    gui_prop.control_type = "color_picker"
+                elseif gui_prop.gui_type == "border_style" then
+                    gui_prop.control_type = "border_style_picker"
+                elseif gui_prop.gui_type == "enum" then
+                    gui_prop.control_type = "dropdown"
+                elseif gui_prop.gui_type == "number" then
+                    gui_prop.control_type = "spinner"
+                    if gui_prop.min_max then
+                        gui_prop.min = gui_prop.min_max.min
+                        gui_prop.max = gui_prop.min_max.max
+                    end
+                elseif gui_prop.gui_type == "boolean" then
+                    gui_prop.control_type = "checkbox"
+                elseif gui_prop.gui_type == "char" then
+                    gui_prop.control_type = "char_picker"
+                else
+                    gui_prop.control_type = "text"
+                end
+
+                table.insert(gui_props, gui_prop)
+            end
+        end
+    end
+
+    table.sort(gui_props, function(a, b)
+        if a.category ~= b.category then
+            return a.category < b.category
+        end
+        return a.name < b.name
+    end)
+
+    return gui_props
+end
+
+function OBJECTS_DEFINITIONS.get_ncurses_menu_items(obj_type)
+    local gui_props = OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    local menu_items = {}
+
+    for _, prop in ipairs(gui_props) do
+        local item = {
+            label = prop.gui_name,
+            name = prop.name,
+            type = prop.gui_type,
+            value = prop.default,
+            choices = prop.available_values,
+            min = prop.min or prop.min_max and prop.min_max.min or 1,
+            max = prop.max or prop.min_max and prop.min_max.max or 100,
+            category = prop.category,
+            hint = prop.hint,
+            control_type = prop.control_type,
+            read_only = prop.read_only
+        }
+        table.insert(menu_items, item)
+    end
+
+    return menu_items
+end
+
+function OBJECTS_DEFINITIONS.export_to_json(obj_type)
+    local props = OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    
+    local function to_json(t, indent)
+        indent = indent or ""
+        if type(t) == "table" then
+            if #t > 0 then
+                local result = "["
+                for i, v in ipairs(t) do
+                    if i > 1 then result = result .. ", " end
+                    if type(v) == "table" then
+                        result = result .. to_json(v, indent .. "  ")
+                    elseif type(v) == "string" then
+                        result = result .. '"' .. v:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
+                    elseif type(v) == "number" or type(v) == "boolean" then
+                        result = result .. tostring(v)
+                    else
+                        result = result .. "null"
+                    end
+                end
+                return result .. "]"
+            else
+                local result = "{"
+                local first = true
+                for k, v in pairs(t) do
+                    if not first then result = result .. ", " end
+                    first = false
+                    result = result .. '"' .. tostring(k) .. '":'
+                    if type(v) == "table" then
+                        result = result .. to_json(v, indent .. "  ")
+                    elseif type(v) == "string" then
+                        result = result .. '"' .. v:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
+                    elseif type(v) == "number" or type(v) == "boolean" then
+                        result = result .. tostring(v)
+                    else
+                        result = result .. "null"
+                    end
+                end
+                return result .. "}"
+            end
+        else
+            if type(t) == "string" then
+                return '"' .. t:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
+            elseif type(t) == "number" or type(t) == "boolean" then
+                return tostring(t)
+            else
+                return "null"
+            end
+        end
+    end
+    
+    local prepared = {}
+    for i, prop in ipairs(props) do
+        prepared[i] = {
+            name = prop.name,
+            gui_name = prop.gui_name,
+            category = prop.category,
+            gui_type = prop.gui_type,
+            control_type = prop.control_type,
+            hint = prop.hint,
+            default = prop.default,
+            available_values = prop.available_values,
+            min = prop.min,
+            max = prop.max,
+            read_only = prop.read_only
+        }
+    end
+    
+    return to_json(prepared)
+end
