@@ -55,7 +55,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_type = { -- Type of the field, can be Field, Literal, ProtectedLiteral, BooleanField, Image, Line, Fieldset
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             Field = "Field",
             Literal = "Literal",
@@ -206,7 +206,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_border_color = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             default = "default",
             black = "black",
@@ -224,7 +224,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_title_color = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             default = "default",
             black = "black",
@@ -242,7 +242,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_text_color = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             default = "default",
             black = "black",
@@ -259,7 +259,7 @@ OBJECTS_DEFINITIONS = {
         edited = nil
     },
     field_avail_footer_color = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             default = "default",
             black = "black",
@@ -277,7 +277,7 @@ OBJECTS_DEFINITIONS = {
     },
     field_footer_color = {
 
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             default = "default",
             black = "black",
@@ -367,7 +367,7 @@ OBJECTS_DEFINITIONS = {
     -- Represents the style for each field type, referencing field_avail_style enum for consistency
     -- Adapted per field type considering user visual experience (UX)
     field_style = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             default = "default",
             bold = "bold",
@@ -410,7 +410,7 @@ OBJECTS_DEFINITIONS = {
     },
     -- field_text_align represents the text alignment for each field type, which can be left, center, or right
     field_text_align = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             left = "left",
             center = "center",
@@ -460,7 +460,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_border_style = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         default = nil, -- Default border style for each field type
         initial = nil, -- Default border style for the initial field type
         edited = nil -- Border style after editing
@@ -483,7 +483,7 @@ OBJECTS_DEFINITIONS = {
 
     -- Caractère de remplissage pour les champs vides (ex: "_" pour Field)
     field_fill_char = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             underscore = "_",
             space = " ",
@@ -505,7 +505,7 @@ OBJECTS_DEFINITIONS = {
     },
     -- ===== ALIGNEMENT VERTICAL =====
     field_vertical_align = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             top = "top",
             middle = "middle",
@@ -517,7 +517,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_vertical_margin = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
             none = 0
         },
@@ -547,19 +547,19 @@ OBJECTS_DEFINITIONS = {
     },
     -- represents the required marker for each field type, which can be used to indicate that a field is required. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
     field_required_marker = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         default = nil,
         initial = nil,
         edited = nil
     },
     field_footer_required_marker = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         default = nil,
         initial = nil,
         edited = nil
     },
     field_footer_error_marker = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         default = nil,
         initial = nil,
         edited = nil
@@ -582,7 +582,7 @@ OBJECTS_DEFINITIONS = {
     },
     -- represents the error marker for each field type, which can be used to indicate that a field is in an error state. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
     field_error_marker = {
-        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         default = nil,
         initial = nil,
         edited = nil
