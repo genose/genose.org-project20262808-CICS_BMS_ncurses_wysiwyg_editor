@@ -415,7 +415,7 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     -- Render children
     if children and #children > 0 then
         -- Calculate max child width for consistent alignment
-        local max_child_width = actual_width - 6  -- Account for fieldset borders (2) + padding (4)
+        local max_child_width = 0
         for _, child in ipairs(children) do
             local child_label = child.label or get_gui_property(child, "field_name") or ""
             local child_required = child.is_required or false
@@ -426,9 +426,21 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
             local child_width = math.max(display_width(child_full_label) + 4, display_width(child_value) + 2)
             max_child_width = math.max(max_child_width, child_width)
         end
-        -- Ensure max_child_width doesn't exceed fieldset width minus margins
-        max_child_width = math.min(max_child_width, actual_width - 6)
-        max_child_width = math.max(max_child_width, 20)  -- Minimum width for readability
+        -- Ensure minimum width for readability
+        max_child_width = math.max(max_child_width, 20)
+        
+        -- If children need more space than available, expand the fieldset (but only if no override_width)
+        -- If override_width is set (e.g., from a form), respect it
+        if override_width then
+            -- When in a form, respect the override_width
+            max_child_width = math.min(max_child_width, actual_width - 6)
+        else
+            -- When standalone, expand fieldset to fit children
+            if max_child_width > actual_width - 6 then
+                actual_width = max_child_width + 6
+            end
+            max_child_width = math.min(max_child_width, actual_width - 6)
+        end
         
         for _, child in ipairs(children) do
             local child_render = render_gui_object(child, {width = max_child_width})
