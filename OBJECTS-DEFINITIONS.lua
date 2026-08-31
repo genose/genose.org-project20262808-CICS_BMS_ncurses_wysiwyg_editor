@@ -2201,56 +2201,56 @@ OBJECTS_DEFINITIONS.field_footer.default = {
         align = OBJECTS_DEFINITIONS.field_footer_align.default.Field,
         fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Field,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.Field,
-        required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Field,
-        error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Field
+        required_marker = nil,
+        error_marker = nil
     },
     Literal = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.Literal,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.Literal,
         fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Literal,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.Literal,
-        required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Literal,
-        error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Literal
+        required_marker = nil,
+        error_marker = nil
     },
     ProtectedLiteral = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.ProtectedLiteral,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.ProtectedLiteral,
         fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.ProtectedLiteral,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.ProtectedLiteral,
-        required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.ProtectedLiteral,
-        error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.ProtectedLiteral
+        required_marker = nil,
+        error_marker = nil
     },
     BooleanField = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.BooleanField,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.BooleanField,
         fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.BooleanField,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.BooleanField,
-        required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.BooleanField,
-        error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.BooleanField
+        required_marker = nil,
+        error_marker = nil
     },
     Image = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.Image,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.Image,
         fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Image,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.Image,
-        required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Image,
-        error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Image
+        required_marker = nil,
+        error_marker = nil
     },
     Line = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.Line,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.Line,
         fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Line,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.Line,
-        required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Line,
-        error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Line
+        required_marker = nil,
+        error_marker = nil
     },
     Fieldset = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.Fieldset,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.Fieldset,
         fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Fieldset,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.Fieldset,
-        required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Fieldset,
-        error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Fieldset
+        required_marker = nil,
+        error_marker = nil
     }
 }
 
@@ -2677,13 +2677,359 @@ local function get_border_chars(obj)
     }
 end
 
+-- Helper: Get the marker string for required fields
+local function get_required_marker(obj)
+    local attrb = get_property(obj, "field_attrb")
+    if not attrb or not attrb.field_required then
+        return ""
+    end
+    local marker_prop = get_property(obj, "field_required_marker")
+    if marker_prop and type(marker_prop) == "table" then
+        -- marker_prop might be:
+        -- 1. A table with 'required' key (default structure)
+        -- 2. A table with 'marker' key directly (user simplified structure)
+        -- 3. A table with initial/edited keys
+        local marker_details = marker_prop.required or marker_prop
+        if marker_details and type(marker_details) == "table" then
+            -- marker_details might have 'marker' key or initial/edited keys
+            local marker_str = marker_details.marker
+            if marker_str and type(marker_str) == "string" then
+                return marker_str
+            end
+            -- Try initial/edited
+            marker_details = marker_details.initial or marker_details.edited
+            if marker_details and type(marker_details) == "table" and marker_details.marker then
+                return marker_details.marker
+            end
+        end
+        -- Try direct marker
+        if marker_prop.marker and type(marker_prop.marker) == "string" then
+            return marker_prop.marker
+        end
+    end
+    -- Fallback to default marker
+    return " *"
+end
+
+-- Helper: Get the marker string for error fields
+local function get_error_marker(obj)
+    local attrb = get_property(obj, "field_attrb")
+    if not attrb or not attrb.field_has_error then
+        return ""
+    end
+    local marker_prop = get_property(obj, "field_error_marker")
+    if marker_prop and type(marker_prop) == "table" then
+        -- marker_prop might be:
+        -- 1. A table with 'error' key (default structure)
+        -- 2. A table with 'marker' key directly (user simplified structure)
+        -- 3. A table with initial/edited keys
+        local marker_details = marker_prop.error or marker_prop
+        if marker_details and type(marker_details) == "table" then
+            -- marker_details might have 'marker' key or initial/edited keys
+            local marker_str = marker_details.marker
+            if marker_str and type(marker_str) == "string" then
+                return marker_str
+            end
+            -- Try initial/edited
+            marker_details = marker_details.initial or marker_details.edited
+            if marker_details and type(marker_details) == "table" and marker_details.marker then
+                return marker_details.marker
+            end
+        end
+        -- Try direct marker
+        if marker_prop.marker and type(marker_prop.marker) == "string" then
+            return marker_prop.marker
+        end
+    end
+    -- Fallback to default marker
+    return " /!\\"
+end
+
+-- Helper: Build title with prefix, main title, and suffix
+local function build_title(obj)
+    local name = get_property(obj, "field_name")
+    local initial = get_property(obj, "field_initial")
+    
+    -- Extract the actual string value
+    local name_str = ""
+    if name and type(name) == "table" then
+        name_str = name.edited or name.initial or ""
+    elseif type(name) == "string" then
+        name_str = name
+    end
+    
+    local initial_str = ""
+    if initial and type(initial) == "table" then
+        initial_str = initial.edited or initial.initial or ""
+        if type(initial_str) == "table" then
+            initial_str = initial_str.initial_value or ""
+        end
+    elseif type(initial) == "string" then
+        initial_str = initial
+    end
+    
+    local title = name_str or initial_str or ""
+    
+    if title == "" then
+        return ""
+    end
+    
+    -- Get prefix and suffix configurations
+    local title_prefix_raw = get_property(obj, "field_title_prefix")
+    local title_suffix_raw = get_property(obj, "field_title_suffix")
+    -- These might be the initial/edited values directly, or tables with initial/edited keys
+    local title_prefix = title_prefix_raw
+    if title_prefix_raw and type(title_prefix_raw) == "table" and title_prefix_raw.initial then
+        title_prefix = title_prefix_raw.edited or title_prefix_raw.initial
+    end
+    local title_suffix = title_suffix_raw
+    if title_suffix_raw and type(title_suffix_raw) == "table" and title_suffix_raw.initial then
+        title_suffix = title_suffix_raw.edited or title_suffix_raw.initial
+    end
+    local attrb = get_property(obj, "field_attrb")
+    
+    -- Build prefix
+    local prefix = ""
+    if title_prefix and type(title_prefix) == "table" and title_prefix.enabled then
+        local marker = ""
+        -- Check if we should show required or error marker
+        if attrb and attrb.field_required and title_prefix.required then
+            -- Use the helper function to get the marker
+            marker = get_required_marker(obj)
+        end
+        if marker == "" and attrb and attrb.field_has_error and title_prefix.errors then
+            -- Use the helper function to get the marker
+            marker = get_error_marker(obj)
+        end
+        if marker ~= "" then
+            prefix = marker
+        elseif title_prefix.prefix_char then
+            local char = title_prefix.prefix_char
+            if type(char) == "table" then
+                char = char.space or char.dash or char.underscore or char.dot or " "
+            end
+            prefix = char
+        end
+    end
+    
+    -- Build suffix
+    local suffix = ""
+    if title_suffix and type(title_suffix) == "table" and title_suffix.enabled then
+        local marker = ""
+        -- Check if we should show required or error marker
+        if attrb and attrb.field_required and title_suffix.required then
+            -- Use the helper function to get the marker
+            marker = get_required_marker(obj)
+        end
+        if marker == "" and attrb and attrb.field_has_error and title_suffix.errors then
+            -- Use the helper function to get the marker
+            marker = get_error_marker(obj)
+        end
+        if marker ~= "" then
+            suffix = marker
+        elseif title_suffix.suffix_char then
+            local char = title_suffix.suffix_char
+            if type(char) == "table" then
+                char = char.space or char.dash or char.underscore or char.dot or " "
+            end
+            suffix = char
+        end
+    end
+    
+    return prefix .. title .. suffix
+end
+
+-- Helper: Build footer line
+local function build_footer(obj, width)
+    local footer_config = get_property(obj, "field_footer")
+    if not footer_config or type(footer_config) ~= "table" then
+        return ""
+    end
+    
+
+    
+    -- Handle fill_char: can be a string or a table with fill char options
+    local fill_char_raw = footer_config.fill_char or " "
+    local fill_char = " "
+    if type(fill_char_raw) == "table" then
+        -- Extract first available fill char
+        fill_char = fill_char_raw.space or fill_char_raw.dash or fill_char_raw.underscore or fill_char_raw.dot or " "
+    elseif type(fill_char_raw) == "string" then
+        fill_char = fill_char_raw
+    end
+    
+    -- Handle title: can be a string or a table { title = "..." }
+    local title = footer_config.title or ""
+    if type(title) == "table" and title.title then
+        title = title.title
+    elseif type(title) ~= "string" then
+        title = ""
+    end
+    -- Handle align: can be a string or a table with alignment options
+    local align_raw = footer_config.align or "center"
+    local align = "center"
+    if type(align_raw) == "table" then
+        -- Extract first available alignment
+        align = align_raw.center or align_raw.left or align_raw.right or "center"
+    elseif type(align_raw) == "string" then
+        align = align_raw
+    end
+    
+    -- Handle color: can be a string or a table with color options
+    local color_raw = footer_config.color or "default"
+    local color = "default"
+    if type(color_raw) == "table" then
+        -- Extract first available color
+        color = color_raw.default or color_raw.white or color_raw.green or color_raw.yellow or "default"
+    elseif type(color_raw) == "string" then
+        color = color_raw
+    end
+    
+    -- Check if we should show required/error markers
+    local attrb = get_property(obj, "field_attrb")
+    local show_required = false
+    local show_error = false
+    
+    if attrb then
+        show_required = attrb.field_required or false
+        show_error = attrb.field_has_error or false
+    end
+    
+    -- Get markers
+    local required_marker = ""
+    local error_marker = ""
+    
+    if footer_config.required_marker then
+        local rm = footer_config.required_marker
+        -- Handle different structures:
+        -- 1. { initial = { marker = "..." } } or { edited = { marker = "..." } }
+        -- 2. { required = { marker = "..." } } (from default)
+        -- 3. { marker = "..." } (direct)
+        -- 4. "..." (string)
+        if type(rm) == "string" then
+            required_marker = rm
+        elseif type(rm) == "table" then
+            local marker_table = rm.edited or rm.initial or rm.required or rm
+            if type(marker_table) == "table" and marker_table.marker then
+                required_marker = marker_table.marker
+            elseif type(marker_table) == "string" then
+                required_marker = marker_table
+            elseif type(rm.marker) == "string" then
+                required_marker = rm.marker
+            end
+        end
+    end
+    
+    if footer_config.error_marker then
+        local em = footer_config.error_marker
+        -- Handle different structures:
+        -- 1. { initial = { marker = "..." } } or { edited = { marker = "..." } }
+        -- 2. { error = { marker = "..." } } (from default)
+        -- 3. { marker = "..." } (direct)
+        -- 4. "..." (string)
+        if type(em) == "string" then
+            error_marker = em
+        elseif type(em) == "table" then
+            local marker_table = em.edited or em.initial or em.error or em
+            if type(marker_table) == "table" and marker_table.marker then
+                error_marker = marker_table.marker
+            elseif type(marker_table) == "string" then
+                error_marker = marker_table
+            elseif type(em.marker) == "string" then
+                error_marker = em.marker
+            end
+        end
+    end
+    
+    -- Only show footer if title is non-empty or there are markers to display
+    if title == "" and not show_required and not show_error then
+        return ""
+    end
+    
+    -- Build footer content parts
+    local marker_content = ""
+    if show_required and required_marker ~= "" then
+        marker_content = marker_content .. required_marker
+    end
+    if show_error and error_marker ~= "" then
+        marker_content = marker_content .. error_marker
+    end
+    
+    -- Check if title + markers fit
+    local total_length = #title + #marker_content
+    local display_title = title
+    
+    -- If total is too long, truncate title to make room for markers
+    if total_length > width then
+        local available_for_title = width - #marker_content
+        if available_for_title > 0 then
+            display_title = title:sub(1, available_for_title)
+        else
+            display_title = ""
+        end
+    end
+    
+    local content = display_title .. marker_content
+    
+    -- If no content after adding markers, return empty
+    if content == "" then
+        return ""
+    end
+    
+    -- Apply alignment
+    local padding = width - #content
+    if padding > 0 then
+        if align == "left" then
+            content = content .. string.rep(fill_char, padding)
+        elseif align == "right" then
+            content = string.rep(fill_char, padding) .. content
+        else -- center
+            local left_pad = math.floor(padding / 2)
+            local right_pad = padding - left_pad
+            content = string.rep(fill_char, left_pad) .. content .. string.rep(fill_char, right_pad)
+        end
+    else
+        -- If still too long after truncating title, do a final truncation
+        content = content:sub(1, width)
+    end
+    
+    return content
+end
+
 -- Helper: Render a simple bordered field (Field, Literal, ProtectedLiteral, BooleanField, Image)
 function render_bordered_field(obj, custom_content)
-    local height = get_property(obj, "field_height") or 3
-    local width = get_property(obj, "field_width") or 10
+    local height_raw = get_property(obj, "field_height")
+    -- field_height might be a table with {min, max, initial, edited} structure
+    local height = 3
+    if height_raw and type(height_raw) == "table" then
+        height = height_raw.initial or height_raw.edited or 3
+    elseif type(height_raw) == "number" then
+        height = height_raw
+    end
+    
+    local width_raw = get_property(obj, "field_width")
+    local width = 10
+    if width_raw and type(width_raw) == "table" then
+        width = width_raw.initial or width_raw.edited or 10
+    elseif type(width_raw) == "number" then
+        width = width_raw
+    end
     local border_style = get_property(obj, "field_border_style") or "none"
     local border_chars = get_border_chars(obj)
-    local fill_char = get_property(obj, "field_fill_char") or " "
+    local fill_char_raw = get_property(obj, "field_fill_char")
+    -- Extract the fill character from the table (default to space)
+    local fill_char = " "
+    if fill_char_raw and type(fill_char_raw) == "table" then
+        local fc_config = fill_char_raw.edited or fill_char_raw.initial
+        if fc_config and type(fc_config) == "table" then
+            -- Use first available fill char
+            fill_char = fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or " "
+        elseif type(fc_config) == "string" then
+            fill_char = fc_config
+        end
+    elseif type(fill_char_raw) == "string" then
+        fill_char = fill_char_raw
+    end
     local obj_type = get_property(obj, "field_type") or "Field"
 
     -- Determine content
@@ -2724,10 +3070,41 @@ function render_bordered_field(obj, custom_content)
         return table.concat(lines, "\n")
     end
 
-    -- Top border
+    -- Top border with title if height >= 1
     if height >= 1 then
-        local top_line = border_chars.top_left .. string.rep(border_chars.top, width) .. border_chars.top_right
-        table.insert(lines, top_line)
+        local title = build_title(obj)
+        local title_fill = get_property(obj, "field_title_fill_char")
+        -- Extract the fill character from the table (default to space)
+        local fill_char_str = " "
+        if title_fill and type(title_fill) == "table" then
+            local tf_config = title_fill.edited or title_fill.initial
+            if tf_config and type(tf_config) == "table" then
+                -- Use first available fill char
+                fill_char_str = tf_config.space or tf_config.dash or tf_config.underscore or tf_config.dot or " "
+            end
+        end
+        
+        if title ~= "" then
+            -- Create title line with border
+            local title_str = " " .. title .. " "
+            local title_len = #title_str
+            local content_width = width - 2
+            
+            if title_len > content_width then
+                title_str = title_str:sub(1, content_width)
+                title_len = content_width
+            end
+            
+            local padding = content_width - title_len
+            local left_fill = math.floor(padding / 2)
+            local right_fill = padding - left_fill
+            title_str = string.rep(fill_char_str, left_fill) .. title_str .. string.rep(fill_char_str, right_fill)
+            
+            table.insert(lines, border_chars.top_left .. title_str .. border_chars.top_right)
+        else
+            -- No title, just border
+            table.insert(lines, border_chars.top_left .. string.rep(border_chars.top, width) .. border_chars.top_right)
+        end
     end
 
     -- Content area
@@ -2767,11 +3144,18 @@ function render_bordered_field(obj, custom_content)
         end
     end
 
-    -- Bottom border
+    -- Bottom border or footer
     if height >= 2 then
-        local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) ..
-                                border_chars.bottom_right
-        table.insert(lines, bottom_line)
+        local footer = build_footer(obj, width)
+        if footer ~= "" then
+            -- Footer line
+            table.insert(lines, border_chars.bottom_left .. footer .. border_chars.bottom_right)
+        else
+            -- Regular bottom border
+            local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) ..
+                                    border_chars.bottom_right
+            table.insert(lines, bottom_line)
+        end
     end
 
     return table.concat(lines, "\n")
@@ -2793,41 +3177,77 @@ end
 
 -- Helper: Render a Fieldset (container with title)
 function render_fieldset(obj)
-    local height = get_property(obj, "field_height") or 3
-    local width = get_property(obj, "field_width") or 40
+    local height_raw = get_property(obj, "field_height")
+    local height = 3
+    if height_raw and type(height_raw) == "table" then
+        height = height_raw.initial or height_raw.edited or 3
+    elseif type(height_raw) == "number" then
+        height = height_raw
+    end
+    
+    local width_raw = get_property(obj, "field_width")
+    local width = 40
+    if width_raw and type(width_raw) == "table" then
+        width = width_raw.initial or width_raw.edited or 40
+    elseif type(width_raw) == "number" then
+        width = width_raw
+    end
     local border_style = get_property(obj, "field_border_style") or "double"
     local border_chars = get_border_chars(obj)
-    local fill_char = get_property(obj, "field_fill_char") or " "
-    local title = get_property(obj, "field_name") or get_property(obj, "field_initial")
-
-    -- Get actual title
-    if title and type(title) == "table" then
-        title = title.initial or title.edited or "Fieldset"
-    else
-        title = "Fieldset"
+    local fill_char_raw = get_property(obj, "field_fill_char")
+    -- Extract the fill character from the table (default to space)
+    local fill_char = " "
+    if fill_char_raw and type(fill_char_raw) == "table" then
+        local fc_config = fill_char_raw.edited or fill_char_raw.initial
+        if fc_config and type(fc_config) == "table" then
+            -- Use first available fill char
+            fill_char = fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or " "
+        elseif type(fc_config) == "string" then
+            fill_char = fc_config
+        end
+    elseif type(fill_char_raw) == "string" then
+        fill_char = fill_char_raw
     end
 
     local lines = {}
 
     -- Top border with title
-    local title_fill = get_property(obj, "field_title_fill_char") or " "
-    if height >= 1 then
-        local title_str = " " .. title .. " "
-        local title_len = #title_str
-        local content_width = width - 2
-
-        if title_len > content_width then
-            title_str = title_str:sub(1, content_width)
-            title_len = content_width
+    local title_fill = get_property(obj, "field_title_fill_char")
+    -- Extract the fill character from the table (default to space)
+    local fill_char_str = " "
+    if title_fill and type(title_fill) == "table" then
+        local tf_config = title_fill.edited or title_fill.initial
+        if tf_config and type(tf_config) == "table" then
+            -- Use first available fill char
+            fill_char_str = tf_config.space or tf_config.dash or tf_config.underscore or tf_config.dot or " "
         end
+    end
+    
+    if height >= 1 then
+        local title = build_title(obj)
+        
+        if title ~= "" then
+            local title_str = " " .. title .. " "
+            local title_len = #title_str
+            local content_width = width - 2
 
-        local padding = content_width - title_len
-        local left_fill = math.floor(padding / 2)
-        local right_fill = padding - left_fill
-        title_str = string.rep(title_fill, left_fill) .. title_str .. string.rep(title_fill, right_fill)
+            if title_len > content_width then
+                title_str = title_str:sub(1, content_width)
+                title_len = content_width
+            end
 
-        local top_line = border_chars.top_left .. title_str .. border_chars.top_right
-        table.insert(lines, top_line)
+            local padding = content_width - title_len
+            local left_fill = math.floor(padding / 2)
+            local right_fill = padding - left_fill
+            title_str = string.rep(fill_char_str, left_fill) .. title_str .. string.rep(fill_char_str, right_fill)
+
+            local top_line = border_chars.top_left .. title_str .. border_chars.top_right
+            table.insert(lines, top_line)
+        else
+            -- No title, just border
+            local top_line = border_chars.top_left .. string.rep(border_chars.top, width) .. border_chars.top_right
+            table.insert(lines, top_line)
+        end
     end
 
     -- Content area
@@ -2835,11 +3255,18 @@ function render_fieldset(obj)
         table.insert(lines, border_chars.left .. string.rep(fill_char, width) .. border_chars.right)
     end
 
-    -- Bottom border
+    -- Bottom border or footer
     if height >= 2 then
-        local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) ..
-                                border_chars.bottom_right
-        table.insert(lines, bottom_line)
+        local footer = build_footer(obj, width)
+        if footer ~= "" then
+            -- Footer line
+            table.insert(lines, border_chars.bottom_left .. footer .. border_chars.bottom_right)
+        else
+            -- Regular bottom border
+            local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) ..
+                                    border_chars.bottom_right
+            table.insert(lines, bottom_line)
+        end
     end
 
     return table.concat(lines, "\n")

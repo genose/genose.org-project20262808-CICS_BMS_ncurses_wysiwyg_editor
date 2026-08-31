@@ -389,6 +389,24 @@ local function get_footer_color(obj)
     return get_color_code(obj, "field_footer_color", "default")
 end
 
+-- Get required marker for a field
+local function get_required_marker(obj)
+    local marker = get_gui_simple_value(obj, "field_required_marker", GUI_CONSTANTS.required_marker)
+    if marker and type(marker) == "table" then
+        marker = resolve_property_value(marker) or GUI_CONSTANTS.required_marker
+    end
+    return marker or GUI_CONSTANTS.required_marker
+end
+
+-- Get error marker for a field
+local function get_error_marker(obj)
+    local marker = get_gui_simple_value(obj, "field_error_marker", GUI_CONSTANTS.error_marker)
+    if marker and type(marker) == "table" then
+        marker = resolve_property_value(marker) or GUI_CONSTANTS.error_marker
+    end
+    return marker or GUI_CONSTANTS.error_marker
+end
+
 -- Align text within a given width
 -- text: the text to align (can be a table with .initial or .edited)
 -- width: the target width
@@ -497,8 +515,14 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     
     -- Calculate minimum width based on content
     local label = label_text or ""
-    local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
-    local full_label = title_prefix .. label .. required_marker .. title_suffix
+    local required_marker = ""
+    local error_marker = ""
+    if has_error then
+        error_marker = get_error_marker(obj)
+    elseif is_required then
+        required_marker = get_required_marker(obj)
+    end
+    local full_label = title_prefix .. label .. required_marker .. error_marker .. title_suffix
     local full_label_dw = display_width(full_label)
     local value_dw = display_width(value)
     local min_width = math.max(full_label_dw + 2, value_dw + 2, width)  -- +2 for border characters
