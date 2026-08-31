@@ -3095,9 +3095,24 @@ function render_bordered_field(obj, custom_content)
                 title_len = content_width
             end
             
+            -- Get title alignment
+            local title_align = get_property(obj, "field_title_align") or "center"
+            -- Handle title_align: might be a table with alignment options
+            if type(title_align) == "table" then
+                title_align = title_align.left or title_align.center or title_align.right or "center"
+            end
+            
             local padding = content_width - title_len
-            local left_fill = math.floor(padding / 2)
-            local right_fill = padding - left_fill
+            local left_fill = 0
+            local right_fill = 0
+            if title_align == "left" then
+                right_fill = padding
+            elseif title_align == "right" then
+                left_fill = padding
+            else -- center
+                left_fill = math.floor(padding / 2)
+                right_fill = padding - left_fill
+            end
             title_str = string.rep(fill_char_str, left_fill) .. title_str .. string.rep(fill_char_str, right_fill)
             
             table.insert(lines, border_chars.top_left .. title_str .. border_chars.top_right)
@@ -3236,9 +3251,24 @@ function render_fieldset(obj)
                 title_len = content_width
             end
 
+            -- Get title alignment
+            local title_align = get_property(obj, "field_title_align") or "center"
+            -- Handle title_align: might be a table with alignment options
+            if type(title_align) == "table" then
+                title_align = title_align.left or title_align.center or title_align.right or "center"
+            end
+
             local padding = content_width - title_len
-            local left_fill = math.floor(padding / 2)
-            local right_fill = padding - left_fill
+            local left_fill = 0
+            local right_fill = 0
+            if title_align == "left" then
+                right_fill = padding
+            elseif title_align == "right" then
+                left_fill = padding
+            else -- center
+                left_fill = math.floor(padding / 2)
+                right_fill = padding - left_fill
+            end
             title_str = string.rep(fill_char_str, left_fill) .. title_str .. string.rep(fill_char_str, right_fill)
 
             local top_line = border_chars.top_left .. title_str .. border_chars.top_right
