@@ -17,8 +17,21 @@
 -- All OBJECTS_DEFINITIONS Field have at least 3 row (field_height, field_height_min) and 3 col (field_width).
 -- 
 -- ***********************************************************
+OBJECTS_DEFINITIONS_GUI_TYPE =
+    { -- definition of the GUI type for each field type, which can be used to render the fields in a WYSIWYG editor. The GUI type can be used to determine the visual representation of each field type, allowing for a flexible and extensible way to create user interfaces for BMS applications.
+        gui_field_type = {
+            gui_select_with_label_string = "gui_select_with_label_string", -- rendu graphique d'un select box (liste de choix) avec label et des kprops de type string
+            gui_select_with_label_numeric = "gui_select_with_label_numeric", -- rendu graphique d'un select box (liste de choix) avec label et des kprops de type numeric
+            gui_list_textornum_with_label_field = "gui_list_textornum_with_label_field", -- rendu graphique d'un field (liste de choix) avec label et des kprops de type string ou numeric
+            gui_checkbox_with_label_field = "gui_checkbox_with_label_field", -- rendu graphique d'un field (checkbox avec label) avec des kprops de type string ou numeric
+            gui_text_with_label_field = "gui_text_with_label_field" -- rendu graphique d'un field (text avec label) avec des kprops de type string ou numeric
+        }
+
+    }
+
 OBJECTS_DEFINITIONS = {
     field_name = { -- Name of the object
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field,
         enum = {
             Field = "Field",
             Literal = "Literal",
@@ -42,6 +55,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_type = { -- Type of the field, can be Field, Literal, ProtectedLiteral, BooleanField, Image, Line, Fieldset
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             Field = "Field",
             Literal = "Literal",
@@ -118,6 +132,7 @@ OBJECTS_DEFINITIONS = {
 
     ----- ===== DIMENSIONS DU CHAMP =====
     field_height = { -- Height of the field, can be any positive integer
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field,
         enum = {
             Field = 3,
             Literal = 3,
@@ -191,6 +206,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_border_color = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             default = "default",
             black = "black",
@@ -208,6 +224,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_title_color = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             default = "default",
             black = "black",
@@ -225,6 +242,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_text_color = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             default = "default",
             black = "black",
@@ -241,6 +259,7 @@ OBJECTS_DEFINITIONS = {
         edited = nil
     },
     field_avail_footer_color = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             default = "default",
             black = "black",
@@ -258,6 +277,18 @@ OBJECTS_DEFINITIONS = {
     },
     field_footer_color = {
 
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
+        enum = {
+            default = "default",
+            black = "black",
+            red = "red",
+            green = "green",
+            yellow = "yellow",
+            blue = "blue",
+            magenta = "magenta",
+            cyan = "cyan",
+            white = "white"
+        },
         default = nil,
         initial = nil,
         edited = nil
@@ -336,6 +367,7 @@ OBJECTS_DEFINITIONS = {
     -- Represents the style for each field type, referencing field_avail_style enum for consistency
     -- Adapted per field type considering user visual experience (UX)
     field_style = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             default = "default",
             bold = "bold",
@@ -378,6 +410,7 @@ OBJECTS_DEFINITIONS = {
     },
     -- field_text_align represents the text alignment for each field type, which can be left, center, or right
     field_text_align = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             left = "left",
             center = "center",
@@ -402,6 +435,7 @@ OBJECTS_DEFINITIONS = {
         edited = nil -- Position after editing
     },
     field_pos = { -- Represents the position of the field in the BMS screen (row, col)
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field,
         default = nil, -- Default position for each field type
         initial = nil, -- Default position for the initial field type
         edited = nil -- Position after editing
@@ -426,6 +460,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_border_style = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         default = nil, -- Default border style for each field type
         initial = nil, -- Default border style for the initial field type
         edited = nil -- Border style after editing
@@ -448,6 +483,7 @@ OBJECTS_DEFINITIONS = {
 
     -- Caractère de remplissage pour les champs vides (ex: "_" pour Field)
     field_fill_char = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             underscore = "_",
             space = " ",
@@ -469,6 +505,7 @@ OBJECTS_DEFINITIONS = {
     },
     -- ===== ALIGNEMENT VERTICAL =====
     field_vertical_align = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             top = "top",
             middle = "middle",
@@ -480,6 +517,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_vertical_margin = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         enum = {
             none = 0
         },
@@ -509,16 +547,19 @@ OBJECTS_DEFINITIONS = {
     },
     -- represents the required marker for each field type, which can be used to indicate that a field is required. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
     field_required_marker = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         default = nil,
         initial = nil,
         edited = nil
     },
     field_footer_required_marker = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         default = nil,
         initial = nil,
         edited = nil
     },
     field_footer_error_marker = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         default = nil,
         initial = nil,
         edited = nil
@@ -541,6 +582,7 @@ OBJECTS_DEFINITIONS = {
     },
     -- represents the error marker for each field type, which can be used to indicate that a field is in an error state. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
     field_error_marker = {
+        gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string,
         default = nil,
         initial = nil,
         edited = nil
