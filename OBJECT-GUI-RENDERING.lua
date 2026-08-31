@@ -41,7 +41,11 @@ local GUI_CONSTANTS = {
     selected_marker = "[X]",
     unselected_marker = "[ ]",
     required_marker = " *",
-    error_marker = " /!\\"
+    error_marker = " /!\\",
+    -- Default alignment values
+    default_text_align = "left",
+    default_vertical_align = "top",
+    default_title_align = "center"
 }
 
 -- ===== HELPER FUNCTIONS =====
@@ -147,7 +151,7 @@ end
 -- For tables like {key = "value"}, returns the first value
 -- For tables like {min=1, max=10, initial=5}, returns .initial
 local function get_gui_simple_value(obj, prop_name, default_value)
-    local prop = get_gui_property(obj, prop_name)
+    local prop = obj[prop_name]
     if prop == nil then return default_value end
     
     -- Recursively resolve the property value
@@ -158,6 +162,59 @@ local function get_gui_simple_value(obj, prop_name, default_value)
     end
     
     return resolved or default_value
+end
+
+-- Get text alignment (horizontal) for an object
+-- Returns: "left", "center", or "right"
+local function get_text_align(obj, default_align)
+    local align = get_gui_simple_value(obj, "field_text_align", default_align or GUI_CONSTANTS.default_text_align)
+    if align and (align == "left" or align == "center" or align == "right") then
+        return align
+    end
+    return default_align or GUI_CONSTANTS.default_text_align
+end
+
+-- Get vertical alignment for an object
+-- Returns: "top", "middle", or "bottom"
+local function get_vertical_align(obj, default_align)
+    local align = get_gui_simple_value(obj, "field_vertical_align", default_align or GUI_CONSTANTS.default_vertical_align)
+    if align and (align == "top" or align == "middle" or align == "bottom") then
+        return align
+    end
+    return default_align or GUI_CONSTANTS.default_vertical_align
+end
+
+-- Get title alignment for an object
+-- Returns: "left", "center", or "right"
+local function get_title_align(obj, default_align)
+    local align = get_gui_simple_value(obj, "field_title_align", default_align or GUI_CONSTANTS.default_title_align)
+    if align and (align == "left" or align == "center" or align == "right") then
+        return align
+    end
+    return default_align or GUI_CONSTANTS.default_title_align
+end
+
+-- Align text within a given width
+-- text: the text to align
+-- width: the target width
+-- align: "left", "center", or "right"
+-- Returns: the aligned text padded to the specified width
+local function align_text(text, width, align)
+    local text_dw = display_width(text)
+    if text_dw >= width then
+        return text
+    end
+    
+    local padding = width - text_dw
+    if align == "left" then
+        return text .. string.rep(" ", padding)
+    elseif align == "right" then
+        return string.rep(" ", padding) .. text
+    else -- center
+        local left_pad = math.floor(padding / 2)
+        local right_pad = padding - left_pad
+        return string.rep(" ", left_pad) .. text .. string.rep(" ", right_pad)
+    end
 end
 
 -- Get dimensions from object
@@ -206,6 +263,13 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local value = get_gui_property(obj, "field_initial") or ""
     if value and type(value) == "table" then value = value.initial_value or "" end
     
+
+    
+    -- Get alignment properties
+    local text_align = get_text_align(obj, "center")
+    local vertical_align = get_vertical_align(obj, "top")
+    local title_align = get_title_align(obj, "center")
+    
     -- Calculate minimum width based on content
     local label = label_text or ""
     local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
@@ -230,9 +294,8 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         if border_style ~= "none" then
             local border_chars = get_border_chars(obj)
             local content_width = actual_width - 2
-            local label_padding = math.max(0, math.floor((content_width - full_label_dw) / 2))
-            local top_line = border_chars.top_left .. string.rep(" ", label_padding) .. full_label .. 
-                            string.rep(" ", content_width - label_padding - full_label_dw) .. border_chars.top_right
+            local label_content = align_text(full_label, content_width, title_align)
+            local top_line = border_chars.top_left .. label_content .. border_chars.top_right
             table.insert(lines, top_line)
         else
             table.insert(lines, full_label)
@@ -244,15 +307,40 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         table.insert(lines, value or "")
     else
         local border_chars = get_border_chars(obj)
-        for i = 1, height - (label_text and 1 or 0) - 1 do
-            local content = (i == 1) and (value or "") or ""
-            local content_dw = display_width(content)
-            local padding = actual_width - 2 - content_dw
-            if padding > 0 then
-                local left_pad = math.floor(padding / 2)
-                content = string.rep(" ", left_pad) .. content .. string.rep(" ", padding - left_pad)
+        local content_height = height - (label_text and 1 or 0) - 1
+        
+        -- Handle vertical alignment
+        if vertical_align == "middle" then
+            -- Add empty lines before content
+            local empty_lines = math.floor((content_height - 1) / 2)
+            for i = 1, empty_lines do
+                table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
             end
-            table.insert(lines, border_chars.left .. content .. border_chars.right)
+        elseif vertical_align == "bottom" then
+            -- Add empty lines before content (all but one)
+            for i = 1, content_height - 1 do
+                table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+            end
+        end
+        
+        -- Content line
+        local content = value or ""
+        local content_dw = display_width(content)
+        local inner_width = actual_width - 2
+        local aligned_content = align_text(content, inner_width, text_align)
+        table.insert(lines, border_chars.left .. aligned_content .. border_chars.right)
+        
+        -- Handle vertical alignment - add remaining empty lines after content
+        if vertical_align == "middle" then
+            local empty_lines = content_height - 1 - math.floor((content_height - 1) / 2)
+            for i = 1, empty_lines do
+                table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+            end
+        elseif vertical_align == "top" then
+            -- Add remaining empty lines
+            for i = 1, content_height - 1 do
+                table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+            end
         end
     end
     
@@ -265,6 +353,10 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
     local value = get_gui_property(obj, "field_initial") or false
+    
+    -- Get alignment properties
+    local text_align = get_text_align(obj, "left")
+    local title_align = get_title_align(obj, "center")
     
     local lines = {}
     local border_chars = get_border_chars(obj)
@@ -288,7 +380,9 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     -- Top line with label
     if label_text and label_text ~= "" then
         local label_dw = display_width(label)
-        local label_line = border_chars.top_left .. " " .. label .. string.rep(" ", actual_width - label_dw - 4) .. " " .. border_chars.top_right
+        local content_width = actual_width - 4  -- -4 for " " + " " + 2 border chars
+        local label_content = align_text(label, content_width, title_align)
+        local label_line = border_chars.top_left .. " " .. label_content .. " " .. border_chars.top_right
         table.insert(lines, label_line)
     else
         table.insert(lines, border_chars.top_left .. string.rep(border_chars.top, actual_width - 2) .. border_chars.top_right)
@@ -304,8 +398,8 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
             option_text = " " .. marker .. " " .. string.sub(tostring(option), 1, actual_width - 6)
             option_dw = display_width(option_text)
         end
-        local padding = actual_width - option_dw - 2
-        local content = option_text .. string.rep(" ", padding)
+        local inner_width = actual_width - 2
+        local content = align_text(option_text, inner_width, text_align)
         table.insert(lines, border_chars.left .. content .. border_chars.right)
     end
     
@@ -328,6 +422,10 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
     local border_chars = get_border_chars(obj)
     
+    -- Get alignment properties
+    local text_align = get_text_align(obj, "left")
+    local title_align = get_title_align(obj, "center")
+    
     local lines = {}
     local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
     local label = (label_text or "") .. required_marker
@@ -348,7 +446,9 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     -- Top border with label
     if border_style ~= "none" then
         local label_dw = display_width(label)
-        local top_line = border_chars.top_left .. " " .. label .. string.rep(" ", actual_width - label_dw - 4) .. " " .. border_chars.top_right
+        local content_width = actual_width - 4
+        local label_content = align_text(label, content_width, title_align)
+        local top_line = border_chars.top_left .. " " .. label_content .. " " .. border_chars.top_right
         table.insert(lines, top_line)
     else
         table.insert(lines, label)
@@ -362,8 +462,8 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
             item_text = "  " .. string.sub(tostring(item), 1, actual_width - 4)
             item_dw = display_width(item_text)
         end
-        local padding = actual_width - item_dw - 2
-        local content = item_text .. string.rep(" ", padding)
+        local inner_width = actual_width - 2
+        local content = align_text(item_text, inner_width, text_align)
         if border_style ~= "none" then
             table.insert(lines, border_chars.left .. content .. border_chars.right)
         else
@@ -385,6 +485,11 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     local height, width = get_dimensions(obj)
     local value = get_gui_property(obj, "field_initial") or ""
     if value and type(value) == "table" then value = value.initial_value or "" end
+    
+    -- Get alignment properties
+    local text_align = get_text_align(obj, "left")
+    local vertical_align = get_vertical_align(obj, "top")
+    local title_align = get_title_align(obj, "center")
     
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
     local border_chars = get_border_chars(obj)
@@ -411,22 +516,41 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     
     -- Top border with label
     if border_style ~= "none" then
-        local padding = actual_width - label_dw - 4
-        local top_line = border_chars.top_left .. " " .. label .. string.rep(" ", padding > 0 and padding or 0) .. " " .. border_chars.top_right
+        local content_width = actual_width - 4
+        local label_content = align_text(label, content_width, title_align)
+        local top_line = border_chars.top_left .. " " .. label_content .. " " .. border_chars.top_right
         table.insert(lines, top_line)
     else
         table.insert(lines, label .. ": " .. value)
         return table.concat(lines, "\n")
     end
     
-    -- Value line
-    local value_line = " " .. value .. string.rep(" ", actual_width - value_dw - 2)
-    table.insert(lines, border_chars.left .. value_line .. border_chars.right)
+    -- Value line with horizontal alignment
+    local content_height = height - 1  -- -1 for the label line
+    local inner_width = actual_width - 2
+    local value_content = align_text(value, inner_width, text_align)
     
-    -- Fill remaining height
-    local line_count = #lines
-    for i = line_count + 1, height do
-        table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+    -- Handle vertical alignment
+    if vertical_align == "middle" then
+        local empty_lines_before = math.floor((content_height - 1) / 2)
+        for i = 1, empty_lines_before do
+            table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+        end
+        table.insert(lines, border_chars.left .. value_content .. border_chars.right)
+        local empty_lines_after = content_height - 1 - empty_lines_before
+        for i = 1, empty_lines_after do
+            table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+        end
+    elseif vertical_align == "bottom" then
+        for i = 1, content_height - 1 do
+            table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+        end
+        table.insert(lines, border_chars.left .. value_content .. border_chars.right)
+    else -- top
+        table.insert(lines, border_chars.left .. value_content .. border_chars.right)
+        for i = 1, content_height - 1 do
+            table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+        end
     end
     
     -- Bottom border
@@ -442,6 +566,10 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     local border_style = get_gui_simple_value(obj, "field_border_style", "double")
     local border_chars = get_border_chars(obj)
     
+    -- Get alignment properties
+    local title_align = get_title_align(obj, "center")
+    local text_align = get_text_align(obj, "left")
+    
     local lines = {}
     local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
     local title_text = (title or obj.field_name.initial or "Fieldset") .. required_marker
@@ -451,15 +579,11 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     local min_width = math.max(title_dw + 4, width)  -- +4 for spaces and border corners
     local actual_width = override_width or (border_style == "none" and math.max(title_dw, width) or min_width)
     
-    -- Top border with title
+    -- Top border with title (using title_align)
     if border_style ~= "none" then
-        local title_len = title_dw + 2  -- +2 for spaces
-        local padding = actual_width - title_len - 2  -- -2 for border corners
-        local left_pad = math.floor(padding / 2)
-        local right_pad = padding - left_pad
-        local top_line = border_chars.top_left .. 
-                       string.rep(" ", left_pad) .. " " .. title_text .. " " .. 
-                       string.rep(" ", right_pad) .. border_chars.top_right
+        local content_width = actual_width - 4  -- -4 for spaces and border corners
+        local title_content = align_text(title_text, content_width, title_align)
+        local top_line = border_chars.top_left .. " " .. title_content .. " " .. border_chars.top_right
         table.insert(lines, top_line)
     else
         table.insert(lines, title_text)
@@ -499,7 +623,9 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
             local child_render = render_gui_object(child, {width = max_child_width})
             for line in child_render:gmatch("[^\n]+") do
                 local line_dw = display_width(line)
-                table.insert(lines, border_chars.left .. " " .. line .. string.rep(" ", actual_width - line_dw - 4) .. " " .. border_chars.right)
+                local inner_width = actual_width - 4
+                local aligned_line = align_text(line, inner_width, text_align)
+                table.insert(lines, border_chars.left .. " " .. aligned_line .. " " .. border_chars.right)
             end
         end
     else
@@ -597,12 +723,30 @@ function create_gui_object(obj_type, options)
     obj.selected_index = options and options.selected_index or 1
     obj.children = options and options.children or {}
     
+    -- Add alignment properties
+    obj.text_align = options and options.text_align or nil
+    obj.vertical_align = options and options.vertical_align or nil
+    obj.title_align = options and options.title_align or nil
+    
     -- Set position if provided
     if options and options.position then
         obj.field_pos = {
             initial = options.position,
             edited = nil
         }
+    end
+    
+    -- Set alignment properties if provided (maps to field_text_align, field_vertical_align, field_title_align)
+    if options then
+        if options.text_align then
+            obj.field_text_align = {initial = options.text_align, edited = nil}
+        end
+        if options.vertical_align then
+            obj.field_vertical_align = {initial = options.vertical_align, edited = nil}
+        end
+        if options.title_align then
+            obj.field_title_align = {initial = options.title_align, edited = nil}
+        end
     end
     
     -- Add render method
@@ -768,6 +912,75 @@ local form = create_gui_form({
 }, {title = "Login Form", width = 60, height = 22})
 
 print(form:render())
+
+-- Example with alignment properties:
+-- Horizontal text alignment: left, center, right
+-- Vertical content alignment: top, middle, bottom
+-- Title alignment for fieldsets: left, center, right
+local alignment_form = create_gui_form({
+    create_gui_object('Field', {
+        label = "Left Aligned",
+        field_initial = "text",
+        gui_field_type = "gui_text_field",
+        text_align = "left",
+        title_align = "left",
+        field_border_style = {initial = "single"},
+        field_height = {initial = 4},
+        field_width = {initial = 25},
+        position = {row = 1}
+    }),
+    create_gui_object('Field', {
+        label = "Center Aligned",
+        field_initial = "text",
+        gui_field_type = "gui_text_field",
+        text_align = "center",
+        title_align = "center",
+        field_border_style = {initial = "single"},
+        field_height = {initial = 4},
+        field_width = {initial = 25},
+        position = {row = 6}
+    }),
+    create_gui_object('Field', {
+        label = "Right Aligned",
+        field_initial = "text",
+        gui_field_type = "gui_text_field",
+        text_align = "right",
+        title_align = "right",
+        field_border_style = {initial = "single"},
+        field_height = {initial = 4},
+        field_width = {initial = 25},
+        position = {row = 11}
+    }),
+    create_gui_object('Field', {
+        label = "Vertical Middle",
+        field_initial = "text",
+        gui_field_type = "gui_text_field",
+        vertical_align = "middle",
+        field_border_style = {initial = "single"},
+        field_height = {initial = 5},
+        field_width = {initial = 25},
+        position = {row = 16}
+    }),
+    create_gui_object('Fieldset', {
+        label = "Left Title Fieldset",
+        gui_field_type = "gui_fieldset_field",
+        title_align = "left",
+        field_border_style = {initial = "double"},
+        field_height = {initial = 7},
+        field_width = {initial = 40},
+        children = {
+            create_gui_object('Field', {
+                label = "Child Field",
+                field_initial = "value",
+                text_align = "center",
+                field_border_style = {initial = "single"}
+            })
+        },
+        position = {row = 22}
+    })
+}, {title = "Alignment Demo", width = 60, height = 32})
+
+print(alignment_form:render())
 --]]
 
 print("OBJECT-GUI-RENDERING.lua module loaded successfully")
