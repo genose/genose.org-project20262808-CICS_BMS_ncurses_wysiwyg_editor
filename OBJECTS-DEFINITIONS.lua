@@ -28,15 +28,6 @@ OBJECTS_DEFINITIONS = {
             Line = "Line",
             Fieldset = "Fieldset"
         },
-        default = {
-            Field = "Field",
-            Literal = "Literal",
-            ProtectedLiteral = "ProtectedLiteral",
-            BooleanField = "BooleanField",
-            Image = "Image",
-            Line = "Line",
-            Fieldset = "Fieldset"
-        }, -- Available field names
         initial = nil, -- Default field name
         edited = nil -- Field name after editing
     },
@@ -51,15 +42,6 @@ OBJECTS_DEFINITIONS = {
             Line = "Line",
             Fieldset = "Fieldset"
         },
-        default = {
-            Field = "Field",
-            Literal = "Literal",
-            ProtectedLiteral = "ProtectedLiteral",
-            BooleanField = "BooleanField",
-            Image = "Image",
-            Line = "Line",
-            Fieldset = "Fieldset"
-        }, -- Available field types    
         initial = nil, -- Default field type
         edited = nil
     },
@@ -74,15 +56,6 @@ OBJECTS_DEFINITIONS = {
             Line = 1,
             Fieldset = 3
         },
-        default = {
-            Field = 3,
-            Literal = 3,
-            ProtectedLiteral = 3,
-            BooleanField = 3,
-            Image = 5,
-            Line = 1,
-            Fieldset = 3
-        }, --  Default height for each field type
         initial = nil, -- Default height for the initial field type
         edited = nil
     },
@@ -97,15 +70,6 @@ OBJECTS_DEFINITIONS = {
             Line = 1,
             Fieldset = 80
         },
-        default = {
-            Field = 80,
-            Literal = 80,
-            ProtectedLiteral = 80,
-            BooleanField = 3,
-            Image = 40,
-            Line = 1,
-            Fieldset = 80
-        }, --  Default max height for each field type
         initial = nil, -- Default max height for the initial field type
         edited = nil
     },
@@ -120,15 +84,6 @@ OBJECTS_DEFINITIONS = {
             Line = 255,
             Fieldset = 255
         },
-        default = {
-            Field = 255,
-            Literal = 255,
-            ProtectedLiteral = 255,
-            BooleanField = 255,
-            Image = 255,
-            Line = 255,
-            Fieldset = 255
-        }, -- Default max length for each field type
         initial = nil, -- Default max length for the initial field type
         edited = nil -- Max length after editing
     },
@@ -143,15 +98,6 @@ OBJECTS_DEFINITIONS = {
             Line = 1,
             Fieldset = 3
         },
-        default = {
-            Field = 3,
-            Literal = 3,
-            ProtectedLiteral = 3,
-            BooleanField = 10,
-            Image = 1,
-            Line = 1,
-            Fieldset = 3
-        }, -- Default min length for each field type
         initial = nil, -- Default min length for the initial field type
         edited = nil -- Min length after editing
     },
@@ -159,15 +105,6 @@ OBJECTS_DEFINITIONS = {
     ----- ===== DIMENSIONS DU CHAMP =====
     field_height = { -- Height of the field, can be any positive integer
         enum = {
-            Field = 3,
-            Literal = 3,
-            ProtectedLiteral = 3,
-            BooleanField = 3,
-            Image = 5,
-            Line = 1,
-            Fieldset = 3
-        },
-        default = {
             Field = 3,
             Literal = 3,
             ProtectedLiteral = 3,
@@ -200,15 +137,6 @@ OBJECTS_DEFINITIONS = {
     ----- ===== DIMENSIONS DU CHAMP =====
     field_width = { -- Length of the field, can be any positive integer
         enum = {
-            Field = 10,
-            Literal = 20,
-            ProtectedLiteral = 20,
-            BooleanField = 10,
-            Image = 40,
-            Line = 40,
-            Fieldset = 40
-        },
-        default = {
             Field = 10,
             Literal = 20,
             ProtectedLiteral = 20,
@@ -2006,6 +1934,89 @@ OBJECTS_DEFINITIONS = {
         initial = nil, -- Default visual representation for the initial field type
         edited = nil -- Visual representation after editing
     }
+}
+
+-- ===== POST-CONSTRUCTION: Default values =====
+
+-- Level 1: Properties with simple static default values
+OBJECTS_DEFINITIONS.field_name.default = {
+    Field = "Field",
+    Literal = "Literal",
+    ProtectedLiteral = "ProtectedLiteral",
+    BooleanField = "BooleanField",
+    Image = "Image",
+    Line = "Line",
+    Fieldset = "Fieldset"
+}
+
+OBJECTS_DEFINITIONS.field_type.default = {
+    Field = "Field",
+    Literal = "Literal",
+    ProtectedLiteral = "ProtectedLiteral",
+    BooleanField = "BooleanField",
+    Image = "Image",
+    Line = "Line",
+    Fieldset = "Fieldset"
+}
+
+OBJECTS_DEFINITIONS.field_min_height.default = {
+    Field = 3,
+    Literal = 3,
+    ProtectedLiteral = 3,
+    BooleanField = 3,
+    Image = 5,
+    Line = 1,
+    Fieldset = 3
+}
+
+OBJECTS_DEFINITIONS.field_max_height.default = {
+    Field = 80,
+    Literal = 80,
+    ProtectedLiteral = 80,
+    BooleanField = 3,
+    Image = 40,
+    Line = 1,
+    Fieldset = 80
+}
+
+OBJECTS_DEFINITIONS.field_width_max.default = {
+    Field = 255,
+    Literal = 255,
+    ProtectedLiteral = 255,
+    BooleanField = 255,
+    Image = 255,
+    Line = 255,
+    Fieldset = 255
+}
+
+OBJECTS_DEFINITIONS.field_width_min.default = {
+    Field = 3,
+    Literal = 3,
+    ProtectedLiteral = 3,
+    BooleanField = 10,
+    Image = 1,
+    Line = 1,
+    Fieldset = 3
+}
+
+OBJECTS_DEFINITIONS.field_height.default = {
+    Field = 3,
+    Literal = 3,
+    ProtectedLiteral = 3,
+    BooleanField = 3,
+    Image = 5,
+    Line = 1,
+    Fieldset = 3
+}
+
+OBJECTS_DEFINITIONS.field_width.default = {
+    Field = 10,
+    Literal = 20,
+    ProtectedLiteral = 20,
+    BooleanField = 10,
+    Image = 40,
+    Line = 40,
+    Fieldset = 40
 }
 
 -- ===== POST-CONSTRUCTION: Dynamic references for field_border =====
