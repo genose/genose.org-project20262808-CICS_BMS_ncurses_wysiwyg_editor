@@ -2318,7 +2318,8 @@ OBJECTS_DEFINITIONS.field_title_align.default = {
     },
     -- Fieldset: titre centre par defaut (conteneur)
     Fieldset = {
-        left = OBJECTS_DEFINITIONS.field_title_align.enum.center
+        left = OBJECTS_DEFINITIONS.field_title_align.enum.left,
+        center = OBJECTS_DEFINITIONS.field_title_align.enum.center
     }
 }
 
@@ -3088,7 +3089,8 @@ function render_bordered_field(obj, custom_content)
             -- Create title line with border
             local title_str = title
             local title_len = #title_str
-            local content_width = width - 2
+            -- Title occupies full width between borders
+            local content_width = width
             
             if title_len > content_width then
                 title_str = title_str:sub(1, content_width)
@@ -3263,7 +3265,8 @@ function render_fieldset(obj)
         if title ~= "" then
             local title_str = title
             local title_len = #title_str
-            local content_width = width - 2
+            -- Title occupies full width between borders
+            local content_width = width
 
             if title_len > content_width then
                 title_str = title_str:sub(1, content_width)
