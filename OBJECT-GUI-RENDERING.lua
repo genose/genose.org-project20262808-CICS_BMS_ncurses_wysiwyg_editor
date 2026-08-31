@@ -138,20 +138,29 @@ local function resolve_property_value(prop)
     if prop.edited ~= nil then
         return resolve_property_value(prop.edited)
     end
-    -- Priority 3: known border styles
+    -- Priority 3: .marker (for marker properties)
+    if prop.marker ~= nil then
+        return resolve_property_value(prop.marker)
+    end
+    -- Priority 4: known border styles
     local style_priority = {"single", "double", "dashed", "none"}
     for _, style in ipairs(style_priority) do
         if prop[style] ~= nil then
             return resolve_property_value(prop[style])
         end
     end
-    -- Priority 4: first string value
+    -- Priority 5: first string value (recursive)
     for _, v in pairs(prop) do
         if type(v) == "string" then
             return v
+        elseif type(v) == "table" then
+            local resolved = resolve_property_value(v)
+            if type(resolved) == "string" or type(resolved) == "number" or type(resolved) == "boolean" then
+                return resolved
+            end
         end
     end
-    -- Priority 5: first numeric value
+    -- Priority 6: first numeric value
     for _, v in pairs(prop) do
         if type(v) == "number" then
             return v

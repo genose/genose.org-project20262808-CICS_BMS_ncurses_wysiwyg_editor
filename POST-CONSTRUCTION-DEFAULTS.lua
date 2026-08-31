@@ -3,6 +3,12 @@
 -- Extractions des definitions .default pour resoudre les dependances circulaires
 -- A inclure APRES la definition de OBJECTS_DEFINITIONS
 -- ===========================================================
+
+-- Check if OBJECTS_DEFINITIONS is loaded
+if not OBJECTS_DEFINITIONS then
+    dofile("OBJECTS-DEFINITIONS.lua")
+end
+
 -- ===== NIVEAU 1: Proprietes avec valeurs statiques simples (aucune dependance) =====
 -- field_name: Noms des types de champs
 OBJECTS_DEFINITIONS.field_name.default = {

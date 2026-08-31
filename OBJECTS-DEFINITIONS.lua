@@ -721,6 +721,12 @@ OBJECTS_DEFINITIONS = {
 -- Alias field_min_width -> field_width_min et field_max_width -> field_width_max
 OBJECTS_DEFINITIONS.field_min_width = OBJECTS_DEFINITIONS.field_width_min
 OBJECTS_DEFINITIONS.field_max_width = OBJECTS_DEFINITIONS.field_width_max
+-- Alias for height
+OBJECTS_DEFINITIONS.field_min_height = OBJECTS_DEFINITIONS.field_min_height
+OBJECTS_DEFINITIONS.field_max_height = OBJECTS_DEFINITIONS.field_max_height
+-- Alias for height_min and height_max (reverse mapping for compatibility)
+OBJECTS_DEFINITIONS.field_height_min = OBJECTS_DEFINITIONS.field_min_height
+OBJECTS_DEFINITIONS.field_height_max = OBJECTS_DEFINITIONS.field_max_height
 
 -- ===== POST-CONSTRUCTION: Dynamic references for field_border =====
 -- ===== NIVEAU 1: Proprietes avec valeurs statiques simples (aucune dependance) =====
