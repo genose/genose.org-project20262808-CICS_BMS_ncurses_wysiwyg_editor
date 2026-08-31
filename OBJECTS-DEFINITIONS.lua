@@ -1788,16 +1788,22 @@ OBJECTS_DEFINITIONS.field_avail_vertical_align.default = {
 -- field_vertical_align: Alignement vertical par defaut
 OBJECTS_DEFINITIONS.field_vertical_align.default = {
     Field = {
-        top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
+        top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top,
+        middle = OBJECTS_DEFINITIONS.field_vertical_align.enum.middle,
+        bottom = OBJECTS_DEFINITIONS.field_vertical_align.enum.bottom
     },
     Literal = {
         top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
     },
     ProtectedLiteral = {
-        top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
+        top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top,
+        middle = OBJECTS_DEFINITIONS.field_vertical_align.enum.middle,
+        bottom = OBJECTS_DEFINITIONS.field_vertical_align.enum.bottom
     },
     BooleanField = {
-        top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
+        top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top,
+        middle = OBJECTS_DEFINITIONS.field_vertical_align.enum.middle,
+        bottom = OBJECTS_DEFINITIONS.field_vertical_align.enum.bottom
     },
     Image = {
         top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
@@ -1806,7 +1812,8 @@ OBJECTS_DEFINITIONS.field_vertical_align.default = {
         top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
     },
     Fieldset = {
-        top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
+        top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top,
+        bottom = OBJECTS_DEFINITIONS.field_vertical_align.enum.bottom
     }
 }
 
@@ -1814,6 +1821,9 @@ OBJECTS_DEFINITIONS.field_vertical_align.default = {
 OBJECTS_DEFINITIONS.field_vertical_margin.default = {
     Field = {
         none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
+        -- small = OBJECTS_DEFINITIONS.field_vertical_margin.enum.small,
+        -- medium = OBJECTS_DEFINITIONS.field_vertical_margin.enum.medium,
+        -- large = OBJECTS_DEFINITIONS.field_vertical_margin.enum.large
     },
     Literal = {
         none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
