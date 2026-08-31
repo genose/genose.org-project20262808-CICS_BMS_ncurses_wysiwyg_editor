@@ -67,10 +67,55 @@ local function get_position(obj)
 end
 
 -- Get dimensions from object
+-- Note: field_height and field_width have structure {min, max, initial, edited}
+-- so we need to extract the .initial value
 local function get_dimensions(obj)
-    local height = get_gui_property(obj, "field_height") or 3
-    local width = get_gui_property(obj, "field_width") or 10
+    local height_prop = get_gui_property(obj, "field_height")
+    local width_prop = get_gui_property(obj, "field_width")
+    
+    local height = (height_prop and type(height_prop) == "table" and height_prop.initial) or height_prop or 3
+    local width = (width_prop and type(width_prop) == "table" and width_prop.initial) or width_prop or 10
+    
     return height, width
+end
+
+-- Get border characters for a given style (uses get_gui_property instead of get_property)
+local function get_border_chars(obj)
+    -- Handle field_border_style which can be a table of available styles or a string
+    local border_style_prop = get_gui_property(obj, "field_border_style")
+    local border_style
+    if type(border_style_prop) == "table" then
+        -- If it's a table of styles (e.g., {single = "single", double = "double", ...})
+        -- get the first value
+        for _, v in pairs(border_style_prop) do
+            border_style = v
+            break
+        end
+    else
+        border_style = border_style_prop
+    end
+    border_style = border_style or "none"
+    
+    local obj_type = get_gui_property(obj, "field_type") or "Field"
+    local chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default[obj_type]
+    if chars and chars[border_style] then
+        return chars[border_style]
+    end
+    -- Fallback to single style
+    if chars and chars.single then
+        return chars.single
+    end
+    -- Ultimate fallback
+    return {
+        top_left = "+",
+        top = "-",
+        top_right = "+",
+        left = "|",
+        right = "|",
+        bottom_left = "+",
+        bottom = "-",
+        bottom_right = "+"
+    }
 end
 
 -- ===== GUI RENDERING FUNCTIONS =====
@@ -421,7 +466,8 @@ function create_gui_form(fields, options)
             local pos = get_position(field)
             local row = pos.row or current_row
             local col = pos.col or 1
-            local height = get_gui_property(field, "field_height") or 3
+            local height_prop = get_gui_property(field, "field_height")
+            local height = (height_prop and type(height_prop) == "table" and height_prop.initial) or height_prop or 3
             
             -- Add empty lines to reach the field's row
             while #lines < row do
