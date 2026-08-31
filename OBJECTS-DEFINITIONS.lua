@@ -3086,7 +3086,7 @@ function render_bordered_field(obj, custom_content)
         
         if title ~= "" then
             -- Create title line with border
-            local title_str = " " .. title .. " "
+            local title_str = title
             local title_len = #title_str
             local content_width = width - 2
             
@@ -3097,7 +3097,7 @@ function render_bordered_field(obj, custom_content)
             
             -- Get title alignment
             local title_align = get_property(obj, "field_title_align") or "center"
-            -- Handle title_align: might be a table with alignment options
+            -- Handle title_align: might be a table with { left, center, right } keys
             if type(title_align) == "table" then
                 title_align = title_align.left or title_align.center or title_align.right or "center"
             end
@@ -3140,13 +3140,32 @@ function render_bordered_field(obj, custom_content)
         content_start = math.floor((height - 1 - content_height) / 2) + 1
     end
 
+    -- Get text alignment
+    local text_align = get_property(obj, "field_text_align") or "left"
+    -- Handle text_align: might be a table with { align = { left, center, right } } structure
+    if type(text_align) == "table" then
+        if text_align.align and type(text_align.align) == "table" then
+            text_align = text_align.align.left or text_align.align.center or text_align.align.right or "left"
+        else
+            text_align = text_align.left or text_align.center or text_align.right or "left"
+        end
+    end
+
     for i = 1, height - 2 do
         if i >= content_start and i < content_start + content_height then
             local content_line = content_lines[i - content_start + 1]
             local padding = width - #content_line
             if padding > 0 then
-                local left_pad = math.floor(padding / 2)
-                local right_pad = padding - left_pad
+                local left_pad = 0
+                local right_pad = 0
+                if text_align == "left" then
+                    right_pad = padding
+                elseif text_align == "right" then
+                    left_pad = padding
+                else -- center
+                    left_pad = math.floor(padding / 2)
+                    right_pad = padding - left_pad
+                end
                 content_line = string.rep(" ", left_pad) .. content_line .. string.rep(" ", right_pad)
             end
             -- Truncate if too long
@@ -3242,7 +3261,7 @@ function render_fieldset(obj)
         local title = build_title(obj)
         
         if title ~= "" then
-            local title_str = " " .. title .. " "
+            local title_str = title
             local title_len = #title_str
             local content_width = width - 2
 
@@ -3253,7 +3272,7 @@ function render_fieldset(obj)
 
             -- Get title alignment
             local title_align = get_property(obj, "field_title_align") or "center"
-            -- Handle title_align: might be a table with alignment options
+            -- Handle title_align: might be a table with { left, center, right } keys
             if type(title_align) == "table" then
                 title_align = title_align.left or title_align.center or title_align.right or "center"
             end
