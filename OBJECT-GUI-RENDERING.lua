@@ -205,11 +205,21 @@ local function get_footer_align(obj, default_align)
 end
 
 -- Align text within a given width
--- text: the text to align
+-- text: the text to align (can be a table with .initial or .edited)
 -- width: the target width
 -- align: "left", "center", or "right"
 -- Returns: the aligned text padded to the specified width
 local function align_text(text, width, align)
+    -- Resolve text if it's a table (from properties like field_footer_title = {initial = value})
+    if type(text) == "table" then
+        text = resolve_property_value(text) or ""
+    end
+    -- Fallback to empty string if text is still a table or nil
+    if type(text) ~= "string" and type(text) ~= "number" then
+        text = ""
+    end
+    text = tostring(text)
+    
     local text_dw = display_width(text)
     if text_dw >= width then
         return text
@@ -364,29 +374,37 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     if border_style ~= "none" then
         local footer_text = ""
         if footer_title and footer_title ~= "" then
-            footer_text = footer_title
+            footer_text = resolve_property_value(footer_title) or ""
+        elseif footer_required_marker and footer_required_marker ~= "" then
+            footer_text = resolve_property_value(footer_required_marker) or ""
+        elseif footer_error_marker and footer_error_marker ~= "" then
+            footer_text = resolve_property_value(footer_error_marker) or ""
         elseif is_required then
-            footer_text = footer_required_marker
+            footer_text = GUI_CONSTANTS.required_marker
         elseif has_error then
-            footer_text = footer_error_marker
+            footer_text = GUI_CONSTANTS.error_marker
         end
         
         if footer_text ~= "" then
-            -- Create footer line with aligned text
+            -- Ensure footer_text is a string
+            footer_text = tostring(footer_text)
+            -- Create footer line with aligned text using fill character
             local content_width = actual_width - 2
-            local footer_content = align_text(footer_text, content_width, footer_align)
-            -- Fill remaining space with footer_fill_char
-            local padding_needed = content_width - display_width(footer_text)
-            if padding_needed > 0 then
-                local left_pad = math.floor(padding_needed / 2)
-                local right_pad = padding_needed - left_pad
+            local footer_text_dw = display_width(footer_text)
+            local footer_content = ""
+            if content_width > footer_text_dw then
+                local padding_needed = content_width - footer_text_dw
                 if footer_align == "left" then
-                    footer_content = footer_text .. string.rep(footer_fill_char, right_pad)
+                    footer_content = footer_text .. string.rep(footer_fill_char, padding_needed)
                 elseif footer_align == "right" then
-                    footer_content = string.rep(footer_fill_char, left_pad) .. footer_text
-                else
+                    footer_content = string.rep(footer_fill_char, padding_needed) .. footer_text
+                else -- center
+                    local left_pad = math.floor(padding_needed / 2)
+                    local right_pad = padding_needed - left_pad
                     footer_content = string.rep(footer_fill_char, left_pad) .. footer_text .. string.rep(footer_fill_char, right_pad)
                 end
+            else
+                footer_content = footer_text
             end
             table.insert(lines, border_chars.bottom_left .. footer_content .. border_chars.bottom_right)
         else

@@ -474,7 +474,12 @@ OBJECTS_DEFINITIONS = {
     field_title_fill_char = {
         enum = {
             space = " ",
-            dash = "─"
+            dash = "─",
+            equal = "=",
+            underscore = "_",
+            dot = ".",
+            asterisk = "*",
+            pipe = "|"
         },
         default = nil,
         initial = nil,
@@ -485,9 +490,13 @@ OBJECTS_DEFINITIONS = {
     field_fill_char = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
         enum = {
-            underscore = "_",
             space = " ",
-            dash = "─"
+            dash = "─",
+            equal = "=",
+            underscore = "_",
+            dot = ".",
+            asterisk = "*",
+            pipe = "|"
         },
         default = nil,
         initial = nil,
@@ -614,7 +623,12 @@ OBJECTS_DEFINITIONS = {
     field_footer_fill_char = {
         enum = {
             space = " ",
-            dash = "-"
+            dash = "─",
+            equal = "=",
+            underscore = "_",
+            dot = ".",
+            asterisk = "*",
+            pipe = "|"
         },
         default = nil,
         initial = nil,
@@ -1713,7 +1727,10 @@ OBJECTS_DEFINITIONS.field_border_style.default = {
 -- field_title_fill_char: Caractere de remplissage pour le titre
 OBJECTS_DEFINITIONS.field_title_fill_char.default = {
     Field = {
-        space = OBJECTS_DEFINITIONS.field_title_fill_char.enum.space
+        space = OBJECTS_DEFINITIONS.field_title_fill_char.enum.space,
+        underscore = OBJECTS_DEFINITIONS.field_title_fill_char.enum.underscore,
+        dash = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dash,
+        dot = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dot
     },
     Literal = {
         space = OBJECTS_DEFINITIONS.field_title_fill_char.enum.space
@@ -1731,17 +1748,27 @@ OBJECTS_DEFINITIONS.field_title_fill_char.default = {
         dash = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dash
     },
     Fieldset = {
-        dash = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dash
+        dash = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dash,
+        space = OBJECTS_DEFINITIONS.field_title_fill_char.enum.space,
+        underscore = OBJECTS_DEFINITIONS.field_title_fill_char.enum.underscore,
+        asterisk = OBJECTS_DEFINITIONS.field_title_fill_char.enum.asterisk,
+        dot = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dot,
+        pipe = OBJECTS_DEFINITIONS.field_title_fill_char.enum.pipe
     }
 }
 
 -- field_fill_char: Caractere de remplissage pour les champs vides
 OBJECTS_DEFINITIONS.field_fill_char.default = {
     Field = {
-        underscore = OBJECTS_DEFINITIONS.field_fill_char.enum.underscore
+        underscore = OBJECTS_DEFINITIONS.field_fill_char.enum.underscore,
+        space = OBJECTS_DEFINITIONS.field_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_fill_char.enum.dash,
+        dot = OBJECTS_DEFINITIONS.field_fill_char.enum.dot,
+        asterisk = OBJECTS_DEFINITIONS.field_fill_char.enum.asterisk
     },
     Literal = {
-        space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
+        space = OBJECTS_DEFINITIONS.field_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_fill_char.enum.dash
     },
     ProtectedLiteral = {
         space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
@@ -1750,13 +1777,17 @@ OBJECTS_DEFINITIONS.field_fill_char.default = {
         space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
     },
     Image = {
-        space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
+        space = OBJECTS_DEFINITIONS.field_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_fill_char.enum.dash,
+        asterisk = OBJECTS_DEFINITIONS.field_fill_char.enum.asterisk,
+        dot = OBJECTS_DEFINITIONS.field_fill_char.enum.dot
     },
     Line = {
         dash = OBJECTS_DEFINITIONS.field_fill_char.enum.dash
     },
     Fieldset = {
-        space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
+        space = OBJECTS_DEFINITIONS.field_fill_char.enum.space,
+        asterisk = OBJECTS_DEFINITIONS.field_fill_char.enum.asterisk
     }
 }
 
@@ -1942,42 +1973,56 @@ OBJECTS_DEFINITIONS.field_footer_error_marker.default = {
 OBJECTS_DEFINITIONS.field_title_suffix.default = {
     Field = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.Field,
+        suffix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Field,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Field,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Field,
         none = ""
     },
     Literal = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.Literal,
+        suffix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Literal,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Literal,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Literal,
         none = ""
     },
     ProtectedLiteral = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.ProtectedLiteral,
+        suffix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.ProtectedLiteral,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.ProtectedLiteral,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.ProtectedLiteral,
         none = ""
     },
     BooleanField = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.BooleanField,
+        suffix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.BooleanField,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.BooleanField,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.BooleanField,
         none = ""
     },
     Image = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.Image,
+        suffix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Image,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Image,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Image,
         none = ""
     },
     Line = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.Line,
+        suffix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Line,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Line,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Line,
         none = ""
     },
     Fieldset = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.Fieldset,
+        suffix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Fieldset,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Fieldset,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Fieldset,
         none = ""
@@ -1988,42 +2033,51 @@ OBJECTS_DEFINITIONS.field_title_suffix.default = {
 OBJECTS_DEFINITIONS.field_title_prefix.default = {
     Field = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.Field,
+        prefix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Field,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Field,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Field,
         none = ""
     },
     Literal = {
         enabled = false,
+        color = OBJECTS_DEFINITIONS.field_title_color.default.Literal,
+        prefix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Literal,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Literal,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Literal,
         none = ""
     },
     ProtectedLiteral = {
         enabled = false,
+        prefix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.ProtectedLiteral,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.ProtectedLiteral,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.ProtectedLiteral,
         none = ""
     },
     BooleanField = {
         enabled = false,
+        prefix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.BooleanField,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.BooleanField,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.BooleanField,
         none = ""
     },
     Image = {
         enabled = false,
+        prefix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Image,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Image,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Image,
         none = ""
     },
     Line = {
         enabled = false,
+        prefix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Line,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Line,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Line,
         none = ""
     },
     Fieldset = {
         enabled = false,
+        prefix_char = OBJECTS_DEFINITIONS.field_title_fill_char.default.Fieldset,
         required = OBJECTS_DEFINITIONS.field_required_marker.default.Fieldset,
         errors = OBJECTS_DEFINITIONS.field_error_marker.default.Fieldset,
         none = ""
@@ -2059,31 +2113,45 @@ OBJECTS_DEFINITIONS.field_footer_title.default = {
 OBJECTS_DEFINITIONS.field_footer_fill_char.default = {
     Field = {
         space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
-        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash,
+        underscore = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.underscore,
+        dot = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dot
     },
     Literal = {
         space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
-        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash,
+        underscore = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.underscore,
+        dot = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dot
     },
     ProtectedLiteral = {
         space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
-        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash,
+        underscore = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.underscore,
+        dot = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dot
     },
     BooleanField = {
         space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
-        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash,
+        underscore = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.underscore,
+        dot = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dot
     },
     Image = {
         space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
-        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash,
+        underscore = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.underscore,
+        dot = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dot
     },
     Line = {
         space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
-        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash,
+        underscore = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.underscore,
+        dot = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dot
     },
     Fieldset = {
         space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
-        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash,
+        underscore = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.underscore,
+        dot = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dot
     }
 }
 
