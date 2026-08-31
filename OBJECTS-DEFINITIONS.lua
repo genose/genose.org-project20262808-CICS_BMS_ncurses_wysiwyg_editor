@@ -3422,3 +3422,245 @@ function render_object(obj)
 
     return table.concat(lines, "\n")
 end
+
+-- =============================================================================
+-- GUI PROPERTY EXTRACTION FUNCTIONS
+-- =============================================================================
+
+-- Categorize properties by their purpose
+local property_categories = {
+    dimensions = {"field_height", "field_width", "field_min_height", "field_max_height", 
+                  "field_width_min", "field_width_max"},
+    colors = {"field_avail_color", "field_border_color", "field_title_color", 
+              "field_text_color", "field_avail_footer_color", "field_footer_color"},
+    font = {"field_avail_font_family", "field_font_family"},
+    style = {"field_avail_style", "field_style"},
+    alignment = {"field_avail_text_align", "field_text_align", "field_title_align",
+                 "field_vertical_align", "field_footer_align"},
+    position = {"field_avail_pos", "field_pos"},
+    borders = {"field_avail_border_chars", "field_avail_border_style", 
+               "field_border", "field_border_style"},
+    fill = {"field_title_fill_char", "field_fill_char", "field_footer_fill_char"},
+    markers = {"field_avail_required_marker", "field_required_marker",
+               "field_avail_error_marker", "field_error_marker",
+               "field_footer_required_marker", "field_footer_error_marker"},
+    prefix_suffix = {"field_title_prefix", "field_title_suffix", "field_footer_title", "field_footer"},
+    attributes = {"field_attrb"},
+    values = {"field_initial", "field_name", "field_type"},
+    children = {"field_children"},
+    visual = {"visual_representation"}
+}
+
+-- Helper to find category for a property
+local function get_property_category(prop_name)
+    for category, props in pairs(property_categories) do
+        for _, p in ipairs(props) do
+            if p == prop_name then
+                return category
+            end
+        end
+    end
+    return "other"
+end
+
+-- Helper to get GUI type from property definition
+local function get_gui_type(prop_def)
+    if prop_def.gui_field_type then
+        return prop_def.gui_field_type
+    end
+    if prop_def.enum then
+        return OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string
+    end
+    if prop_def.default and type(prop_def.default) == "table" then
+        return OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field
+    end
+    return OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field
+end
+
+-- Helper to get control type from GUI type
+local function get_control_type(gui_type)
+    if gui_type == OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string then
+        return "select"
+    elseif gui_type == OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_numeric then
+        return "select"
+    elseif gui_type == OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field then
+        return "text"
+    elseif gui_type == OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_checkbox_with_label_field then
+        return "checkbox"
+    elseif gui_type == OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_list_textornum_with_label_field then
+        return "list"
+    else
+        return "text"
+    end
+end
+
+-- Helper to convert property name to GUI-friendly name
+local function property_name_to_gui_name(prop_name)
+    local gui_name = prop_name:gsub("[_%%]", " ")
+    gui_name = gui_name:gsub("(%a)(%a*)", function(first, rest)
+        return first:upper() .. rest:lower()
+    end)
+    return gui_name
+end
+
+-- Helper to check if a property is read-only
+local function is_property_readonly(prop_name, prop_def)
+    local readonly_properties = {
+        field_type = true,
+        field_name = true,
+        visual_representation = true,
+        field_avail_color = true,
+        field_avail_font_family = true,
+        field_avail_style = true,
+        field_avail_text_align = true,
+        field_avail_border_chars = true,
+        field_avail_border_style = true,
+        field_avail_pos = true,
+        field_avail_vertical_align = true,
+        field_avail_required_marker = true,
+        field_avail_error_marker = true
+    }
+    return readonly_properties[prop_name] or false
+end
+
+-- Main function: Extract GUI properties for a specific type or all types
+function OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    local properties = {}
+    
+    for prop_name, prop_def in pairs(OBJECTS_DEFINITIONS) do
+        if type(prop_def) == "table" then
+            local gui_type = get_gui_type(prop_def)
+            local category = get_property_category(prop_name)
+            local control_type = get_control_type(gui_type)
+            local readonly = is_property_readonly(prop_name, prop_def)
+            
+            local available_values = {}
+            if prop_def.enum then
+                for k, v in pairs(prop_def.enum) do
+                    if type(v) == "string" then
+                        table.insert(available_values, v)
+                    end
+                end
+            end
+            
+            local default_val
+            if prop_def.default and obj_type then
+                if prop_def.default[obj_type] then
+                    if type(prop_def.default[obj_type]) == "table" and prop_def.default[obj_type].initial then
+                        default_val = prop_def.default[obj_type].initial
+                    else
+                        default_val = prop_def.default[obj_type]
+                    end
+                end
+            end
+            
+            local min_max = nil
+            if prop_name == "field_height" or prop_name == "field_width" then
+                local min_val = 1
+                local max_val = 255
+                if prop_def.default and obj_type and prop_def.default[obj_type] then
+                    local defaults = prop_def.default[obj_type]
+                    if type(defaults) == "table" then
+                        min_val = defaults.min or 1
+                        max_val = defaults.max or 255
+                    end
+                end
+                min_max = { min = min_val, max = max_val }
+            end
+            
+            local hint = ""
+            if prop_def.avail_color_help then
+                hint = "Color selection for field styling"
+            elseif prop_def.avail_style_help then
+                hint = "Text style options"
+            elseif prop_def.help then
+                hint = prop_def.help
+            else
+                hint = "Configure " .. prop_name:gsub("[_%%]", " ")
+            end
+            
+            table.insert(properties, {
+                name = prop_name,
+                gui_name = property_name_to_gui_name(prop_name),
+                category = category,
+                gui_type = gui_type,
+                control_type = control_type,
+                default = default_val,
+                min_max = min_max,
+                available_values = #available_values > 0 and available_values or nil,
+                read_only = readonly,
+                hint = hint
+            })
+        end
+    end
+    
+    return properties
+end
+
+-- Function: Get ncurses menu items for a specific type
+function OBJECTS_DEFINITIONS.get_ncurses_menu_items(obj_type)
+    local properties = OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    local menu_items = {}
+    
+    for _, prop in ipairs(properties) do
+        local menu_item = {
+            label = prop.gui_name,
+            name = prop.name,
+            type = prop.gui_type,
+            control_type = prop.control_type,
+            read_only = prop.read_only,
+            default = prop.default,
+            min = prop.min_max and prop.min_max.min,
+            max = prop.min_max and prop.min_max.max,
+            choices = prop.available_values,
+            category = prop.category,
+            hint = prop.hint
+        }
+        table.insert(menu_items, menu_item)
+    end
+    
+    return menu_items
+end
+
+-- Function: Export to JSON
+function OBJECTS_DEFINITIONS.export_to_json(obj_type)
+    local function serialize_value(v)
+        if v == nil then
+            return "null"
+        elseif type(v) == "string" then
+            return '"' .. v:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
+        elseif type(v) == "number" then
+            return tostring(v)
+        elseif type(v) == "boolean" then
+            return v and "true" or "false"
+        elseif type(v) == "table" then
+            local items = {}
+            for k, val in pairs(v) do
+                if type(k) == "string" and k:match("^[a-zA-Z_]+") then
+                    table.insert(items, '"' .. k .. '": ' .. serialize_value(val))
+                end
+            end
+            return "{" .. table.concat(items, ", ") .. "}"
+        else
+            return "null"
+        end
+    end
+    
+    if obj_type then
+        local type_def = {}
+        for prop_name, prop_def in pairs(OBJECTS_DEFINITIONS) do
+            if type(prop_def) == "table" and prop_def.default and prop_def.default[obj_type] then
+                type_def[prop_name] = prop_def.default[obj_type]
+            end
+        end
+        return serialize_value(type_def)
+    else
+        local all_types = {}
+        for prop_name, prop_def in pairs(OBJECTS_DEFINITIONS) do
+            if type(prop_def) == "table" and prop_def.default then
+                all_types[prop_name] = prop_def.default
+            end
+        end
+        return serialize_value(all_types)
+    end
+end

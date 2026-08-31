@@ -8,11 +8,11 @@ local validation_passed = true
 
 -- Check field_avail_pos.enum has all required keys
 local enum = OBJECTS_DEFINITIONS.field_avail_pos.enum
-if enum.row == nil or enum.col == nil or enum.rowend == nil or enum.colend == nil then
-    print("FAIL: field_avail_pos.enum missing row/col/rowend/colend keys")
+if enum.position == nil or enum.position.row == nil or enum.position.col == nil or enum.position.rowend == nil or enum.position.colend == nil then
+    print("FAIL: field_avail_pos.enum.position missing row/col/rowend/colend keys")
     validation_passed = false
 else
-    print("PASS: field_avail_pos.enum has all position keys")
+    print("PASS: field_avail_pos.enum.position has all position keys")
 end
 
 -- Check field_footer_title exists
