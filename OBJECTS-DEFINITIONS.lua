@@ -17,7 +17,7 @@
 -- All OBJECTS_DEFINITIONS Field have at least 3 row (field_height, field_height_min) and 3 col (field_width).
 -- 
 -- ***********************************************************
-field_max_height {
+OBJECTS_DEFINITIONS = {
     field_name = { -- Name of the object
         enum = {
             Field = "Field",
@@ -28,29 +28,6 @@ field_max_height {
             Line = "Line",
             Fieldset = "Fieldset"
         },
-        default = {
-            Field = {
-                name = OBJECTS_DEFINITIONS.field_name.enum.Field
-            },
-            Literal = {
-                name = OBJECTS_DEFINITIONS.field_name.enum.Literal
-            },
-            ProtectedLiteral = {
-                name = OBJECTS_DEFINITIONS.field_name.enum.ProtectedLiteral
-            },
-            BooleanField = {
-                name = OBJECTS_DEFINITIONS.field_name.enum.BooleanField
-            },
-            Image = {
-                name = OBJECTS_DEFINITIONS.field_name.enum.Image
-            },
-            Line = {
-                name = OBJECTS_DEFINITIONS.field_name.enum.Line
-            },
-            Fieldset = {
-                name = OBJECTS_DEFINITIONS.field_name.enum.Fieldset
-            }
-        }, -- Available field names
         initial = nil, -- Default field name
         edited = nil -- Field name after editing
     },
@@ -65,29 +42,6 @@ field_max_height {
             Line = "Line",
             Fieldset = "Fieldset"
         },
-        default = {
-            Field = {
-                type = OBJECTS_DEFINITIONS.field_type.enum.Field
-            },
-            Literal = {
-                type = OBJECTS_DEFINITIONS.field_type.enum.Literal
-            },
-            ProtectedLiteral = {
-                type = OBJECTS_DEFINITIONS.field_type.enum.ProtectedLiteral
-            },
-            BooleanField = {
-                type = OBJECTS_DEFINITIONS.field_type.enum.BooleanField
-            },
-            Image = {
-                type = OBJECTS_DEFINITIONS.field_type.enum.Image
-            },
-            Line = {
-                type = OBJECTS_DEFINITIONS.field_type.enum.Line
-            },
-            Fieldset = {
-                type = OBJECTS_DEFINITIONS.field_type.enum.Fieldset
-            }
-        }, -- Available field types
         initial = nil, -- Default field type
         edited = nil
     },
@@ -102,29 +56,6 @@ field_max_height {
             Line = 1,
             Fieldset = 3
         },
-        default = {
-            Field = {
-                min_height = OBJECTS_DEFINITIONS.field_min_height.enum.Field
-            },
-            Literal = {
-                min_height = OBJECTS_DEFINITIONS.field_min_height.enum.Literal
-            },
-            ProtectedLiteral = {
-                min_height = OBJECTS_DEFINITIONS.field_min_height.enum.ProtectedLiteral
-            },
-            BooleanField = {
-                min_height = OBJECTS_DEFINITIONS.field_min_height.enum.BooleanField
-            },
-            Image = {
-                min_height = OBJECTS_DEFINITIONS.field_min_height.enum.Image
-            },
-            Line = {
-                min_height = OBJECTS_DEFINITIONS.field_min_height.enum.Line
-            },
-            Fieldset = {
-                min_height = OBJECTS_DEFINITIONS.field_min_height.enum.Fieldset
-            }
-        }, --  Default height for each field type
         initial = nil, -- Default height for the initial field type
         edited = nil
     },
@@ -139,34 +70,11 @@ field_max_height {
             Line = 1,
             Fieldset = 80
         },
-        default = {
-            Field = {
-                max_height = OBJECTS_DEFINITIONS.field_max_height.enum.Field
-            },
-            Literal = {
-                max_height = OBJECTS_DEFINITIONS.field_max_height.enum.Literal
-            },
-            ProtectedLiteral = {
-                max_height = OBJECTS_DEFINITIONS.field_max_height.enum.ProtectedLiteral
-            },
-            BooleanField = {
-                max_height = OBJECTS_DEFINITIONS.field_max_height.enum.BooleanField
-            },
-            Image = {
-                max_height = OBJECTS_DEFINITIONS.field_max_height.enum.Image
-            },
-            Line = {
-                max_height = OBJECTS_DEFINITIONS.field_max_height.enum.Line
-            },
-            Fieldset = {
-                max_height = OBJECTS_DEFINITIONS.field_max_height.enum.Fieldset
-            }
-        }, --  Default max height for each field type
         initial = nil, -- Default max height for the initial field type
         edited = nil
     },
 
-    field_max_width = { -- Maximum length of the field, can be any positive integer
+    field_width_max = { -- Maximum length of the field, can be any positive integer
         enum = {
             Field = 255,
             Literal = 255,
@@ -176,20 +84,11 @@ field_max_height {
             Line = 255,
             Fieldset = 255
         },
-        default = {
-            Field = OBJECTS_DEFINITIONS.field_max_width.enum.Field,
-            Literal = OBJECTS_DEFINITIONS.field_max_width.enum.Literal,
-            ProtectedLiteral = OBJECTS_DEFINITIONS.field_max_width.enum.ProtectedLiteral,
-            BooleanField = OBJECTS_DEFINITIONS.field_max_width.enum.BooleanField,
-            Image = OBJECTS_DEFINITIONS.field_max_width.enum.Image,
-            Line = OBJECTS_DEFINITIONS.field_max_width.enum.Line,
-            Fieldset = OBJECTS_DEFINITIONS.field_max_width.enum.Fieldset
-        }, -- Default max length for each field type
         initial = nil, -- Default max length for the initial field type
         edited = nil -- Max length after editing
     },
 
-    field_min_width = { -- Minimum length of the field, can be any positive integer
+    field_width_min = { -- Minimum length of the field, can be any positive integer
         enum = {
             Field = 3,
             Literal = 3,
@@ -199,15 +98,6 @@ field_max_height {
             Line = 1,
             Fieldset = 3
         },
-        default = {
-            Field = OBJECTS_DEFINITIONS.field_min_width.enum.Field,
-            Literal = OBJECTS_DEFINITIONS.field_min_width.enum.Literal,
-            ProtectedLiteral = OBJECTS_DEFINITIONS.field_min_width.enum.ProtectedLiteral,
-            BooleanField = OBJECTS_DEFINITIONS.field_min_width.enum.BooleanField,
-            Image = OBJECTS_DEFINITIONS.field_min_width.enum.Image,
-            Line = OBJECTS_DEFINITIONS.field_min_width.enum.Line,
-            Fieldset = OBJECTS_DEFINITIONS.field_min_width.enum.Fieldset
-        }, -- Default min length for each field type
         initial = nil, -- Default min length for the initial field type
         edited = nil -- Min length after editing
     },
@@ -223,50 +113,24 @@ field_max_height {
             Line = 1,
             Fieldset = 3
         },
-        default = {
-            Field = {
-                min = OBJECTS_DEFINITIONS.field_min_height.enum.Field,
-                max = OBJECTS_DEFINITIONS.field_max_height.enum.Field,
-                initial = OBJECTS_DEFINITIONS.field_height.enum.Field,
-                edited = nil
-            },
-            Literal = {
-                min = OBJECTS_DEFINITIONS.field_min_height.enum.Literal,
-                max = OBJECTS_DEFINITIONS.field_max_height.enum.Literal,
-                initial = OBJECTS_DEFINITIONS.field_height.enum.Literal,
-                edited = nil
-            },
-            ProtectedLiteral = {
-                min = OBJECTS_DEFINITIONS.field_min_height.enum.ProtectedLiteral,
-                max = OBJECTS_DEFINITIONS.field_max_height.enum.ProtectedLiteral,
-                initial = OBJECTS_DEFINITIONS.field_height.enum.ProtectedLiteral,
-                edited = nil
-            },
-            BooleanField = {
-                min = OBJECTS_DEFINITIONS.field_min_height.enum.BooleanField,
-                max = OBJECTS_DEFINITIONS.field_max_height.enum.BooleanField,
-                initial = OBJECTS_DEFINITIONS.field_height.enum.BooleanField,
-                edited = nil
-            },
-            Image = {
-                min = OBJECTS_DEFINITIONS.field_min_height.enum.Image,
-                max = OBJECTS_DEFINITIONS.field_max_height.enum.Image,
-                initial = OBJECTS_DEFINITIONS.field_height.enum.Image,
-                edited = nil
-            },
-            Line = {
-                min = OBJECTS_DEFINITIONS.field_min_height.enum.Line,
-                max = OBJECTS_DEFINITIONS.field_max_height.enum.Line,
-                initial = OBJECTS_DEFINITIONS.field_height.enum.Line,
-                edited = nil
-            },
-            Fieldset = {
-                min = OBJECTS_DEFINITIONS.field_min_height.enum.Fieldset,
-                max = OBJECTS_DEFINITIONS.field_max_height.enum.Fieldset,
-                initial = OBJECTS_DEFINITIONS.field_height.enum.Fieldset,
-                edited = nil
-            }
-        }, -- Default height for each field type (min, max, initial, edited)
+        min = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 3,
+            Image = 5,
+            Line = 1,
+            Fieldset = 3
+        },
+        max = {
+            Field = 80,
+            Literal = 80,
+            ProtectedLiteral = 80,
+            BooleanField = 3,
+            Image = 40,
+            Line = 1,
+            Fieldset = 80
+        }, --  Default height for each field type
         initial = nil, -- Default height for the initial field type
         edited = nil
     },
@@ -281,50 +145,24 @@ field_max_height {
             Line = 40,
             Fieldset = 40
         },
-        default = {
-            Field = {
-                min = OBJECTS_DEFINITIONS.field_min_width.default.Field,
-                max = OBJECTS_DEFINITIONS.field_max_width.default.Field,
-                initial = OBJECTS_DEFINITIONS.field_width.enum.Field,
-                edited = nil
-            },
-            Literal = {
-                min = OBJECTS_DEFINITIONS.field_min_width.default.Literal,
-                max = OBJECTS_DEFINITIONS.field_max_width.default.Literal,
-                initial = OBJECTS_DEFINITIONS.field_width.enum.Literal,
-                edited = nil
-            },
-            ProtectedLiteral = {
-                min = OBJECTS_DEFINITIONS.field_min_width.default.ProtectedLiteral,
-                max = OBJECTS_DEFINITIONS.field_max_width.default.ProtectedLiteral,
-                initial = OBJECTS_DEFINITIONS.field_width.enum.ProtectedLiteral,
-                edited = nil
-            },
-            BooleanField = {
-                min = OBJECTS_DEFINITIONS.field_min_width.default.BooleanField,
-                max = OBJECTS_DEFINITIONS.field_max_width.default.BooleanField,
-                initial = OBJECTS_DEFINITIONS.field_width.enum.BooleanField,
-                edited = nil
-            },
-            Image = {
-                min = OBJECTS_DEFINITIONS.field_min_width.default.Image,
-                max = OBJECTS_DEFINITIONS.field_max_width.default.Image,
-                initial = OBJECTS_DEFINITIONS.field_width.enum.Image,
-                edited = nil
-            },
-            Line = {
-                min = OBJECTS_DEFINITIONS.field_min_width.default.Line,
-                max = OBJECTS_DEFINITIONS.field_max_width.default.Line,
-                initial = OBJECTS_DEFINITIONS.field_width.enum.Line,
-                edited = nil
-            },
-            Fieldset = {
-                min = OBJECTS_DEFINITIONS.field_min_width.default.Fieldset,
-                max = OBJECTS_DEFINITIONS.field_max_width.default.Fieldset,
-                initial = OBJECTS_DEFINITIONS.field_width.enum.Fieldset,
-                edited = nil
-            }
-        }, -- Default length for each field type (min, max, initial, edited)
+        min = {
+            Field = 3,
+            Literal = 3,
+            ProtectedLiteral = 3,
+            BooleanField = 10,
+            Image = 1,
+            Line = 1,
+            Fieldset = 3
+        },
+        max = {
+            Field = 255,
+            Literal = 255,
+            ProtectedLiteral = 255,
+            BooleanField = 255,
+            Image = 255,
+            Line = 255,
+            Fieldset = 255
+        }, -- Default length for each field type
         initial = nil, -- Default length for the initial field type
         edited = nil -- Length after editing
     },
@@ -369,67 +207,25 @@ field_max_height {
         },
         default = {
             -- Field : Couleurs pour champs de saisie (default = neutre, white = visible sur fond sombre)
-            Field = {
-                default = OBJECTS_DEFINITIONS.field_avail_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_avail_color.enum.green,
-                yellow = OBJECTS_DEFINITIONS.field_avail_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_avail_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_avail_color.enum.cyan
-            },
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
 
             -- Literal : Texte statique (default = neutre, white/yellow = lisible, green = accent)
-            Literal = {
-                default = OBJECTS_DEFINITIONS.field_avail_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_avail_color.enum.yellow,
-                green = OBJECTS_DEFINITIONS.field_avail_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_avail_color.enum.cyan,
-                blue = OBJECTS_DEFINITIONS.field_avail_color.enum.blue
-            },
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
 
             -- ProtectedLiteral : Texte protege (white = par defaut pour read-only, green = protege, cyan = informatif)
-            ProtectedLiteral = {
-                white = OBJECTS_DEFINITIONS.field_avail_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_avail_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_avail_color.enum.cyan,
-                yellow = OBJECTS_DEFINITIONS.field_avail_color.enum.yellow,
-                default = OBJECTS_DEFINITIONS.field_avail_color.enum.default
-            },
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
 
             -- BooleanField : Cases a cocher (default = neutre, green = coche/valide, white = non coche)
-            BooleanField = {
-                default = OBJECTS_DEFINITIONS.field_avail_color.enum.default,
-                green = OBJECTS_DEFINITIONS.field_avail_color.enum.green,
-                white = OBJECTS_DEFINITIONS.field_avail_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_avail_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_avail_color.enum.blue
-            },
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
 
             -- Image : Placeholder (default = transparent, white/blue = contour visible, cyan = water mark)
-            Image = {
-                default = OBJECTS_DEFINITIONS.field_avail_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_avail_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_avail_color.enum.cyan
-            },
+            Image = {"default", "white", "blue", "cyan"},
 
             -- Line : Separateurs (default = invisible, white/blue/cyan = visibles mais discrets)
-            Line = {
-                default = OBJECTS_DEFINITIONS.field_avail_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_avail_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_avail_color.enum.cyan
-            },
+            Line = {"default", "white", "blue", "cyan"},
 
             -- Fieldset : Conteneurs (blue = standard pour bordures, default = neutre, white/cyan = alternatifs)
-            Fieldset = {
-                blue = OBJECTS_DEFINITIONS.field_avail_color.enum.blue,
-                default = OBJECTS_DEFINITIONS.field_avail_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_color.enum.white,
-                cyan = OBJECTS_DEFINITIONS.field_avail_color.enum.cyan,
-                green = OBJECTS_DEFINITIONS.field_avail_color.enum.green
-            }
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
         }, -- Combinaisons UX par type (1ere = valeur par defaut pour .initial)
         initial = nil,
         edited = nil
@@ -448,55 +244,13 @@ field_max_height {
             white = "white"
         },
         default = {
-            Field = {
-                default = OBJECTS_DEFINITIONS.field_border_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_border_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_border_color.enum.green,
-                yellow = OBJECTS_DEFINITIONS.field_border_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_border_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_border_color.enum.cyan
-            },
-            Literal = {
-                default = OBJECTS_DEFINITIONS.field_border_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_border_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_border_color.enum.yellow,
-                green = OBJECTS_DEFINITIONS.field_border_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_border_color.enum.cyan,
-                blue = OBJECTS_DEFINITIONS.field_border_color.enum.blue
-            },
-            ProtectedLiteral = {
-                white = OBJECTS_DEFINITIONS.field_border_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_border_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_border_color.enum.cyan,
-                yellow = OBJECTS_DEFINITIONS.field_border_color.enum.yellow,
-                default = OBJECTS_DEFINITIONS.field_border_color.enum.default
-            },
-            BooleanField = {
-                default = OBJECTS_DEFINITIONS.field_border_color.enum.default,
-                green = OBJECTS_DEFINITIONS.field_border_color.enum.green,
-                white = OBJECTS_DEFINITIONS.field_border_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_border_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_border_color.enum.blue
-            },
-            Image = {
-                default = OBJECTS_DEFINITIONS.field_border_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_border_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_border_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_border_color.enum.cyan
-            },
-            Line = {
-                default = OBJECTS_DEFINITIONS.field_border_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_border_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_border_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_border_color.enum.cyan
-            },
-            Fieldset = {
-                blue = OBJECTS_DEFINITIONS.field_border_color.enum.blue,
-                default = OBJECTS_DEFINITIONS.field_border_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_border_color.enum.white,
-                cyan = OBJECTS_DEFINITIONS.field_border_color.enum.cyan,
-                green = OBJECTS_DEFINITIONS.field_border_color.enum.green
-            }
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
+            Image = {"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
         }, -- Default border color for each field type
         initial = nil,
         edited = nil
@@ -515,55 +269,13 @@ field_max_height {
             white = "white"
         },
         default = {
-            Field = {
-                default = OBJECTS_DEFINITIONS.field_title_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_title_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_title_color.enum.green,
-                yellow = OBJECTS_DEFINITIONS.field_title_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_title_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_title_color.enum.cyan
-            },
-            Literal = {
-                default = OBJECTS_DEFINITIONS.field_title_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_title_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_title_color.enum.yellow,
-                green = OBJECTS_DEFINITIONS.field_title_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_title_color.enum.cyan,
-                blue = OBJECTS_DEFINITIONS.field_title_color.enum.blue
-            },
-            ProtectedLiteral = {
-                white = OBJECTS_DEFINITIONS.field_title_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_title_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_title_color.enum.cyan,
-                yellow = OBJECTS_DEFINITIONS.field_title_color.enum.yellow,
-                default = OBJECTS_DEFINITIONS.field_title_color.enum.default
-            },
-            BooleanField = {
-                default = OBJECTS_DEFINITIONS.field_title_color.enum.default,
-                green = OBJECTS_DEFINITIONS.field_title_color.enum.green,
-                white = OBJECTS_DEFINITIONS.field_title_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_title_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_title_color.enum.blue
-            },
-            Image = {
-                default = OBJECTS_DEFINITIONS.field_title_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_title_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_title_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_title_color.enum.cyan
-            },
-            Line = {
-                default = OBJECTS_DEFINITIONS.field_title_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_title_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_title_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_title_color.enum.cyan
-            },
-            Fieldset = {
-                blue = OBJECTS_DEFINITIONS.field_title_color.enum.blue,
-                default = OBJECTS_DEFINITIONS.field_title_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_title_color.enum.white,
-                cyan = OBJECTS_DEFINITIONS.field_title_color.enum.cyan,
-                green = OBJECTS_DEFINITIONS.field_title_color.enum.green
-            }
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
+            Image = {"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
         },
         initial = nil,
         edited = nil
@@ -582,61 +294,19 @@ field_max_height {
             white = "white"
         },
         default = {
-            Field = {
-                default = OBJECTS_DEFINITIONS.field_text_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_text_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_text_color.enum.green,
-                yellow = OBJECTS_DEFINITIONS.field_text_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_text_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_text_color.enum.cyan
-            },
-            Literal = {
-                default = OBJECTS_DEFINITIONS.field_text_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_text_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_text_color.enum.yellow,
-                green = OBJECTS_DEFINITIONS.field_text_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_text_color.enum.cyan,
-                blue = OBJECTS_DEFINITIONS.field_text_color.enum.blue
-            },
-            ProtectedLiteral = {
-                white = OBJECTS_DEFINITIONS.field_text_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_text_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_text_color.enum.cyan,
-                yellow = OBJECTS_DEFINITIONS.field_text_color.enum.yellow,
-                default = OBJECTS_DEFINITIONS.field_text_color.enum.default
-            },
-            BooleanField = {
-                default = OBJECTS_DEFINITIONS.field_text_color.enum.default,
-                green = OBJECTS_DEFINITIONS.field_text_color.enum.green,
-                white = OBJECTS_DEFINITIONS.field_text_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_text_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_text_color.enum.blue
-            },
-            Image = {
-                default = OBJECTS_DEFINITIONS.field_text_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_text_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_text_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_text_color.enum.cyan
-            },
-            Line = {
-                default = OBJECTS_DEFINITIONS.field_text_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_text_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_text_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_text_color.enum.cyan
-            },
-            Fieldset = {
-                blue = OBJECTS_DEFINITIONS.field_text_color.enum.blue,
-                default = OBJECTS_DEFINITIONS.field_text_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_text_color.enum.white,
-                cyan = OBJECTS_DEFINITIONS.field_text_color.enum.cyan,
-                green = OBJECTS_DEFINITIONS.field_text_color.enum.green
-            }
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
+            Image = {"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
         },
         initial = nil,
         edited = nil
     },
 
-    field_avail_footer_color = {
+    field_footer_color = {
         enum = {
             default = "default",
             black = "black",
@@ -649,55 +319,13 @@ field_max_height {
             white = "white"
         },
         default = {
-            Field = {
-                default = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.green,
-                yellow = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.cyan
-            },
-            Literal = {
-                default = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.yellow,
-                green = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.cyan,
-                blue = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.blue
-            },
-            ProtectedLiteral = {
-                white = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.white,
-                green = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.green,
-                cyan = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.cyan,
-                yellow = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.yellow,
-                default = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.default
-            },
-            BooleanField = {
-                default = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.default,
-                green = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.green,
-                white = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.white,
-                yellow = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.yellow,
-                blue = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.blue
-            },
-            Image = {
-                default = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.cyan
-            },
-            Line = {
-                default = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.white,
-                blue = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.blue,
-                cyan = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.cyan
-            },
-            Fieldset = {
-                blue = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.blue,
-                default = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.default,
-                white = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.white,
-                cyan = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.cyan,
-                green = OBJECTS_DEFINITIONS.field_avail_footer_color.enum.green
-            }
+            Field = {"default", "white", "green", "yellow", "blue", "cyan"},
+            Literal = {"default", "white", "yellow", "green", "cyan", "blue"},
+            ProtectedLiteral = {"white", "green", "cyan", "yellow", "default"},
+            BooleanField = {"default", "green", "white", "yellow", "blue"},
+            Image = {"default", "white", "blue", "cyan"},
+            Line = {"default", "white", "blue", "cyan"},
+            Fieldset = {"blue", "default", "white", "cyan", "green"}
         },
         initial = nil,
         edited = nil
@@ -730,29 +358,15 @@ field_max_height {
         },
         default = {
             -- All BMS field types reference the same single font (3270 has only one physical font)
-            Field = {
-                default = OBJECTS_DEFINITIONS.field_avail_font_family.enum.default
-            },
-            Literal = {
-                default = OBJECTS_DEFINITIONS.field_avail_font_family.enum.default
-            },
-            ProtectedLiteral = {
-                default = OBJECTS_DEFINITIONS.field_avail_font_family.enum.default
-            },
-            BooleanField = {
-                default = OBJECTS_DEFINITIONS.field_avail_font_family.enum.default
-            },
-            Image = {
-                default = OBJECTS_DEFINITIONS.field_avail_font_family.enum.default
-            },
-            Line = {
-                default = OBJECTS_DEFINITIONS.field_avail_font_family.enum.default
-            },
-            Fieldset = {
-                default = OBJECTS_DEFINITIONS.field_avail_font_family.enum.default
-            }
+            Field = "default",
+            Literal = "default",
+            ProtectedLiteral = "default",
+            BooleanField = "default",
+            Image = "default",
+            Line = "default",
+            Fieldset = "default"
         }, -- Default font family for each field type
-        initial = nil, -- Default font family for the initial field type
+        initial = "default", -- Default font family for the initial field type
         edited = nil -- Font family after editing
     },
     ----- ===== STYLE DU TEXTE =====
@@ -787,88 +401,54 @@ field_max_height {
         },
         default = {
             -- Field: Tous les styles disponibles
-            Field = {
-                default = OBJECTS_DEFINITIONS.field_avail_style.enum.default,
-                bold = OBJECTS_DEFINITIONS.field_avail_style.enum.bold,
-                italic = OBJECTS_DEFINITIONS.field_avail_style.enum.italic,
-                underline = OBJECTS_DEFINITIONS.field_avail_style.enum.underline,
-                strikethrough = OBJECTS_DEFINITIONS.field_avail_style.enum.strikethrough,
-                blink = OBJECTS_DEFINITIONS.field_avail_style.enum.blink,
-                reverse = OBJECTS_DEFINITIONS.field_avail_style.enum.reverse
-            },
+            Field = {"default", "bold", "italic", "underline", "strikethrough", "blink", "reverse"},
 
             -- Literal: Tous les styles (texte statique peut etre mis en valeur)
-            Literal = {
-                default = OBJECTS_DEFINITIONS.field_avail_style.enum.default,
-                bold = OBJECTS_DEFINITIONS.field_avail_style.enum.bold,
-                italic = OBJECTS_DEFINITIONS.field_avail_style.enum.italic,
-                underline = OBJECTS_DEFINITIONS.field_avail_style.enum.underline,
-                blink = OBJECTS_DEFINITIONS.field_avail_style.enum.blink,
-                reverse = OBJECTS_DEFINITIONS.field_avail_style.enum.reverse
-            },
+            Literal = {"default", "bold", "italic", "underline", "blink", "reverse"},
 
             -- ProtectedLiteral: Pas de italic/strikethrough/blink (distrayant pour read-only)
-            ProtectedLiteral = {
-                default = OBJECTS_DEFINITIONS.field_avail_style.enum.default,
-                bold = OBJECTS_DEFINITIONS.field_avail_style.enum.bold,
-                underline = OBJECTS_DEFINITIONS.field_avail_style.enum.underline,
-                reverse = OBJECTS_DEFINITIONS.field_avail_style.enum.reverse
-            },
+            ProtectedLiteral = {"default", "bold", "underline", "reverse"},
 
             -- BooleanField: Pas de italic/strikethrough; blink pour attention
-            BooleanField = {
-                default = OBJECTS_DEFINITIONS.field_avail_style.enum.default,
-                bold = OBJECTS_DEFINITIONS.field_avail_style.enum.bold,
-                underline = OBJECTS_DEFINITIONS.field_avail_style.enum.underline,
-                blink = OBJECTS_DEFINITIONS.field_avail_style.enum.blink,
-                reverse = OBJECTS_DEFINITIONS.field_avail_style.enum.reverse
-            },
+            BooleanField = {"default", "bold", "underline", "blink", "reverse"},
 
             -- Image: Pas de italic/strikethrough/blink (distrayant pour placeholder)
-            Image = {
-                default = OBJECTS_DEFINITIONS.field_avail_style.enum.default,
-                bold = OBJECTS_DEFINITIONS.field_avail_style.enum.bold,
-                underline = OBJECTS_DEFINITIONS.field_avail_style.enum.underline,
-                reverse = OBJECTS_DEFINITIONS.field_avail_style.enum.reverse
-            },
+            Image = {"default", "bold", "underline", "reverse"},
 
             -- Line: underline pour effet tirete, strikethrough pour ligne brisee
-            Line = {
-                underline = OBJECTS_DEFINITIONS.field_avail_style.enum.underline,
-                strikethrough = OBJECTS_DEFINITIONS.field_avail_style.enum.strikethrough,
-                default = OBJECTS_DEFINITIONS.field_avail_style.enum.default,
-                bold = OBJECTS_DEFINITIONS.field_avail_style.enum.bold,
-                reverse = OBJECTS_DEFINITIONS.field_avail_style.enum.reverse
-            },
+            Line = {"underline", "strikethrough", "default", "bold", "reverse"},
 
             -- Fieldset: Tous les styles sauf strikethrough (peu pertinent pour bordures)
-            Fieldset = {
-                default = OBJECTS_DEFINITIONS.field_avail_style.enum.default,
-                bold = OBJECTS_DEFINITIONS.field_avail_style.enum.bold,
-                underline = OBJECTS_DEFINITIONS.field_avail_style.enum.underline,
-                blink = OBJECTS_DEFINITIONS.field_avail_style.enum.blink,
-                reverse = OBJECTS_DEFINITIONS.field_avail_style.enum.reverse
-            }
+            Fieldset = {"default", "bold", "underline", "blink", "reverse"}
         } -- Styles disponibles par type (1er = valeur par defaut pour .initial)
     },
     -- Represents the style for each field type, referencing field_avail_style enum for consistency
     -- Adapted per field type considering user visual experience (UX)
     field_style = {
+        enum = {
+            default = "default",
+            bold = "bold",
+            italic = "italic",
+            underline = "underline",
+            strikethrough = "strikethrough",
+            blink = "blink",
+            reverse = "reverse"
+        },
         default = {
             -- Field: Input field - style par defaut
-            Field = OBJECTS_DEFINITIONS.field_avail_style.default.Field,
+            Field = "default",
             -- Literal: Static text - style par defaut
-            Literal = OBJECTS_DEFINITIONS.field_avail_style.default.Literal,
+            Literal = "default",
             -- ProtectedLiteral: Protected static text - UX optimized
-            ProtectedLiteral = OBJECTS_DEFINITIONS.field_avail_style.default.ProtectedLiteral,
+            ProtectedLiteral = "default",
             -- BooleanField: Checkbox - style par defaut
-            BooleanField = OBJECTS_DEFINITIONS.field_avail_style.default.BooleanField,
+            BooleanField = "default",
             -- Image: Placeholder - style par defaut
-            Image = OBJECTS_DEFINITIONS.field_avail_style.default.Image,
+            Image = "default",
             -- Line: Horizontal rule - underline par defaut pour effet de ligne
-            Line = OBJECTS_DEFINITIONS.field_avail_style.default.Line,
+            Line = "underline",
             -- Fieldset: Container - style par defaut
-            Fieldset = OBJECTS_DEFINITIONS.field_avail_style.default.Fieldset
+            Fieldset = "default"
         }, -- Style par defaut pour chaque type
         initial = nil, -- Default style for the initial field type
         edited = nil -- Style after editing
@@ -882,41 +462,13 @@ field_max_height {
             right = "right"
         },
         default = {
-            Field = {
-                left = OBJECTS_DEFINITIONS.field_avail_text_align.enum.left,
-                center = OBJECTS_DEFINITIONS.field_avail_text_align.enum.center,
-                right = OBJECTS_DEFINITIONS.field_avail_text_align.enum.right
-            },
-            Literal = {
-                left = OBJECTS_DEFINITIONS.field_avail_text_align.enum.left,
-                center = OBJECTS_DEFINITIONS.field_avail_text_align.enum.center,
-                right = OBJECTS_DEFINITIONS.field_avail_text_align.enum.right
-            },
-            ProtectedLiteral = {
-                left = OBJECTS_DEFINITIONS.field_avail_text_align.enum.left,
-                center = OBJECTS_DEFINITIONS.field_avail_text_align.enum.center,
-                right = OBJECTS_DEFINITIONS.field_avail_text_align.enum.right
-            },
-            BooleanField = {
-                left = OBJECTS_DEFINITIONS.field_avail_text_align.enum.left,
-                center = OBJECTS_DEFINITIONS.field_avail_text_align.enum.center,
-                right = OBJECTS_DEFINITIONS.field_avail_text_align.enum.right
-            },
-            Image = {
-                left = OBJECTS_DEFINITIONS.field_avail_text_align.enum.left,
-                center = OBJECTS_DEFINITIONS.field_avail_text_align.enum.center,
-                right = OBJECTS_DEFINITIONS.field_avail_text_align.enum.right
-            },
-            Line = {
-                left = OBJECTS_DEFINITIONS.field_avail_text_align.enum.left,
-                center = OBJECTS_DEFINITIONS.field_avail_text_align.enum.center,
-                right = OBJECTS_DEFINITIONS.field_avail_text_align.enum.right
-            },
-            Fieldset = {
-                left = OBJECTS_DEFINITIONS.field_avail_text_align.enum.left,
-                center = OBJECTS_DEFINITIONS.field_avail_text_align.enum.center,
-                right = OBJECTS_DEFINITIONS.field_avail_text_align.enum.right
-            }
+            Field = {"left", "center", "right"},
+            Literal = {"left", "center", "right"},
+            ProtectedLiteral = {"left", "center", "right"},
+            BooleanField = {"left", "center", "right"},
+            Image = {"left", "center", "right"},
+            Line = {"left", "center", "right"},
+            Fieldset = {"left", "center", "right"}
         }, -- Available text alignment for each field type
         initial = nil, -- Default text alignment for the initial field type
         edited = nil -- Text alignment after editing
@@ -929,105 +481,64 @@ field_max_height {
             right = "right"
         },
         default = {
-            Field = {
-                align = OBJECTS_DEFINITIONS.field_avail_text_align.default.Field
-            },
-            Literal = {
-                align = OBJECTS_DEFINITIONS.field_avail_text_align.default.Literal
-            },
-            ProtectedLiteral = {
-                align = OBJECTS_DEFINITIONS.field_avail_text_align.default.ProtectedLiteral
-            },
-            BooleanField = {
-                align = OBJECTS_DEFINITIONS.field_avail_text_align.default.BooleanField
-            },
-            Image = {
-                align = OBJECTS_DEFINITIONS.field_avail_text_align.default.Image
-            },
-            Line = {
-                align = OBJECTS_DEFINITIONS.field_avail_text_align.default.Line
-            },
-            Fieldset = {
-                align = OBJECTS_DEFINITIONS.field_avail_text_align.default.Fieldset
-            }
+            Field = {"left", "center", "right"},
+            Literal = {"left", "center", "right"},
+            ProtectedLiteral = {"left", "center", "right"},
+            BooleanField = {"left", "center", "right"},
+            Image = {"left", "center", "right"},
+            Line = {"left", "center", "right"},
+            Fieldset = {"left", "center", "right"}
         }, -- Default text alignment for each field type
         initial = nil, -- Default text alignment for the initial field type
         edited = nil -- Text alignment after editing
     },
 
-    field_avail_pos = { -- Represents the position of the field in the BMS screen (row, col)
+    field_pos = { -- Represents the position of the field in the BMS screen (row, col)
         enum = {
             zero = 0
         },
         default = {
             Field = {
-                col = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                row = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
             },
             Literal = {
-                col = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                row = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
             },
             ProtectedLiteral = {
-                col = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                row = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
             },
             BooleanField = {
-                col = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                row = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
             },
             Image = {
-                col = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                row = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
             },
             Line = {
-                col = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                row = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
             },
             Fieldset = {
-                col = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                row = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero,
-                colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.zero
-            }
-        }, -- Default position for each field type
-        initial = nil, -- Default position for the initial field type
-        edited = nil -- Position after editing
-    },
-    field_pos = { -- Represents the position of the field in the BMS screen (row, col)
-        default = {
-            Field = {
-                position = OBJECTS_DEFINITIONS.field_avail_pos.default.Field
-            },
-            Literal = {
-                position = OBJECTS_DEFINITIONS.field_avail_pos.default.Literal
-            },
-            ProtectedLiteral = {
-                position = OBJECTS_DEFINITIONS.field_avail_pos.default.ProtectedLiteral
-            },
-            BooleanField = {
-                position = OBJECTS_DEFINITIONS.field_avail_pos.default.BooleanField
-            },
-            Image = {
-                position = OBJECTS_DEFINITIONS.field_avail_pos.default.Image
-            },
-            Line = {
-                position = OBJECTS_DEFINITIONS.field_avail_pos.default.Line
-            },
-            Fieldset = {
-                position = OBJECTS_DEFINITIONS.field_avail_pos.default.Fieldset
+                col = "zero",
+                row = "zero",
+                rowend = "zero",
+                colend = "zero"
             }
         }, -- Default position for each field type
         initial = nil, -- Default position for the initial field type
@@ -1346,66 +857,43 @@ field_max_height {
         },
         default = {
             -- Field : Bordure simple par defaut (standard pour champs de saisie)
-            Field = {
-                single = OBJECTS_DEFINITIONS.field_avail_border_style.enum.single,
-                double = OBJECTS_DEFINITIONS.field_avail_border_style.enum.double,
-                dashed = OBJECTS_DEFINITIONS.field_avail_border_style.enum.dashed,
-                none = OBJECTS_DEFINITIONS.field_avail_border_style.enum.none
-            },
+            Field = {"single", "double", "dashed", "none"},
 
             -- Literal : Pas de bordure par defaut (texte statique n'en a pas besoin)
-            Literal = {
-                none = OBJECTS_DEFINITIONS.field_avail_border_style.enum.none,
-                single = OBJECTS_DEFINITIONS.field_avail_border_style.enum.single,
-                dashed = OBJECTS_DEFINITIONS.field_avail_border_style.enum.dashed
-            },
+            Literal = {"none", "single", "dashed"},
 
             -- ProtectedLiteral : Bordure pointillee pour indiquer protection
-            ProtectedLiteral = {
-                dashed = OBJECTS_DEFINITIONS.field_avail_border_style.enum.dashed,
-                single = OBJECTS_DEFINITIONS.field_avail_border_style.enum.single,
-                double = OBJECTS_DEFINITIONS.field_avail_border_style.enum.double,
-                none = OBJECTS_DEFINITIONS.field_avail_border_style.enum.none
-            },
+            ProtectedLiteral = {"dashed", "single", "double", "none"},
 
             -- BooleanField : Bordure simple pour cases a cocher
-            BooleanField = {
-                single = OBJECTS_DEFINITIONS.field_avail_border_style.enum.single,
-                double = OBJECTS_DEFINITIONS.field_avail_border_style.enum.double,
-                dashed = OBJECTS_DEFINITIONS.field_avail_border_style.enum.dashed
-            },
+            BooleanField = {"single", "double", "dashed"},
 
             -- Image : Bordure double pour encadrer les placeholders
-            Image = {
-                double = OBJECTS_DEFINITIONS.field_avail_border_style.enum.double,
-                single = OBJECTS_DEFINITIONS.field_avail_border_style.enum.single,
-                dashed = OBJECTS_DEFINITIONS.field_avail_border_style.enum.dashed,
-                none = OBJECTS_DEFINITIONS.field_avail_border_style.enum.none
-            },
+            Image = {"double", "single", "dashed", "none"},
 
             -- Line : Pas de bordure (c'est deja une ligne)
-            Line = {
-                none = OBJECTS_DEFINITIONS.field_avail_border_style.enum.none
-            },
+            Line = {"none"},
 
             -- Fieldset : Bordure double pour conteneurs (standard UI)
-            Fieldset = {
-                double = OBJECTS_DEFINITIONS.field_avail_border_style.enum.double,
-                single = OBJECTS_DEFINITIONS.field_avail_border_style.enum.single,
-                dashed = OBJECTS_DEFINITIONS.field_avail_border_style.enum.dashed
-            }
+            Fieldset = {"double", "single", "dashed"}
         } -- Combinaisons UX par type (1ere = valeur par defaut pour .initial)
     },
 
     field_border_style = {
+        enum = {
+            single = "single",
+            double = "double",
+            dashed = "dashed",
+            none = "none"
+        },
         default = {
-            Field = OBJECTS_DEFINITIONS.field_avail_border_style.default.Field,
-            Literal = OBJECTS_DEFINITIONS.field_avail_border_style.default.Literal,
-            ProtectedLiteral = OBJECTS_DEFINITIONS.field_avail_border_style.default.ProtectedLiteral,
-            BooleanField = OBJECTS_DEFINITIONS.field_avail_border_style.default.BooleanField,
-            Image = OBJECTS_DEFINITIONS.field_avail_border_style.default.Image,
-            Line = OBJECTS_DEFINITIONS.field_avail_border_style.default.Line,
-            Fieldset = OBJECTS_DEFINITIONS.field_avail_border_style.default.Fieldset
+            Field = {"single", "double", "dashed", "none"},
+            Literal = {"none", "single", "dashed"},
+            ProtectedLiteral = {"dashed", "single", "double", "none"},
+            BooleanField = {"single", "double", "dashed"},
+            Image = {"double", "single", "dashed", "none"},
+            Line = {"none"},
+            Fieldset = {"double", "single", "dashed"}
         }, -- Default border style for each field type
         initial = nil, -- Default border style for the initial field type
         edited = nil -- Border style after editing
@@ -1422,30 +910,16 @@ field_max_height {
             dash = "─"
         },
         default = {
-            Field = {
-                space = OBJECTS_DEFINITIONS.field_title_fill_char.enum.space
-            },
-            Literal = {
-                space = OBJECTS_DEFINITIONS.field_title_fill_char.enum.space
-            },
-            ProtectedLiteral = {
-                space = OBJECTS_DEFINITIONS.field_title_fill_char.enum.space
-            },
-            BooleanField = {
-                space = OBJECTS_DEFINITIONS.field_title_fill_char.enum.space
-            },
-            Image = {
-                dash = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dash
-            },
-            Line = {
-                dash = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dash
-            },
-            Fieldset = {
-                dash = OBJECTS_DEFINITIONS.field_title_fill_char.enum.dash
-            }
+            Field = " ",
+            Literal = " ",
+            ProtectedLiteral = " ",
+            BooleanField = " ",
+            Image = " ",
+            Line = "─",
+            Fieldset = "─"
         },
-        initial = nil,
-        edited = nil
+        initial = "─",
+        edited = "─"
     },
 
     -- Caractère de remplissage pour les champs vides (ex: "_" pour Field)
@@ -1456,27 +930,13 @@ field_max_height {
             dash = "─"
         },
         default = {
-            Field = {
-                underscore = OBJECTS_DEFINITIONS.field_fill_char.enum.underscore
-            },
-            Literal = {
-                space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
-            },
-            ProtectedLiteral = {
-                space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
-            },
-            BooleanField = {
-                space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
-            },
-            Image = {
-                space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
-            },
-            Line = {
-                dash = OBJECTS_DEFINITIONS.field_fill_char.enum.dash
-            },
-            Fieldset = {
-                space = OBJECTS_DEFINITIONS.field_fill_char.enum.space
-            }
+            Field = "_",
+            Literal = " ",
+            ProtectedLiteral = " ",
+            BooleanField = " ",
+            Image = " ",
+            Line = "─",
+            Fieldset = " "
         },
         initial = nil,
         edited = nil
@@ -1488,27 +948,13 @@ field_max_height {
             bottom = "bottom"
         },
         default = {
-            Field = {
-                top = OBJECTS_DEFINITIONS.field_avail_vertical_align.enum.top
-            },
-            Literal = {
-                top = OBJECTS_DEFINITIONS.field_avail_vertical_align.enum.top
-            },
-            ProtectedLiteral = {
-                top = OBJECTS_DEFINITIONS.field_avail_vertical_align.enum.top
-            },
-            BooleanField = {
-                top = OBJECTS_DEFINITIONS.field_avail_vertical_align.enum.top
-            },
-            Image = {
-                top = OBJECTS_DEFINITIONS.field_avail_vertical_align.enum.top
-            },
-            Line = {
-                top = OBJECTS_DEFINITIONS.field_avail_vertical_align.enum.top
-            },
-            Fieldset = {
-                top = OBJECTS_DEFINITIONS.field_avail_vertical_align.enum.top
-            }
+            Field = "top",
+            Literal = "top",
+            ProtectedLiteral = "top",
+            BooleanField = "top",
+            Image = "top",
+            Line = "top",
+            Fieldset = "top"
         },
         initial = nil,
         edited = nil
@@ -1521,27 +967,13 @@ field_max_height {
             bottom = "bottom"
         },
         default = {
-            Field = {
-                top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
-            },
-            Literal = {
-                top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
-            },
-            ProtectedLiteral = {
-                top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
-            },
-            BooleanField = {
-                top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
-            },
-            Image = {
-                top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
-            },
-            Line = {
-                top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
-            },
-            Fieldset = {
-                top = OBJECTS_DEFINITIONS.field_vertical_align.enum.top
-            }
+            Field = "top",
+            Literal = "top",
+            ProtectedLiteral = "top",
+            BooleanField = "top",
+            Image = "top",
+            Line = "top",
+            Fieldset = "top"
         },
         initial = nil,
         edited = nil
@@ -1552,30 +984,16 @@ field_max_height {
             none = 0
         },
         default = {
-            Field = {
-                none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
-            },
-            Literal = {
-                none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
-            },
-            ProtectedLiteral = {
-                none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
-            },
-            BooleanField = {
-                none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
-            },
-            Image = {
-                none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
-            },
-            Line = {
-                none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
-            },
-            Fieldset = {
-                none = OBJECTS_DEFINITIONS.field_vertical_margin.enum.none
-            }
+            Field = "none",
+            Literal = "none",
+            ProtectedLiteral = "none",
+            BooleanField = "none",
+            Image = "none",
+            Line = "none",
+            Fieldset = "none"
         },
-        initial = nil,
-        edited = nil
+        initial = "none",
+        edited = "none"
     },
 
     -- ===== AUTRES PROPRIETES =====
@@ -1583,8 +1001,56 @@ field_max_height {
 
     -- Marqueur pour les champs requis (ex: " *")
     field_avail_required_marker = {
-        enum = {
-            required = {
+        default = {
+            Field = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Fieldset = {
                 enabled = false,
                 enabled_marker = false,
                 marker = " *",
@@ -1593,48 +1059,122 @@ field_max_height {
                 none = ""
             }
         },
-        default = {
-            Field = {
-                required = OBJECTS_DEFINITIONS.field_avail_required_marker.enum.required
-            },
-            Literal = {
-                required = OBJECTS_DEFINITIONS.field_avail_required_marker.enum.required
-            },
-            ProtectedLiteral = {
-                required = OBJECTS_DEFINITIONS.field_avail_required_marker.enum.required
-            },
-            BooleanField = {
-                required = OBJECTS_DEFINITIONS.field_avail_required_marker.enum.required
-            },
-            Image = {
-                required = OBJECTS_DEFINITIONS.field_avail_required_marker.enum.required
-            },
-            Line = {
-                required = OBJECTS_DEFINITIONS.field_avail_required_marker.enum.required
-            },
-            Fieldset = {
-                required = OBJECTS_DEFINITIONS.field_avail_required_marker.enum.required
-            }
-        },
         initial = nil,
         edited = nil
     },
     -- represents the required marker for each field type, which can be used to indicate that a field is required. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
     field_required_marker = {
         default = {
-            Field = OBJECTS_DEFINITIONS.field_avail_required_marker.default.Field,
-            Literal = OBJECTS_DEFINITIONS.field_avail_required_marker.default.Literal,
-            ProtectedLiteral = OBJECTS_DEFINITIONS.field_avail_required_marker.default.ProtectedLiteral,
-            BooleanField = OBJECTS_DEFINITIONS.field_avail_required_marker.default.BooleanField,
-            Image = OBJECTS_DEFINITIONS.field_avail_required_marker.default.Image,
-            Line = OBJECTS_DEFINITIONS.field_avail_required_marker.default.Line,
-            Fieldset = OBJECTS_DEFINITIONS.field_avail_required_marker.default.Fieldset
+            Field = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " *",
+                enabled_sentence = false,
+                sentence = "= required fields",
+                none = ""
+            }
         }
     },
     -- Marqueur pour les champs en erreur (ex: " /!\")
     field_avail_error_marker = {
-        enum = {
-            error = {
+        default = {
+            Field = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Fieldset = {
                 enabled = false,
                 enabled_marker = false,
                 marker = " /!\\",
@@ -1643,43 +1183,68 @@ field_max_height {
                 none = ""
             }
         },
-        default = {
-            Field = {
-                error = OBJECTS_DEFINITIONS.field_avail_error_marker.enum.error
-            },
-            Literal = {
-                error = OBJECTS_DEFINITIONS.field_avail_error_marker.enum.error
-            },
-            ProtectedLiteral = {
-                error = OBJECTS_DEFINITIONS.field_avail_error_marker.enum.error
-            },
-            BooleanField = {
-                error = OBJECTS_DEFINITIONS.field_avail_error_marker.enum.error
-            },
-            Image = {
-                error = OBJECTS_DEFINITIONS.field_avail_error_marker.enum.error
-            },
-            Line = {
-                error = OBJECTS_DEFINITIONS.field_avail_error_marker.enum.error
-            },
-            Fieldset = {
-                error = OBJECTS_DEFINITIONS.field_avail_error_marker.enum.error
-            }
-        },
         initial = nil,
         edited = nil
     },
     -- represents the error marker for each field type, which can be used to indicate that a field is in an error state. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
     field_error_marker = {
-
         default = {
-            Field = OBJECTS_DEFINITIONS.field_avail_error_marker.default.Field,
-            Literal = OBJECTS_DEFINITIONS.field_avail_error_marker.default.Literal,
-            ProtectedLiteral = OBJECTS_DEFINITIONS.field_avail_error_marker.default.ProtectedLiteral,
-            BooleanField = OBJECTS_DEFINITIONS.field_avail_error_marker.default.BooleanField,
-            Image = OBJECTS_DEFINITIONS.field_avail_error_marker.default.Image,
-            Line = OBJECTS_DEFINITIONS.field_avail_error_marker.default.Line,
-            Fieldset = OBJECTS_DEFINITIONS.field_avail_error_marker.default.Fieldset
+            Field = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Literal = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            ProtectedLiteral = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            BooleanField = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Image = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Line = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            },
+            Fieldset = {
+                enabled = false,
+                enabled_marker = false,
+                marker = " /!\\",
+                enabled_sentence = false,
+                sentence = "= error fields",
+                none = ""
+            }
         },
         initial = nil,
         edited = nil
@@ -1690,44 +1255,142 @@ field_max_height {
         default = {
             Field = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Field,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Field,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             Literal = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Literal,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Literal,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             ProtectedLiteral = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.ProtectedLiteral,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.ProtectedLiteral,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             BooleanField = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.BooleanField,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.BooleanField,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             Image = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Image,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Image,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             Line = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Line,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Line,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             Fieldset = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Fieldset,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Fieldset,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             }
         },
@@ -1739,134 +1402,291 @@ field_max_height {
         default = {
             Field = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Field,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Field,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             Literal = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Literal,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Literal,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             ProtectedLiteral = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.ProtectedLiteral,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.ProtectedLiteral,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             BooleanField = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.BooleanField,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.BooleanField,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             Image = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Image,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Image,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             Line = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Line,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Line,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             },
             Fieldset = {
                 enabled = false,
-                required = OBJECTS_DEFINITIONS.field_required_marker.default.Fieldset,
-                errors = OBJECTS_DEFINITIONS.field_error_marker.default.Fieldset,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
                 none = ""
             }
         },
         initial = nil,
         edited = nil
     },
-    field_footer_title = {
-        default = {
-            Field = {
-                title = ""
-            },
-            Literal = {
-                title = ""
-            },
-            ProtectedLiteral = {
-                title = ""
-            },
-            BooleanField = {
-                title = ""
-            },
-            Image = {
-                title = ""
-            },
-            Line = {
-                title = ""
-            },
-            Fieldset = {
-                title = ""
-            }
-        }
 
-    },
     -- field_footer represents the footer for the title of each field type, which can be used to indicate required fields or other information
     field_footer = {
         default = {
             Field = {
-                color = OBJECTS_DEFINITIONS.field_footer_color.default.Field,
-                align = OBJECTS_DEFINITIONS.field_footer_align.default.Field,
-                fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Field,
-                title = OBJECTS_DEFINITIONS.field_footer_title.default.Field,
-                required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Field,
-                error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Field
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
             },
             Literal = {
-                color = OBJECTS_DEFINITIONS.field_footer_color.default.Literal,
-                align = OBJECTS_DEFINITIONS.field_footer_align.default.Literal,
-                fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Literal,
-                title = OBJECTS_DEFINITIONS.field_footer_title.default.Literal,
-                required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Literal,
-                error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Literal
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
             },
             ProtectedLiteral = {
-                color = OBJECTS_DEFINITIONS.field_footer_color.default.ProtectedLiteral,
-                align = OBJECTS_DEFINITIONS.field_footer_align.default.ProtectedLiteral,
-                fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.ProtectedLiteral,
-                title = OBJECTS_DEFINITIONS.field_footer_title.default.ProtectedLiteral,
-                required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.ProtectedLiteral,
-                error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.ProtectedLiteral
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
             },
             BooleanField = {
-                color = OBJECTS_DEFINITIONS.field_footer_color.default.BooleanField,
-                align = OBJECTS_DEFINITIONS.field_footer_align.default.BooleanField,
-                fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.BooleanField,
-                title = OBJECTS_DEFINITIONS.field_footer_title.default.BooleanField,
-                required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.BooleanField,
-                error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.BooleanField
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
             },
             Image = {
-                color = OBJECTS_DEFINITIONS.field_footer_color.default.Image,
-                align = OBJECTS_DEFINITIONS.field_footer_align.default.Image,
-                fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Image,
-                title = OBJECTS_DEFINITIONS.field_footer_title.default.Image,
-                required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Image,
-                error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Image
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
             },
             Line = {
-                color = OBJECTS_DEFINITIONS.field_footer_color.default.Line,
-                align = OBJECTS_DEFINITIONS.field_footer_align.default.Line,
-                fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Line,
-                title = OBJECTS_DEFINITIONS.field_footer_title.default.Line,
-                required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Line,
-                error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Line
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
             },
             Fieldset = {
-                color = OBJECTS_DEFINITIONS.field_footer_color.default.Fieldset,
-                align = OBJECTS_DEFINITIONS.field_footer_align.default.Fieldset,
-                fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Fieldset,
-                title = OBJECTS_DEFINITIONS.field_footer_title.default.Fieldset,
-                required_marker = OBJECTS_DEFINITIONS.field_footer_required_marker.default.Fieldset,
-                error_marker = OBJECTS_DEFINITIONS.field_footer_error_marker.default.Fieldset
+                enabled = false,
+                required = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " *",
+                    enabled_sentence = false,
+                    sentence = "= required fields",
+                    none = ""
+                },
+                errors = {
+                    enabled = false,
+                    enabled_marker = false,
+                    marker = " /!\\",
+                    enabled_sentence = false,
+                    sentence = "= error fields",
+                    none = ""
+                },
+                none = ""
             }
         },
         initial = nil,
@@ -1882,34 +1702,15 @@ field_max_height {
         },
         default = {
             -- Field/Literal/ProtectedLiteral/BooleanField/Image: titre a gauche par defaut
-            Field = {
-                left = OBJECTS_DEFINITIONS.field_title_align.enum.left,
-                right = OBJECTS_DEFINITIONS.field_title_align.enum.right,
-                center = OBJECTS_DEFINITIONS.field_title_align.enum.center
-            },
-            Literal = {
-                left = OBJECTS_DEFINITIONS.field_title_align.enum.left
-            },
-            ProtectedLiteral = {
-                left = OBJECTS_DEFINITIONS.field_title_align.enum.left
-            },
-            BooleanField = {
-                left = OBJECTS_DEFINITIONS.field_title_align.enum.left,
-                right = OBJECTS_DEFINITIONS.field_title_align.enum.right
-            },
-            Image = {
-                left = OBJECTS_DEFINITIONS.field_title_align.enum.left,
-                middle = OBJECTS_DEFINITIONS.field_title_align.enum.center,
-                right = OBJECTS_DEFINITIONS.field_title_align.enum.right
-            },
+            Field = "left",
+            Literal = "left",
+            ProtectedLiteral = "left",
+            BooleanField = "left",
+            Image = "left",
             -- Line: titre centre par defaut (ligne horizontale)
-            Line = {
-                left = OBJECTS_DEFINITIONS.field_title_align.enum.center
-            },
+            Line = "center",
             -- Fieldset: titre centre par defaut (conteneur)
-            Fieldset = {
-                left = OBJECTS_DEFINITIONS.field_title_align.enum.center
-            }
+            Fieldset = "center"
         },
         initial = nil,
         edited = nil
@@ -2135,6 +1936,89 @@ field_max_height {
     }
 }
 
+-- ===== POST-CONSTRUCTION: Default values =====
+
+-- Level 1: Properties with simple static default values
+OBJECTS_DEFINITIONS.field_name.default = {
+    Field = "Field",
+    Literal = "Literal",
+    ProtectedLiteral = "ProtectedLiteral",
+    BooleanField = "BooleanField",
+    Image = "Image",
+    Line = "Line",
+    Fieldset = "Fieldset"
+}
+
+OBJECTS_DEFINITIONS.field_type.default = {
+    Field = "Field",
+    Literal = "Literal",
+    ProtectedLiteral = "ProtectedLiteral",
+    BooleanField = "BooleanField",
+    Image = "Image",
+    Line = "Line",
+    Fieldset = "Fieldset"
+}
+
+OBJECTS_DEFINITIONS.field_min_height.default = {
+    Field = 3,
+    Literal = 3,
+    ProtectedLiteral = 3,
+    BooleanField = 3,
+    Image = 5,
+    Line = 1,
+    Fieldset = 3
+}
+
+OBJECTS_DEFINITIONS.field_max_height.default = {
+    Field = 80,
+    Literal = 80,
+    ProtectedLiteral = 80,
+    BooleanField = 3,
+    Image = 40,
+    Line = 1,
+    Fieldset = 80
+}
+
+OBJECTS_DEFINITIONS.field_width_max.default = {
+    Field = 255,
+    Literal = 255,
+    ProtectedLiteral = 255,
+    BooleanField = 255,
+    Image = 255,
+    Line = 255,
+    Fieldset = 255
+}
+
+OBJECTS_DEFINITIONS.field_width_min.default = {
+    Field = 3,
+    Literal = 3,
+    ProtectedLiteral = 3,
+    BooleanField = 10,
+    Image = 1,
+    Line = 1,
+    Fieldset = 3
+}
+
+OBJECTS_DEFINITIONS.field_height.default = {
+    Field = 3,
+    Literal = 3,
+    ProtectedLiteral = 3,
+    BooleanField = 3,
+    Image = 5,
+    Line = 1,
+    Fieldset = 3
+}
+
+OBJECTS_DEFINITIONS.field_width.default = {
+    Field = 10,
+    Literal = 20,
+    ProtectedLiteral = 20,
+    BooleanField = 10,
+    Image = 40,
+    Line = 40,
+    Fieldset = 40
+}
+
 -- ===== POST-CONSTRUCTION: Dynamic references for field_border =====
 OBJECTS_DEFINITIONS.field_border = {
     default = {
@@ -2183,9 +2067,7 @@ OBJECTS_DEFINITIONS.field_border = {
 -- Helper: Get the current value for a property (edited if set, otherwise initial)
 local function get_property(obj, prop_name)
     local prop = obj[prop_name]
-    if not prop then
-        return nil
-    end
+    if not prop then return nil end
     if type(prop) == "table" and prop.edited ~= nil then
         return prop.edited
     elseif type(prop) == "table" and prop.initial ~= nil then
@@ -2209,14 +2091,9 @@ local function get_border_chars(obj)
     end
     -- Ultimate fallback
     return {
-        top_left = "+",
-        top = "-",
-        top_right = "+",
-        left = "|",
-        right = "|",
-        bottom_left = "+",
-        bottom = "-",
-        bottom_right = "+"
+        top_left = "+", top = "-", top_right = "+",
+        left = "|", right = "|",
+        bottom_left = "+", bottom = "-", bottom_right = "+"
     }
 end
 
@@ -2228,7 +2105,7 @@ function render_bordered_field(obj, custom_content)
     local border_chars = get_border_chars(obj)
     local fill_char = get_property(obj, "field_fill_char") or " "
     local obj_type = get_property(obj, "field_type") or "Field"
-
+    
     -- Determine content
     local content
     if custom_content then
@@ -2248,9 +2125,9 @@ function render_bordered_field(obj, custom_content)
             content = ""
         end
     end
-
+    
     local lines = {}
-
+    
     -- If no border, just return content centered
     if border_style == "none" then
         if height >= 1 then
@@ -2266,13 +2143,13 @@ function render_bordered_field(obj, custom_content)
         end
         return table.concat(lines, "\n")
     end
-
+    
     -- Top border
     if height >= 1 then
         local top_line = border_chars.top_left .. string.rep(border_chars.top, width) .. border_chars.top_right
         table.insert(lines, top_line)
     end
-
+    
     -- Content area
     local content_lines = {}
     if content and #content > 0 then
@@ -2283,14 +2160,14 @@ function render_bordered_field(obj, custom_content)
     else
         table.insert(content_lines, "")
     end
-
+    
     -- Center content vertically
     local content_height = #content_lines
     local content_start = 1
     if height > 2 then
         content_start = math.floor((height - 1 - content_height) / 2) + 1
     end
-
+    
     for i = 1, height - 2 do
         if i >= content_start and i < content_start + content_height then
             local content_line = content_lines[i - content_start + 1]
@@ -2309,14 +2186,13 @@ function render_bordered_field(obj, custom_content)
             table.insert(lines, border_chars.left .. string.rep(fill_char, width) .. border_chars.right)
         end
     end
-
+    
     -- Bottom border
     if height >= 2 then
-        local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) ..
-                                border_chars.bottom_right
+        local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) .. border_chars.bottom_right
         table.insert(lines, bottom_line)
     end
-
+    
     return table.concat(lines, "\n")
 end
 
@@ -2326,11 +2202,11 @@ function render_line(obj)
     local border_style = get_property(obj, "field_border_style") or "none"
     local border_chars = get_border_chars(obj)
     local line_char = border_chars.top -- Use top border char for horizontal line
-
+    
     if border_style == "none" then
         return string.rep("-", width)
     end
-
+    
     return string.rep(line_char, width)
 end
 
@@ -2342,49 +2218,48 @@ function render_fieldset(obj)
     local border_chars = get_border_chars(obj)
     local fill_char = get_property(obj, "field_fill_char") or " "
     local title = get_property(obj, "field_name") or get_property(obj, "field_initial")
-
+    
     -- Get actual title
     if title and type(title) == "table" then
         title = title.initial or title.edited or "Fieldset"
     else
         title = "Fieldset"
     end
-
+    
     local lines = {}
-
+    
     -- Top border with title
     local title_fill = get_property(obj, "field_title_fill_char") or " "
     if height >= 1 then
         local title_str = " " .. title .. " "
         local title_len = #title_str
         local content_width = width - 2
-
+        
         if title_len > content_width then
             title_str = title_str:sub(1, content_width)
             title_len = content_width
         end
-
+        
         local padding = content_width - title_len
         local left_fill = math.floor(padding / 2)
         local right_fill = padding - left_fill
         title_str = string.rep(title_fill, left_fill) .. title_str .. string.rep(title_fill, right_fill)
-
+        
         local top_line = border_chars.top_left .. title_str .. border_chars.top_right
         table.insert(lines, top_line)
     end
-
+    
     -- Content area
     for i = 1, height - 2 do
         table.insert(lines, border_chars.left .. string.rep(fill_char, width) .. border_chars.right)
     end
-
+    
     -- Bottom border
     if height >= 2 then
-        local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) ..
-                                border_chars.bottom_right
+        local bottom_line = border_chars.bottom_left .. string.rep(border_chars.bottom, width) .. border_chars.bottom_right
         table.insert(lines, bottom_line)
     end
-
+    
     return table.concat(lines, "\n")
 end
 
@@ -2394,8 +2269,7 @@ function OBJECTS_DEFINITIONS.new(obj_type, overrides)
 
     -- Copie de toutes les propriétés depuis la définition globale
     for prop_name, prop_def in pairs(OBJECTS_DEFINITIONS) do
-        if type(prop_def) == "table" and prop_def.default and prop_def.default[obj_type] and
-            type(prop_def.default[obj_type]) ~= "function" and prop_name ~= "visual_representation" then
+        if type(prop_def) == "table" and prop_def.default and prop_def.default[obj_type] and type(prop_def.default[obj_type]) ~= "function" and prop_name ~= "visual_representation" then
             -- Initialisation : .default[Type] → .initial
             self[prop_name] = {
                 initial = prop_def.default[obj_type],
@@ -2445,6 +2319,7 @@ function OBJECTS_DEFINITIONS.new(obj_type, overrides)
     return self
 end
 
+
 -- ===== FONCTION DE RENDU GENÉRIQUE =====
 -- Rend n'importe quel objet (Field, Fieldset, etc.) selon ses propriétés
 function render_object(obj)
@@ -2485,4 +2360,322 @@ function render_object(obj)
     end
 
     return table.concat(lines, "\n")
+end
+
+-- ===== EXTRACTION DES PROPRIÉTÉS POUR GUI =====
+
+function OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    -->
+    -- Extrait toutes les propriétés d'un type d'objet avec leurs métadonnées
+    -- Retourne une table prête pour une GUI (combobox, property grid, etc.)
+    --
+    -- @param obj_type: Type de l'objet (ex: "Field", "Fieldset"), ou nil pour toutes les propriétés globales
+    -- @return: Table de propriétés au format GUI
+    
+    local function get_category(prop_name)
+        if prop_name:find("color") then return "Colors" end
+        if prop_name:find("border") then return "Border" end
+        if prop_name:find("style") then return "Style" end
+        if prop_name:find("font") then return "Font" end
+        if prop_name:find("align") then return "Alignment" end
+        if prop_name:find("height") or prop_name:find("width") then return "Dimensions" end
+        if prop_name:find("fill") or prop_name:find("char") then return "Characters" end
+        if prop_name:find("initial") or prop_name:find("value") then return "Values" end
+        if prop_name:find("name") or prop_name:find("type") then return "Identity" end
+        if prop_name:find("avail") or prop_name:find("default") then return "Available Options" end
+        if prop_name:find("pos") then return "Position" end
+        if prop_name:find("title") or prop_name:find("footer") or prop_name:find("prefix") or prop_name:find("suffix") then return "Title & Footer" end
+        if prop_name:find("error") or prop_name:find("required") then return "Validation" end
+        if prop_name:find("attrb") then return "Attributes" end
+        if prop_name:find("child") then return "Children" end
+        return "Other"
+    end
+
+    local function get_gui_type(prop_name, prop_def)
+        -- D'abord vérifier par nom de propriété (priorité aux noms explicites)
+        if prop_name:find("color") then return "color" end
+        if prop_name:find("char") then return "char" end
+        if prop_name:find("height") or prop_name:find("width") then return "number" end
+        if prop_name:find("border_style") then return "border_style" end
+        if prop_name:find("align") then return "enum" end
+        if prop_name:find("style") then return "enum" end
+        
+        -- Ensuite vérifier le type des valeurs par défaut
+        if prop_def.default then
+            if type(prop_def.default) == "string" then return "string" end
+            if type(prop_def.default) == "number" then return "number" end
+            if type(prop_def.default) == "boolean" then return "boolean" end
+            if type(prop_def.default) == "table" then
+                -- Vérifier si c'est une table de valeurs par type ou une vraie enum
+                local has_string_values = false
+                local has_number_values = false
+                for _, v in pairs(prop_def.default) do
+                    if type(v) == "string" then has_string_values = true end
+                    if type(v) == "number" then has_number_values = true end
+                end
+                -- Si toutes les valeurs sont des nombres, c'est une propriété numérique
+                if has_number_values and not has_string_values then
+                    return "number"
+                end
+                -- Si toutes les valeurs sont des strings, c'est une enum
+                if has_string_values and not has_number_values then
+                    return "enum"
+                end
+                -- Mixte ou complexe, retourner object
+                return "object"
+            end
+        end
+        
+        -- Enfin vérifier enum (mais après les vérifications par nom)
+        if prop_def.enum and type(prop_def.enum) == "table" then
+            -- Vérifier si enum contient des strings ou des nombres
+            local has_string_enum = false
+            local has_number_enum = false
+            for _, v in pairs(prop_def.enum) do
+                if type(v) == "string" then has_string_enum = true end
+                if type(v) == "number" then has_number_enum = true end
+            end
+            if has_string_enum and not has_number_enum then
+                return "enum"
+            end
+        end
+        
+        return "object"
+    end
+
+    local function get_gui_hint(prop_name)
+        local hints = {
+            field_name = "Name identifier for the object",
+            field_type = "Type of the field (Field, Literal, ProtectedLiteral, BooleanField, Image, Line, Fieldset)",
+            field_height = "Height of the field in rows",
+            field_width = "Width of the field in columns",
+            field_min_height = "Minimum allowed height",
+            field_max_height = "Maximum allowed height",
+            field_width_min = "Minimum allowed width",
+            field_width_max = "Maximum allowed width",
+            field_avail_color = "Available color palette",
+            field_border_color = "Border line color",
+            field_title_color = "Title text color",
+            field_text_color = "Main text color",
+            field_footer_color = "Footer text color",
+            field_fill_char = "Character used to fill empty space",
+            field_avail_style = "Available text styles",
+            field_style = "Current text style",
+            field_avail_text_align = "Available text alignment options",
+            field_text_align = "Text alignment (left, center, right)",
+            field_avail_border_style = "Available border styles",
+            field_border_style = "Current border style",
+            field_avail_border_chars = "Available border character sets",
+            field_border = "Border configuration (style + chars)",
+            field_title_fill_char = "Character to fill title area",
+            field_avail_vertical_align = "Available vertical alignment options",
+            field_vertical_align = "Vertical alignment (top, middle, bottom)",
+            field_vertical_margin = "Vertical margin size",
+            field_pos = "Position coordinates (row, col, rowend, colend)",
+            field_initial = "Initial/starting value",
+            field_children = "Child fields (for Fieldset)",
+            field_attrb = "Field attributes (readonly, required, etc.)",
+            field_required_marker = "Marker for required fields",
+            field_error_marker = "Marker for fields with errors",
+            field_title_prefix = "Prefix for field title",
+            field_title_suffix = "Suffix for field title",
+            field_title_align = "Title text alignment",
+            field_footer = "Footer text",
+            visual_representation = "Visual rendering template"
+        }
+        return hints[prop_name] or prop_name:gsub("_", " "):gsub("^%l", string.upper)
+    end
+
+    local function get_available_values(prop_def, obj_type)
+        if prop_def.enum and obj_type and prop_def.enum[obj_type] then
+            if type(prop_def.enum[obj_type]) == "table" then
+                return prop_def.enum[obj_type]
+            end
+            return {prop_def.enum[obj_type]}
+        elseif prop_def.default and obj_type and prop_def.default[obj_type] then
+            if type(prop_def.default[obj_type]) == "table" then
+                local has_only_string_or_number_keys = true
+                for k, _ in pairs(prop_def.default[obj_type]) do
+                    if type(k) ~= "string" and type(k) ~= "number" then
+                        has_only_string_or_number_keys = false
+                        break
+                    end
+                end
+                if has_only_string_or_number_keys then
+                    return prop_def.default[obj_type]
+                end
+            end
+        elseif prop_def.enum then
+            return prop_def.enum
+        elseif prop_def.default then
+            return prop_def.default
+        end
+        return nil
+    end
+
+    local function get_min_max(prop_def, obj_type)
+        local min_table = prop_def.min
+        local max_table = prop_def.max
+        
+        if min_table and max_table then
+            local min_val = obj_type and min_table[obj_type] or min_table.Field or 1
+            local max_val = obj_type and max_table[obj_type] or max_table.Field or 100
+            if min_val and max_val then
+                return { min = min_val, max = max_val }
+            end
+        end
+        return nil
+    end
+
+    local gui_props = {}
+
+    for prop_name, prop_def in pairs(OBJECTS_DEFINITIONS) do
+        if type(prop_name) == "string" and not prop_name:match("^_") and
+           prop_name ~= "field_border" and prop_name ~= "visual_representation" and
+           type(prop_def) == "table" then
+
+            local has_type_specific = obj_type and prop_def.default and prop_def.default[obj_type]
+
+            if not obj_type or has_type_specific or not prop_def.default then
+                local gui_prop = {
+                    name = prop_name,
+                    gui_name = prop_name:gsub("_", " "):gsub("^%l", string.upper),
+                    category = get_category(prop_name),
+                    gui_type = get_gui_type(prop_name, prop_def),
+                    hint = get_gui_hint(prop_name),
+                    default = prop_def.default and (obj_type and prop_def.default[obj_type] or prop_def.default) or nil,
+                    available_values = get_available_values(prop_def, obj_type),
+                    min_max = get_min_max(prop_def, obj_type),
+                    editable = true,
+                    read_only = prop_name:find("avail_") ~= nil or prop_name:find("_exported") ~= nil or prop_name:find("_help") ~= nil
+                }
+
+                if gui_prop.gui_type == "color" then
+                    gui_prop.control_type = "color_picker"
+                elseif gui_prop.gui_type == "border_style" then
+                    gui_prop.control_type = "border_style_picker"
+                elseif gui_prop.gui_type == "enum" then
+                    gui_prop.control_type = "dropdown"
+                elseif gui_prop.gui_type == "number" then
+                    gui_prop.control_type = "spinner"
+                    if gui_prop.min_max then
+                        gui_prop.min = gui_prop.min_max.min
+                        gui_prop.max = gui_prop.min_max.max
+                    end
+                elseif gui_prop.gui_type == "boolean" then
+                    gui_prop.control_type = "checkbox"
+                elseif gui_prop.gui_type == "char" then
+                    gui_prop.control_type = "char_picker"
+                else
+                    gui_prop.control_type = "text"
+                end
+
+                table.insert(gui_props, gui_prop)
+            end
+        end
+    end
+
+    table.sort(gui_props, function(a, b)
+        if a.category ~= b.category then
+            return a.category < b.category
+        end
+        return a.name < b.name
+    end)
+
+    return gui_props
+end
+
+function OBJECTS_DEFINITIONS.get_ncurses_menu_items(obj_type)
+    local gui_props = OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    local menu_items = {}
+
+    for _, prop in ipairs(gui_props) do
+        local item = {
+            label = prop.gui_name,
+            name = prop.name,
+            type = prop.gui_type,
+            value = prop.default,
+            choices = prop.available_values,
+            min = prop.min or prop.min_max and prop.min_max.min or 1,
+            max = prop.max or prop.min_max and prop.min_max.max or 100,
+            category = prop.category,
+            hint = prop.hint,
+            control_type = prop.control_type,
+            read_only = prop.read_only
+        }
+        table.insert(menu_items, item)
+    end
+
+    return menu_items
+end
+
+function OBJECTS_DEFINITIONS.export_to_json(obj_type)
+    local props = OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    
+    local function to_json(t, indent)
+        indent = indent or ""
+        if type(t) == "table" then
+            if #t > 0 then
+                local result = "["
+                for i, v in ipairs(t) do
+                    if i > 1 then result = result .. ", " end
+                    if type(v) == "table" then
+                        result = result .. to_json(v, indent .. "  ")
+                    elseif type(v) == "string" then
+                        result = result .. '"' .. v:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
+                    elseif type(v) == "number" or type(v) == "boolean" then
+                        result = result .. tostring(v)
+                    else
+                        result = result .. "null"
+                    end
+                end
+                return result .. "]"
+            else
+                local result = "{"
+                local first = true
+                for k, v in pairs(t) do
+                    if not first then result = result .. ", " end
+                    first = false
+                    result = result .. '"' .. tostring(k) .. '":'
+                    if type(v) == "table" then
+                        result = result .. to_json(v, indent .. "  ")
+                    elseif type(v) == "string" then
+                        result = result .. '"' .. v:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
+                    elseif type(v) == "number" or type(v) == "boolean" then
+                        result = result .. tostring(v)
+                    else
+                        result = result .. "null"
+                    end
+                end
+                return result .. "}"
+            end
+        else
+            if type(t) == "string" then
+                return '"' .. t:gsub("\\", "\\\\"):gsub('"', '\\"') .. '"'
+            elseif type(t) == "number" or type(t) == "boolean" then
+                return tostring(t)
+            else
+                return "null"
+            end
+        end
+    end
+    
+    local prepared = {}
+    for i, prop in ipairs(props) do
+        prepared[i] = {
+            name = prop.name,
+            gui_name = prop.gui_name,
+            category = prop.category,
+            gui_type = prop.gui_type,
+            control_type = prop.control_type,
+            hint = prop.hint,
+            default = prop.default,
+            available_values = prop.available_values,
+            min = prop.min,
+            max = prop.max,
+            read_only = prop.read_only
+        }
+    end
+    
+    return to_json(prepared)
 end
