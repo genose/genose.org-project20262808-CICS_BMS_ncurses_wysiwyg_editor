@@ -194,6 +194,16 @@ local function get_title_align(obj, default_align)
     return default_align or GUI_CONSTANTS.default_title_align
 end
 
+-- Get footer alignment for an object
+-- Returns: "left", "center", or "right"
+local function get_footer_align(obj, default_align)
+    local align = get_gui_simple_value(obj, "field_footer_align", default_align or "center")
+    if align and (align == "left" or align == "center" or align == "right") then
+        return align
+    end
+    return default_align or "center"
+end
+
 -- Align text within a given width
 -- text: the text to align
 -- width: the target width
@@ -269,6 +279,13 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local text_align = get_text_align(obj, "center")
     local vertical_align = get_vertical_align(obj, "top")
     local title_align = get_title_align(obj, "center")
+    local footer_align = get_footer_align(obj, "center")
+    
+    -- Get footer properties
+    local footer_title = get_gui_property(obj, "field_footer_title") or ""
+    local footer_fill_char = get_gui_simple_value(obj, "field_footer_fill_char", " ")
+    local footer_required_marker = get_gui_property(obj, "field_footer_required_marker") or ""
+    local footer_error_marker = get_gui_property(obj, "field_footer_error_marker") or ""
     
     -- Calculate minimum width based on content
     local label = label_text or ""
@@ -285,6 +302,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     end
     
     local lines = {}
+    local border_chars = get_border_chars(obj)
     
     -- If there's a label, render it
     if label_text and label_text ~= "" then
@@ -292,7 +310,6 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         
         -- Top line: label + field border
         if border_style ~= "none" then
-            local border_chars = get_border_chars(obj)
             local content_width = actual_width - 2
             local label_content = align_text(full_label, content_width, title_align)
             local top_line = border_chars.top_left .. label_content .. border_chars.top_right
@@ -306,7 +323,6 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     if border_style == "none" then
         table.insert(lines, value or "")
     else
-        local border_chars = get_border_chars(obj)
         local content_height = height - (label_text and 1 or 0) - 1
         
         -- Handle vertical alignment
@@ -341,6 +357,41 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
             for i = 1, content_height - 1 do
                 table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
             end
+        end
+    end
+    
+    -- Footer line (if footer_title is set, replace bottom border with footer)
+    if border_style ~= "none" then
+        local footer_text = ""
+        if footer_title and footer_title ~= "" then
+            footer_text = footer_title
+        elseif is_required then
+            footer_text = footer_required_marker
+        elseif has_error then
+            footer_text = footer_error_marker
+        end
+        
+        if footer_text ~= "" then
+            -- Create footer line with aligned text
+            local content_width = actual_width - 2
+            local footer_content = align_text(footer_text, content_width, footer_align)
+            -- Fill remaining space with footer_fill_char
+            local padding_needed = content_width - display_width(footer_text)
+            if padding_needed > 0 then
+                local left_pad = math.floor(padding_needed / 2)
+                local right_pad = padding_needed - left_pad
+                if footer_align == "left" then
+                    footer_content = footer_text .. string.rep(footer_fill_char, right_pad)
+                elseif footer_align == "right" then
+                    footer_content = string.rep(footer_fill_char, left_pad) .. footer_text
+                else
+                    footer_content = string.rep(footer_fill_char, left_pad) .. footer_text .. string.rep(footer_fill_char, right_pad)
+                end
+            end
+            table.insert(lines, border_chars.bottom_left .. footer_content .. border_chars.bottom_right)
+        else
+            -- Standard bottom border
+            table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) .. border_chars.bottom_right)
         end
     end
     
@@ -727,6 +778,7 @@ function create_gui_object(obj_type, options)
     obj.text_align = options and options.text_align or nil
     obj.vertical_align = options and options.vertical_align or nil
     obj.title_align = options and options.title_align or nil
+    obj.footer_align = options and options.footer_align or nil
     
     -- Set position if provided
     if options and options.position then
@@ -736,7 +788,7 @@ function create_gui_object(obj_type, options)
         }
     end
     
-    -- Set alignment properties if provided (maps to field_text_align, field_vertical_align, field_title_align)
+    -- Set alignment properties if provided (maps to field_text_align, field_vertical_align, field_title_align, field_footer_align)
     if options then
         if options.text_align then
             obj.field_text_align = {initial = options.text_align, edited = nil}
@@ -746,6 +798,16 @@ function create_gui_object(obj_type, options)
         end
         if options.title_align then
             obj.field_title_align = {initial = options.title_align, edited = nil}
+        end
+        if options.footer_align then
+            obj.field_footer_align = {initial = options.footer_align, edited = nil}
+        end
+        -- Footer properties
+        if options.footer_title then
+            obj.field_footer_title = {initial = options.footer_title, edited = nil}
+        end
+        if options.footer_fill_char then
+            obj.field_footer_fill_char = {initial = options.footer_fill_char, edited = nil}
         end
     end
     
@@ -1290,6 +1352,148 @@ local nested_form = create_gui_form({
 }, {title = "Nested Fieldsets", width = 50, height = 20})
 
 print(nested_form:render())
+
+-- ============================================
+-- EXAMPLE 10: FOOTER ALIGNMENT
+-- ============================================
+-- Shows footer alignment (left, center, right) with footer titles
+
+print("\n\n=== EXAMPLE 10: FOOTER ALIGNMENT ===")
+
+local footer_left_field = create_gui_object('Field', {
+    label = "Footer Left",
+    field_initial = "value",
+    gui_field_type = "gui_text_field",
+    footer_title = "-- left --",
+    footer_align = "left",
+    footer_fill_char = "-",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 4},
+    field_width = {initial = 25}
+})
+print("\n--- Footer with left alignment ---")
+print(footer_left_field:render_gui())
+
+local footer_center_field = create_gui_object('Field', {
+    label = "Footer Center",
+    field_initial = "value",
+    gui_field_type = "gui_text_field",
+    footer_title = "-- center --",
+    footer_align = "center",
+    footer_fill_char = "-",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 4},
+    field_width = {initial = 25}
+})
+print("\n--- Footer with center alignment ---")
+print(footer_center_field:render_gui())
+
+local footer_right_field = create_gui_object('Field', {
+    label = "Footer Right",
+    field_initial = "value",
+    gui_field_type = "gui_text_field",
+    footer_title = "-- right --",
+    footer_align = "right",
+    footer_fill_char = "-",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 4},
+    field_width = {initial = 25}
+})
+print("\n--- Footer with right alignment ---")
+print(footer_right_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 11: ALL ALIGNMENT PROPERTIES COMBINED
+-- ============================================
+-- Shows a field using all alignment properties together
+
+print("\n\n=== EXAMPLE 11: ALL ALIGNMENT PROPERTIES COMBINED ===")
+
+local all_align_field = create_gui_object('Field', {
+    label = "All Alignments",
+    field_initial = "data",
+    gui_field_type = "gui_text_field",
+    text_align = "center",
+    vertical_align = "middle",
+    title_align = "right",
+    footer_title = "footer",
+    footer_align = "left",
+    footer_fill_char = "=",
+    field_border_style = {initial = "double"},
+    field_height = {initial = 6},
+    field_width = {initial = 30}
+})
+print("\n--- Text:center + Vertical:middle + Title:right + Footer:left ---")
+print(all_align_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 12: USING ALL ALIGNMENT TYPES IN A FORM
+-- ============================================
+-- Complete form demonstrating all alignment types
+
+print("\n\n=== EXAMPLE 12: USING ALL ALIGNMENT TYPES IN A FORM ===")
+
+local all_alignments_form = create_gui_form({
+    create_gui_object('Field', {
+        label = "text_align:left",
+        field_initial = "value",
+        text_align = "left",
+        field_border_style = {initial = "single"},
+        position = {row = 1}
+    }),
+    create_gui_object('Field', {
+        label = "text_align:center",
+        field_initial = "value",
+        text_align = "center",
+        field_border_style = {initial = "single"},
+        position = {row = 4}
+    }),
+    create_gui_object('Field', {
+        label = "text_align:right",
+        field_initial = "value",
+        text_align = "right",
+        field_border_style = {initial = "single"},
+        position = {row = 7}
+    }),
+    create_gui_object('Field', {
+        label = "vertical_align:middle",
+        field_initial = "value",
+        vertical_align = "middle",
+        field_border_style = {initial = "single"},
+        field_height = {initial = 5},
+        position = {row = 10}
+    }),
+    create_gui_object('Field', {
+        label = "title_align:left",
+        field_initial = "value",
+        title_align = "left",
+        field_border_style = {initial = "single"},
+        position = {row = 16}
+    }),
+    create_gui_object('Field', {
+        label = "footer_align:right",
+        field_initial = "value",
+        footer_title = "footer",
+        footer_align = "right",
+        field_border_style = {initial = "single"},
+        position = {row = 19}
+    }),
+    create_gui_object('Fieldset', {
+        label = "title_align:center",
+        gui_field_type = "gui_fieldset_field",
+        title_align = "center",
+        field_border_style = {initial = "double"},
+        children = {
+            create_gui_object('Field', {
+                label = "Child",
+                field_initial = "value"
+            })
+        },
+        position = {row = 22}
+    })
+}, {title = "All Alignment Types", width = 50, height = 32})
+
+print(all_alignments_form:render())
 --]]
 
 print("OBJECT-GUI-RENDERING.lua module loaded successfully")
