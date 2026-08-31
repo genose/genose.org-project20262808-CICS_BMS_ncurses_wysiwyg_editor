@@ -95,6 +95,54 @@ local function get_position(obj)
     return {row = 0, col = 0, rowend = 0, colend = 0}
 end
 
+-- Helper: Recursively resolve property value through nested tables
+-- Handles structures like {initial = {initial = value}} or {style = "single"}
+local function resolve_property_value(prop)
+    if prop == nil then return nil end
+    
+    -- If it's a simple value (number, string, boolean), return it
+    if type(prop) ~= "table" then
+        return prop
+    end
+    
+    -- If it's a table, try to find a value
+    -- Priority 1: .initial
+    if prop.initial ~= nil then
+        return resolve_property_value(prop.initial)
+    end
+    -- Priority 2: .edited
+    if prop.edited ~= nil then
+        return resolve_property_value(prop.edited)
+    end
+    -- Priority 3: known border styles
+    local style_priority = {"single", "double", "dashed", "none"}
+    for _, style in ipairs(style_priority) do
+        if prop[style] ~= nil then
+            return resolve_property_value(prop[style])
+        end
+    end
+    -- Priority 4: first string value
+    for _, v in pairs(prop) do
+        if type(v) == "string" then
+            return v
+        end
+    end
+    -- Priority 5: first numeric value
+    for _, v in pairs(prop) do
+        if type(v) == "number" then
+            return v
+        end
+    end
+    -- Priority 6: first non-table value
+    for _, v in pairs(prop) do
+        if type(v) ~= "table" then
+            return v
+        end
+    end
+    
+    return prop
+end
+
 -- Helper: Extract a simple value from a property that might be a table
 -- For tables like {key = "value"}, returns the first value
 -- For tables like {min=1, max=10, initial=5}, returns .initial
@@ -102,29 +150,14 @@ local function get_gui_simple_value(obj, prop_name, default_value)
     local prop = get_gui_property(obj, prop_name)
     if prop == nil then return default_value end
     
-    if type(prop) == "table" then
-        -- Check if it's a {min, max, initial, edited} structure (field_height, field_width)
-        if prop.initial ~= nil then
-            return prop.initial
-        end
-        -- For style tables (field_border_style), check for known style values
-        -- Define priority order for border styles
-        local style_priority = {"single", "double", "dashed", "none"}
-        for _, style in ipairs(style_priority) do
-            if prop[style] ~= nil then
-                return style
-            end
-        end
-        -- For other tables, get the first value
-        for _, v in pairs(prop) do
-            if type(v) == "string" then
-                return v
-            end
-        end
+    -- Recursively resolve the property value
+    local resolved = resolve_property_value(prop)
+    
+    if resolved == nil or resolved == prop then
         return default_value
     end
     
-    return prop or default_value
+    return resolved or default_value
 end
 
 -- Get dimensions from object
