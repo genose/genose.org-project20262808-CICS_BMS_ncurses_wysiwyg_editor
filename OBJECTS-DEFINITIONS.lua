@@ -2077,48 +2077,13 @@ OBJECTS_DEFINITIONS.field_avail_pos.default = {
 } -- Available positions for each field type
 -- field_pos: Position (row, col, rowend, colend)
 OBJECTS_DEFINITIONS.field_pos.default = {
-    Field = {
-        row = OBJECTS_DEFINITIONS.field_avail_pos.enum.row,
-        col = OBJECTS_DEFINITIONS.field_avail_pos.enum.col,
-        rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.rowend,
-        colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.colend
-    },
-    Literal = {
-        row = OBJECTS_DEFINITIONS.field_avail_pos.enum.row,
-        col = OBJECTS_DEFINITIONS.field_avail_pos.enum.col,
-        rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.rowend,
-        colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.colend
-    },
-    ProtectedLiteral = {
-        row = OBJECTS_DEFINITIONS.field_avail_pos.enum.row,
-        col = OBJECTS_DEFINITIONS.field_avail_pos.enum.col,
-        rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.rowend,
-        colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.colend
-    },
-    BooleanField = {
-        row = OBJECTS_DEFINITIONS.field_avail_pos.enum.row,
-        col = OBJECTS_DEFINITIONS.field_avail_pos.enum.col,
-        rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.rowend,
-        colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.colend
-    },
-    Image = {
-        row = OBJECTS_DEFINITIONS.field_avail_pos.enum.row,
-        col = OBJECTS_DEFINITIONS.field_avail_pos.enum.col,
-        rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.rowend,
-        colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.colend
-    },
-    Line = {
-        row = OBJECTS_DEFINITIONS.field_avail_pos.enum.row,
-        col = OBJECTS_DEFINITIONS.field_avail_pos.enum.col,
-        rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.rowend,
-        colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.colend
-    },
-    Fieldset = {
-        row = OBJECTS_DEFINITIONS.field_avail_pos.enum.row,
-        col = OBJECTS_DEFINITIONS.field_avail_pos.enum.col,
-        rowend = OBJECTS_DEFINITIONS.field_avail_pos.enum.rowend,
-        colend = OBJECTS_DEFINITIONS.field_avail_pos.enum.colend
-    }
+    Field = OBJECTS_DEFINITIONS.field_avail_pos.default.Field,
+    Literal = OBJECTS_DEFINITIONS.field_avail_pos.default.Literal,
+    ProtectedLiteral = OBJECTS_DEFINITIONS.field_avail_pos.default.ProtectedLiteral,
+    BooleanField = OBJECTS_DEFINITIONS.field_avail_pos.default.BooleanField,
+    Image = OBJECTS_DEFINITIONS.field_avail_pos.default.Image,
+    Line = OBJECTS_DEFINITIONS.field_avail_pos.default.Line,
+    Fieldset = OBJECTS_DEFINITIONS.field_avail_pos.default.Fieldset
 } -- Default position for each field type
 
 -- field_title_align: Alignement du titre
