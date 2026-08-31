@@ -877,110 +877,419 @@ end
 
 -- Example usage:
 --[[
--- Create a simple form with GUI fields
-local form = create_gui_form({
+-- ============================================
+-- EXAMPLE 1: HORIZONTAL TEXT ALIGNMENT
+-- ============================================
+-- Shows left, center, and right alignment of text content
+
+print("=== EXAMPLE 1: HORIZONTAL TEXT ALIGNMENT ===")
+
+local left_field = create_gui_object('Field', {
+    label = "Left Aligned",
+    field_initial = "text",
+    gui_field_type = "gui_text_field",
+    text_align = "left",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Left aligned ---")
+print(left_field:render_gui())
+
+local center_field = create_gui_object('Field', {
+    label = "Center Aligned",
+    field_initial = "text",
+    gui_field_type = "gui_text_field",
+    text_align = "center",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Center aligned ---")
+print(center_field:render_gui())
+
+local right_field = create_gui_object('Field', {
+    label = "Right Aligned",
+    field_initial = "text",
+    gui_field_type = "gui_text_field",
+    text_align = "right",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Right aligned ---")
+print(right_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 2: VERTICAL ALIGNMENT
+-- ============================================
+-- Shows top, middle, and bottom vertical alignment
+
+print("\n\n=== EXAMPLE 2: VERTICAL ALIGNMENT ===")
+
+local top_field = create_gui_object('Field', {
+    label = "Top Aligned",
+    field_initial = "text",
+    gui_field_type = "gui_text_field",
+    vertical_align = "top",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 5},
+    field_width = {initial = 25}
+})
+print("\n--- Top aligned (content at top) ---")
+print(top_field:render_gui())
+
+local middle_field = create_gui_object('Field', {
+    label = "Middle Aligned",
+    field_initial = "text",
+    gui_field_type = "gui_text_field",
+    vertical_align = "middle",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 5},
+    field_width = {initial = 25}
+})
+print("\n--- Middle aligned (content centered vertically) ---")
+print(middle_field:render_gui())
+
+local bottom_field = create_gui_object('Field', {
+    label = "Bottom Aligned",
+    field_initial = "text",
+    gui_field_type = "gui_text_field",
+    vertical_align = "bottom",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 5},
+    field_width = {initial = 25}
+})
+print("\n--- Bottom aligned (content at bottom) ---")
+print(bottom_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 3: TITLE ALIGNMENT
+-- ============================================
+-- Shows left, center, and right alignment of field labels/titles
+
+print("\n\n=== EXAMPLE 3: TITLE ALIGNMENT ===")
+
+local title_left_field = create_gui_object('Field', {
+    label = "Left Title",
+    field_initial = "value",
+    gui_field_type = "gui_text_field",
+    title_align = "left",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Title left aligned ---")
+print(title_left_field:render_gui())
+
+local title_center_field = create_gui_object('Field', {
+    label = "Center Title",
+    field_initial = "value",
+    gui_field_type = "gui_text_field",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Title center aligned ---")
+print(title_center_field:render_gui())
+
+local title_right_field = create_gui_object('Field', {
+    label = "Right Title",
+    field_initial = "value",
+    gui_field_type = "gui_text_field",
+    title_align = "right",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Title right aligned ---")
+print(title_right_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 4: FIELDSET TITLE ALIGNMENT
+-- ============================================
+-- Shows title alignment for fieldset containers
+
+print("\n\n=== EXAMPLE 4: FIELDSET TITLE ALIGNMENT ===")
+
+local fieldset_left = create_gui_object('Fieldset', {
+    label = "Left Title",
+    gui_field_type = "gui_fieldset_field",
+    title_align = "left",
+    field_border_style = {initial = "double"},
+    field_height = {initial = 6},
+    field_width = {initial = 35},
+    children = {
+        create_gui_object('Field', {
+            label = "Name",
+            field_initial = "John",
+            text_align = "center"
+        })
+    }
+})
+print("\n--- Fieldset with left-aligned title ---")
+print(fieldset_left:render_gui())
+
+local fieldset_center = create_gui_object('Fieldset', {
+    label = "Center Title",
+    gui_field_type = "gui_fieldset_field",
+    title_align = "center",
+    field_border_style = {initial = "double"},
+    field_height = {initial = 6},
+    field_width = {initial = 35},
+    children = {
+        create_gui_object('Field', {
+            label = "Name",
+            field_initial = "John",
+            text_align = "center"
+        })
+    }
+})
+print("\n--- Fieldset with center-aligned title ---")
+print(fieldset_center:render_gui())
+
+local fieldset_right = create_gui_object('Fieldset', {
+    label = "Right Title",
+    gui_field_type = "gui_fieldset_field",
+    title_align = "right",
+    field_border_style = {initial = "double"},
+    field_height = {initial = 6},
+    field_width = {initial = 35},
+    children = {
+        create_gui_object('Field', {
+            label = "Name",
+            field_initial = "John",
+            text_align = "center"
+        })
+    }
+})
+print("\n--- Fieldset with right-aligned title ---")
+print(fieldset_right:render_gui())
+
+-- ============================================
+-- EXAMPLE 5: COMBINED ALIGNMENTS
+-- ============================================
+-- Shows combinations of horizontal, vertical, and title alignments
+
+print("\n\n=== EXAMPLE 5: COMBINED ALIGNMENTS ===")
+
+-- Text: center, Vertical: middle, Title: right
+local combined1 = create_gui_object('Field', {
+    label = "Combined 1",
+    field_initial = "data",
+    gui_field_type = "gui_text_field",
+    text_align = "center",
+    vertical_align = "middle",
+    title_align = "right",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 5},
+    field_width = {initial = 25}
+})
+print("\n--- Text:center + Vertical:middle + Title:right ---")
+print(combined1:render_gui())
+
+-- Text: right, Vertical: bottom, Title: left
+local combined2 = create_gui_object('Field', {
+    label = "Combined 2",
+    field_initial = "data",
+    gui_field_type = "gui_text_field",
+    text_align = "right",
+    vertical_align = "bottom",
+    title_align = "left",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 5},
+    field_width = {initial = 25}
+})
+print("\n--- Text:right + Vertical:bottom + Title:left ---")
+print(combined2:render_gui())
+
+-- Text: left, Vertical: top, Title: center
+local combined3 = create_gui_object('Field', {
+    label = "Combined 3",
+    field_initial = "data",
+    gui_field_type = "gui_text_field",
+    text_align = "left",
+    vertical_align = "top",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 5},
+    field_width = {initial = 25}
+})
+print("\n--- Text:left + Vertical:top + Title:center ---")
+print(combined3:render_gui())
+
+-- ============================================
+-- EXAMPLE 6: ALIGNMENT IN SELECT FIELDS
+-- ============================================
+-- Shows alignment in select/checkbox fields
+
+print("\n\n=== EXAMPLE 6: ALIGNMENT IN SELECT FIELDS ===")
+
+local select_field = create_gui_object('BooleanField', {
+    label = "Options",
+    gui_field_type = "gui_select_field",
+    options = {"Option 1", "Option 2", "Option 3"},
+    selected_index = 2,
+    text_align = "center",
+    title_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 6},
+    field_width = {initial = 25}
+})
+print("\n--- Select field with center-aligned options ---")
+print(select_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 7: COMPLETE FORM WITH ALL ALIGNMENTS
+-- ============================================
+-- Shows a complete form using various alignment combinations
+
+print("\n\n=== EXAMPLE 7: COMPLETE FORM WITH ALL ALIGNMENTS ===")
+
+local complete_form = create_gui_form({
     create_gui_object('Field', {
-        label = "Username",
+        label = "Name",
+        field_initial = "John Doe",
         gui_field_type = "gui_textornum_with_label_field",
         is_required = true,
-        position = {row = 1, col = 1, rowend = 3, colend = 30}
-    }),
-    create_gui_object('Field', {
-        label = "Password",
-        gui_field_type = "gui_textornum_with_label_field",
-        is_required = true,
-        position = {row = 5, col = 1, rowend = 7, colend = 30}
-    }),
-    create_gui_object('BooleanField', {
-        label = "Remember me",
-        gui_field_type = "gui_select_field",
-        is_required = false,
-        options = {"Yes", "No"},
-        selected_index = 2,
-        position = {row = 9, col = 1, rowend = 11, colend = 30}
-    }),
-    create_gui_object('Fieldset', {
-        label = "Address",
-        gui_field_type = "gui_fieldset_field",
-        is_required = false,
-        children = {
-            create_gui_object('Field', {label = "Street", position = {row = 1, col = 1}}),
-            create_gui_object('Field', {label = "City", position = {row = 2, col = 1}})
-        },
-        position = {row = 13, col = 1, rowend = 19, colend = 60}
-    })
-}, {title = "Login Form", width = 60, height = 22})
-
-print(form:render())
-
--- Example with alignment properties:
--- Horizontal text alignment: left, center, right
--- Vertical content alignment: top, middle, bottom
--- Title alignment for fieldsets: left, center, right
-local alignment_form = create_gui_form({
-    create_gui_object('Field', {
-        label = "Left Aligned",
-        field_initial = "text",
-        gui_field_type = "gui_text_field",
         text_align = "left",
         title_align = "left",
         field_border_style = {initial = "single"},
-        field_height = {initial = 4},
-        field_width = {initial = 25},
         position = {row = 1}
     }),
     create_gui_object('Field', {
-        label = "Center Aligned",
-        field_initial = "text",
-        gui_field_type = "gui_text_field",
+        label = "Email",
+        field_initial = "john@example.com",
+        gui_field_type = "gui_textornum_with_label_field",
+        is_required = true,
         text_align = "center",
         title_align = "center",
         field_border_style = {initial = "single"},
-        field_height = {initial = 4},
-        field_width = {initial = 25},
-        position = {row = 6}
+        position = {row = 4}
     }),
-    create_gui_object('Field', {
-        label = "Right Aligned",
-        field_initial = "text",
-        gui_field_type = "gui_text_field",
-        text_align = "right",
+    create_gui_object('BooleanField', {
+        label = "Subscribe",
+        gui_field_type = "gui_select_field",
+        options = {"Yes", "No"},
+        selected_index = 1,
+        text_align = "center",
         title_align = "right",
         field_border_style = {initial = "single"},
-        field_height = {initial = 4},
-        field_width = {initial = 25},
-        position = {row = 11}
+        position = {row = 7}
     }),
     create_gui_object('Field', {
-        label = "Vertical Middle",
-        field_initial = "text",
+        label = "Status",
+        field_initial = "Active",
         gui_field_type = "gui_text_field",
         vertical_align = "middle",
+        text_align = "center",
+        title_align = "center",
         field_border_style = {initial = "single"},
         field_height = {initial = 5},
-        field_width = {initial = 25},
-        position = {row = 16}
+        position = {row = 10}
     }),
     create_gui_object('Fieldset', {
-        label = "Left Title Fieldset",
+        label = "Address Information",
+        gui_field_type = "gui_fieldset_field",
+        title_align = "center",
+        field_border_style = {initial = "double"},
+        children = {
+            create_gui_object('Field', {
+                label = "Street",
+                field_initial = "123 Main St",
+                text_align = "left"
+            }),
+            create_gui_object('Field', {
+                label = "City",
+                field_initial = "New York",
+                text_align = "center"
+            }),
+            create_gui_object('Field', {
+                label = "ZIP",
+                field_initial = "10001",
+                text_align = "right"
+            })
+        },
+        position = {row = 16}
+    })
+}, {title = "Complete Form with Alignments", width = 60, height = 25})
+
+print(complete_form:render())
+
+-- ============================================
+-- EXAMPLE 8: DEFAULT ALIGNMENTS
+-- ============================================
+-- Shows behavior with default alignment (no explicit alignment set)
+
+print("\n\n=== EXAMPLE 8: DEFAULT ALIGNMENTS ===")
+
+local default_field = create_gui_object('Field', {
+    label = "Default Alignment",
+    field_initial = "text",
+    gui_field_type = "gui_text_field",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 4},
+    field_width = {initial = 25}
+})
+print("\n--- Field with default alignments (text:left, vertical:top, title:center) ---")
+print(default_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 9: NESTED FIELDSET WITH ALIGNMENTS
+-- ============================================
+-- Shows nested fieldsets with different title alignments
+
+print("\n\n=== EXAMPLE 9: NESTED FIELDSET WITH ALIGNMENTS ===")
+
+local nested_form = create_gui_form({
+    create_gui_object('Fieldset', {
+        label = "Personal Info",
+        gui_field_type = "gui_fieldset_field",
+        title_align = "center",
+        field_border_style = {initial = "double"},
+        children = {
+            create_gui_object('Field', {
+                label = "Name",
+                field_initial = "John",
+                text_align = "left"
+            }),
+            create_gui_object('Field', {
+                label = "Age",
+                field_initial = "30",
+                text_align = "center"
+            })
+        },
+        position = {row = 1}
+    }),
+    create_gui_object('Fieldset', {
+        label = "Preferences",
         gui_field_type = "gui_fieldset_field",
         title_align = "left",
         field_border_style = {initial = "double"},
-        field_height = {initial = 7},
-        field_width = {initial = 40},
         children = {
             create_gui_object('Field', {
-                label = "Child Field",
-                field_initial = "value",
-                text_align = "center",
-                field_border_style = {initial = "single"}
+                label = "Theme",
+                field_initial = "Dark",
+                text_align = "center"
+            }),
+            create_gui_object('Field', {
+                label = "Language",
+                field_initial = "English",
+                text_align = "right"
             })
         },
-        position = {row = 22}
+        position = {row = 9}
     })
-}, {title = "Alignment Demo", width = 60, height = 32})
+}, {title = "Nested Fieldsets", width = 50, height = 20})
 
-print(alignment_form:render())
+print(nested_form:render())
 --]]
 
 print("OBJECT-GUI-RENDERING.lua module loaded successfully")
