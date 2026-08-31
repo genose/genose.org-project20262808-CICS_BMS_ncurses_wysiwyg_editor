@@ -392,7 +392,9 @@ OBJECTS_DEFINITIONS = {
             zero = 0,
             position = {
                 row = 0,
-                col = 0
+                col = 0,
+                rowend = 0,
+                colend = 0
             }
         },
         default = nil, -- Default position for each field type
@@ -576,6 +578,11 @@ OBJECTS_DEFINITIONS = {
         initial = nil,
         edited = nil
     },
+    field_footer_title = {
+        default = nil,
+        initial = nil,
+        edited = nil
+    },
     -- field_footer represents the footer for the title of each field type, which can be used to indicate required fields or other information
     field_footer = {
         default = nil,
@@ -653,6 +660,11 @@ OBJECTS_DEFINITIONS = {
         edited = nil -- Visual representation after editing
     }
 }
+
+-- ===== ALIASES POUR COMPATIBILITE =====
+-- Alias field_min_width -> field_width_min et field_max_width -> field_width_max
+OBJECTS_DEFINITIONS.field_min_width = OBJECTS_DEFINITIONS.field_width_min
+OBJECTS_DEFINITIONS.field_max_width = OBJECTS_DEFINITIONS.field_width_max
 
 -- ===== POST-CONSTRUCTION: Dynamic references for field_border =====
 -- ===== NIVEAU 1: Proprietes avec valeurs statiques simples (aucune dependance) =====
@@ -1991,6 +2003,77 @@ OBJECTS_DEFINITIONS.field_footer_title.default = {
     }
 }
 
+-- field_footer_fill_char: Caractere de remplissage pour le pied de page
+OBJECTS_DEFINITIONS.field_footer_fill_char.default = {
+    Field = {
+        space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+    },
+    Literal = {
+        space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+    },
+    ProtectedLiteral = {
+        space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+    },
+    BooleanField = {
+        space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+    },
+    Image = {
+        space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+    },
+    Line = {
+        space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+    },
+    Fieldset = {
+        space = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.space,
+        dash = OBJECTS_DEFINITIONS.field_footer_fill_char.enum.dash
+    }
+}
+
+-- field_footer_align: Alignement du pied de page
+OBJECTS_DEFINITIONS.field_footer_align.default = {
+    Field = {
+        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
+        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
+        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
+    },
+    Literal = {
+        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
+        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
+        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
+    },
+    ProtectedLiteral = {
+        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
+        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
+        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
+    },
+    BooleanField = {
+        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
+        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
+        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
+    },
+    Image = {
+        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
+        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
+        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
+    },
+    Line = {
+        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
+        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
+        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
+    },
+    Fieldset = {
+        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
+        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
+        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
+    }
+}
+
 -- field_footer: Pied de page (reference required_marker et error_marker du Niveau 2)
 OBJECTS_DEFINITIONS.field_footer.default = {
     Field = {
@@ -2075,7 +2158,7 @@ OBJECTS_DEFINITIONS.field_avail_pos.default = {
         position = OBJECTS_DEFINITIONS.field_avail_pos.enum.position
     }
 } -- Available positions for each field type
--- field_pos: Position (row, col, rowend, colend)
+-- field_pos: Position par defaut pour chaque type de champ (reference field_avail_pos du Niveau 3)
 OBJECTS_DEFINITIONS.field_pos.default = {
     Field = OBJECTS_DEFINITIONS.field_avail_pos.default.Field,
     Literal = OBJECTS_DEFINITIONS.field_avail_pos.default.Literal,
@@ -2430,114 +2513,7 @@ OBJECTS_DEFINITIONS.field_border = {
 
 -- ===== PROPRIETES MANQUANTES POUR field_footer =====
 
--- field_footer_align: Alignement du pied de page
-OBJECTS_DEFINITIONS.field_footer_align.default = {
-    Field = {
-        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
-        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
-        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
-    },
-    Literal = {
-        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
-        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
-        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
-    },
-    ProtectedLiteral = {
-        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
-        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
-        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
-    },
-    BooleanField = {
-        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
-        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
-        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
-    },
-    Image = {
-        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
-        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
-        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
-    },
-    Line = {
-        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
-        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
-        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
-    },
-    Fieldset = {
-        left = OBJECTS_DEFINITIONS.field_footer_align.enum.left,
-        center = OBJECTS_DEFINITIONS.field_footer_align.enum.center,
-        right = OBJECTS_DEFINITIONS.field_footer_align.enum.right
-    }
-}
-
 -- ===== NOUVELLE VERSION DE field_footer AVEC LES 5 PROPRIETES =====
--- Remplace la version existante dans la table principale
-
--- D'abord, supprimons les references circulaires dans field_footer en utilisant les nouvelles proprietes
-OBJECTS_DEFINITIONS.field_footer.default = {
-    Field = {
-        enabled = false,
-        color = OBJECTS_DEFINITIONS.field_footer_color.default.Field,
-        align = OBJECTS_DEFINITIONS.field_footer_align.default.Field,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Field,
-        title = OBJECTS_DEFINITIONS.field_footer_title.default.Field,
-        required_marker = OBJECTS_DEFINITIONS.field_required_marker.default.Field,
-        error_marker = OBJECTS_DEFINITIONS.field_error_marker.default.Field
-    },
-    Literal = {
-        enabled = false,
-        color = OBJECTS_DEFINITIONS.field_footer_color.default.Literal,
-        align = OBJECTS_DEFINITIONS.field_footer_align.default.Literal,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Literal,
-        title = OBJECTS_DEFINITIONS.field_footer_title.default.Literal,
-        required_marker = OBJECTS_DEFINITIONS.field_required_marker.default.Literal,
-        error_marker = OBJECTS_DEFINITIONS.field_error_marker.default.Literal
-    },
-    ProtectedLiteral = {
-        enabled = false,
-        color = OBJECTS_DEFINITIONS.field_footer_color.default.ProtectedLiteral,
-        align = OBJECTS_DEFINITIONS.field_footer_align.default.ProtectedLiteral,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.ProtectedLiteral,
-        title = OBJECTS_DEFINITIONS.field_footer_title.default.ProtectedLiteral,
-        required_marker = OBJECTS_DEFINITIONS.field_required_marker.default.ProtectedLiteral,
-        error_marker = OBJECTS_DEFINITIONS.field_error_marker.default.ProtectedLiteral
-    },
-    BooleanField = {
-        enabled = false,
-        color = OBJECTS_DEFINITIONS.field_footer_color.default.BooleanField,
-        align = OBJECTS_DEFINITIONS.field_footer_align.default.BooleanField,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.BooleanField,
-        title = OBJECTS_DEFINITIONS.field_footer_title.default.BooleanField,
-        required_marker = OBJECTS_DEFINITIONS.field_required_marker.default.BooleanField,
-        error_marker = OBJECTS_DEFINITIONS.field_error_marker.default.BooleanField
-    },
-    Image = {
-        enabled = false,
-        color = OBJECTS_DEFINITIONS.field_footer_color.default.Image,
-        align = OBJECTS_DEFINITIONS.field_footer_align.default.Image,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Image,
-        title = OBJECTS_DEFINITIONS.field_footer_title.default.Image,
-        required_marker = OBJECTS_DEFINITIONS.field_required_marker.default.Image,
-        error_marker = OBJECTS_DEFINITIONS.field_error_marker.default.Image
-    },
-    Line = {
-        enabled = false,
-        color = OBJECTS_DEFINITIONS.field_footer_color.default.Line,
-        align = OBJECTS_DEFINITIONS.field_footer_align.default.Line,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Line,
-        title = OBJECTS_DEFINITIONS.field_footer_title.default.Line,
-        required_marker = OBJECTS_DEFINITIONS.field_required_marker.default.Line,
-        error_marker = OBJECTS_DEFINITIONS.field_error_marker.default.Line
-    },
-    Fieldset = {
-        enabled = false,
-        color = OBJECTS_DEFINITIONS.field_footer_color.default.Fieldset,
-        align = OBJECTS_DEFINITIONS.field_footer_align.default.Fieldset,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Fieldset,
-        title = OBJECTS_DEFINITIONS.field_footer_title.default.Fieldset,
-        required_marker = OBJECTS_DEFINITIONS.field_required_marker.default.Fieldset,
-        error_marker = OBJECTS_DEFINITIONS.field_error_marker.default.Fieldset
-    }
-}
 
 -- ===== FONCTIONS HELPERS POUR LE RENDU =====
 
