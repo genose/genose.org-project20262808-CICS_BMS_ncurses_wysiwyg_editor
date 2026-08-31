@@ -424,6 +424,207 @@ local all_align_field = create_gui_object('Field', {
 print("\n--- Text:center + Vertical:middle + Title:right + Footer:left ---")
 print(all_align_field:render_gui())
 
+-- ============================================
+-- EXAMPLE 11: PREFIX AND SUFFIX
+-- ============================================
+print("\n\n=== EXAMPLE 11: PREFIX AND SUFFIX ===")
+
+local prefix_field = create_gui_object('Field', {
+    label = "Name",
+    field_initial = "John Doe",
+    gui_field_type = "gui_text_field",
+    title_prefix = "[ ",
+    title_suffix = " ]",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Field with prefix '[ ' and suffix ' ]' ---")
+print(prefix_field:render_gui())
+
+local suffix_required_field = create_gui_object('Field', {
+    label = "Email",
+    field_initial = "user@example.com",
+    gui_field_type = "gui_text_field",
+    is_required = true,
+    title_suffix = " *",
+    text_align = "left",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 30}
+})
+print("\n--- Field with required suffix ---")
+print(suffix_required_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 12: FILL CHARACTER
+-- ============================================
+print("\n\n=== EXAMPLE 12: FILL CHARACTER ===")
+
+local fill_dash_field = create_gui_object('Field', {
+    label = "Fill with dashes",
+    field_initial = "value",
+    gui_field_type = "gui_text_field",
+    fill_char = "-",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 5},
+    field_width = {initial = 25}
+})
+print("\n--- Field with dash fill character ---")
+print(fill_dash_field:render_gui())
+
+local fill_dot_field = create_gui_object('Field', {
+    label = "Fill with dots",
+    field_initial = "value",
+    gui_field_type = "gui_text_field",
+    fill_char = ".",
+    text_align = "center",
+    field_border_style = {initial = "double"},
+    field_height = {initial = 4},
+    field_width = {initial = 25}
+})
+print("\n--- Field with dot fill character ---")
+print(fill_dot_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 13: TEXT COLOR
+-- ============================================
+print("\n\n=== EXAMPLE 13: TEXT COLOR ===")
+
+local red_text_field = create_gui_object('Field', {
+    label = "Error Field",
+    field_initial = "Invalid input",
+    gui_field_type = "gui_text_field",
+    text_color = "red",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Field with red text color ---")
+print(red_text_field:render_gui())
+
+local green_text_field = create_gui_object('Field', {
+    label = "Success Field",
+    field_initial = "Valid input",
+    gui_field_type = "gui_text_field",
+    text_color = "green",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Field with green text color ---")
+print(green_text_field:render_gui())
+
+local blue_text_field = create_gui_object('Field', {
+    label = "Info Field",
+    field_initial = "Information",
+    gui_field_type = "gui_text_field",
+    text_color = "blue",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Field with blue text color ---")
+print(blue_text_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 14: TITLE COLOR
+-- ============================================
+print("\n\n=== EXAMPLE 14: TITLE COLOR ===")
+
+local yellow_title_field = create_gui_object('Field', {
+    label = "Warning",
+    field_initial = "Caution!",
+    gui_field_type = "gui_text_field",
+    title_color = "yellow",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Field with yellow title color ---")
+print(yellow_title_field:render_gui())
+
+local magenta_title_field = create_gui_object('Field', {
+    label = "Important",
+    field_initial = "Read this",
+    gui_field_type = "gui_text_field",
+    title_color = "magenta",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 3},
+    field_width = {initial = 25}
+})
+print("\n--- Field with magenta title color ---")
+print(magenta_title_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 15: FOOTER COLOR
+-- ============================================
+print("\n\n=== EXAMPLE 15: FOOTER COLOR ===")
+
+local red_footer_field = create_gui_object('Field', {
+    label = "Alert",
+    field_initial = "warning",
+    gui_field_type = "gui_text_field",
+    footer_title = "URGENT",
+    footer_color = "red",
+    footer_fill_char = "-",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 4},
+    field_width = {initial = 25}
+})
+print("\n--- Field with red footer color ---")
+print(red_footer_field:render_gui())
+
+local cyan_footer_field = create_gui_object('Field', {
+    label = "Info",
+    field_initial = "details",
+    gui_field_type = "gui_text_field",
+    footer_title = "INFO",
+    footer_color = "cyan",
+    footer_fill_char = "=",
+    text_align = "center",
+    field_border_style = {initial = "single"},
+    field_height = {initial = 4},
+    field_width = {initial = 25}
+})
+print("\n--- Field with cyan footer color ---")
+print(cyan_footer_field:render_gui())
+
+-- ============================================
+-- EXAMPLE 16: COMBINED PREFIX/SUFFIX/FILL/COLOR
+-- ============================================
+print("\n\n=== EXAMPLE 16: COMBINED PREFIX/SUFFIX/FILL/COLOR ===")
+
+local combined_field = create_gui_object('Field', {
+    label = "Status",
+    field_initial = "ACTIVE",
+    gui_field_type = "gui_text_field",
+    title_prefix = "[ ",
+    title_suffix = " ]",
+    title_color = "green",
+    text_color = "white",
+    fill_char = ".",
+    footer_title = "ready",
+    footer_color = "cyan",
+    footer_fill_char = "-",
+    text_align = "center",
+    title_align = "center",
+    footer_align = "center",
+    field_border_style = {initial = "double"},
+    field_height = {initial = 5},
+    field_width = {initial = 30}
+})
+print("\n--- Field with prefix, suffix, fill_char, text_color, title_color, footer_color ---")
+print(combined_field:render_gui())
+
 print("\n\n" .. string.rep("=", 60))
-print("ALL ALIGNMENT EXAMPLES COMPLETED")
+print("ALL EXAMPLES COMPLETED")
 print(string.rep("=", 60))

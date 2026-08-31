@@ -45,7 +45,27 @@ local GUI_CONSTANTS = {
     -- Default alignment values
     default_text_align = "left",
     default_vertical_align = "top",
-    default_title_align = "center"
+    default_title_align = "center",
+    -- Color ANSI codes for terminal display
+    color_codes = {
+        default = "\27[0m",
+        black = "\27[30m",
+        red = "\27[31m",
+        green = "\27[32m",
+        yellow = "\27[33m",
+        blue = "\27[34m",
+        magenta = "\27[35m",
+        cyan = "\27[36m",
+        white = "\27[37m",
+        bright_black = "\27[90m",
+        bright_red = "\27[91m",
+        bright_green = "\27[92m",
+        bright_yellow = "\27[93m",
+        bright_blue = "\27[94m",
+        bright_magenta = "\27[95m",
+        bright_cyan = "\27[96m",
+        bright_white = "\27[97m"
+    }
 }
 
 -- ===== HELPER FUNCTIONS =====
@@ -204,12 +224,178 @@ local function get_footer_align(obj, default_align)
     return default_align or "center"
 end
 
+-- Get color property and return ANSI code
+-- Returns: ANSI color code string
+local function get_color_code(obj, prop_name, default_color)
+    local color_prop = obj[prop_name]
+    -- If property doesn't exist, use default
+    if not color_prop then
+        return GUI_CONSTANTS.color_codes[default_color or "default"] or GUI_CONSTANTS.color_codes.default
+    end
+    
+    -- Check if user has explicitly set a color (not from defaults)
+    if color_prop.initial and type(color_prop.initial) == "string" then
+        return GUI_CONSTANTS.color_codes[color_prop.initial] or GUI_CONSTANTS.color_codes.default
+    end
+    if color_prop.edited and type(color_prop.edited) == "string" then
+        return GUI_CONSTANTS.color_codes[color_prop.edited] or GUI_CONSTANTS.color_codes.default
+    end
+    
+    -- Resolve the color value
+    local color = resolve_property_value(color_prop)
+    
+    -- If color is a string and valid, use it
+    if type(color) == "string" and GUI_CONSTANTS.color_codes[color] then
+        return GUI_CONSTANTS.color_codes[color]
+    end
+    
+    -- Handle case where color is a table (from field_text_color.default.Field)
+    if type(color) == "table" then
+        -- First check if 'default' key exists
+        if color.default and type(color.default) == "string" then
+            return GUI_CONSTANTS.color_codes[color.default] or GUI_CONSTANTS.color_codes.default
+        end
+        -- Check if any key is "default"
+        if color["default"] and type(color["default"]) == "string" then
+            return GUI_CONSTANTS.color_codes[color["default"]] or GUI_CONSTANTS.color_codes.default
+        end
+        -- Look for any valid color string
+        for k, v in pairs(color) do
+            if type(v) == "string" and GUI_CONSTANTS.color_codes[v] then
+                return GUI_CONSTANTS.color_codes[v]
+            end
+        end
+    end
+    
+    return GUI_CONSTANTS.color_codes.default
+end
+
+-- Get title prefix (can be table with .initial)
+local function get_title_prefix(obj)
+    local prefix = get_gui_property(obj, "field_title_prefix")
+    if prefix then
+        if type(prefix) == "table" then
+            prefix = resolve_property_value(prefix) or ""
+        end
+        if type(prefix) == "table" and prefix.prefix_char then
+            return resolve_property_value(prefix.prefix_char) or ""
+        end
+        return prefix or ""
+    end
+    return ""
+end
+
+-- Get title suffix (can be table with .initial)
+local function get_title_suffix(obj)
+    local suffix = get_gui_property(obj, "field_title_suffix")
+    if suffix then
+        if type(suffix) == "table" then
+            suffix = resolve_property_value(suffix) or ""
+        end
+        if type(suffix) == "table" and suffix.suffix_char then
+            return resolve_property_value(suffix.suffix_char) or ""
+        end
+        return suffix or ""
+    end
+    return ""
+end
+
+-- Get fill character for a field
+local function get_fill_char(obj, default_char)
+    local fill_prop = obj.field_fill_char
+    -- If property doesn't exist, use default
+    if not fill_prop then
+        return default_char or GUI_CONSTANTS.default_fill_char
+    end
+    
+    -- Check if user has explicitly set a fill_char (not from defaults)
+    -- If fill_prop.initial is a simple string (not a table), use it
+    if fill_prop.initial and type(fill_prop.initial) == "string" then
+        return fill_prop.initial
+    end
+    if fill_prop.edited and type(fill_prop.edited) == "string" then
+        return fill_prop.edited
+    end
+    
+    -- If fill_prop.initial is the defaults table, look for space
+    if fill_prop.initial and type(fill_prop.initial) == "table" then
+        -- Try direct access first
+        local initial_table = fill_prop.initial
+        if initial_table.space and type(initial_table.space) == "string" then
+            return initial_table.space
+        end
+        if initial_table["space"] and type(initial_table["space"]) == "string" then
+            return initial_table["space"]
+        end
+        -- Look for space character
+        for k, v in pairs(initial_table) do
+            if type(v) == "string" and v == " " then
+                return v
+            end
+        end
+    end
+    
+    -- Resolve the fill value as fallback
+    local fill = resolve_property_value(fill_prop)
+    
+    -- If fill is a string, return it
+    if type(fill) == "string" then
+        return fill
+    end
+    
+    -- Handle case where fill is a table
+    if type(fill) == "table" then
+        -- Try to get the space value
+        if fill.space and type(fill.space) == "string" then
+            return fill.space
+        end
+        if fill["space"] and type(fill["space"]) == "string" then
+            return fill["space"]
+        end
+        -- Look for space character
+        for k, v in pairs(fill) do
+            if type(v) == "string" and v == " " then
+                return v
+            end
+        end
+        -- Look for any string value
+        for k, v in pairs(fill) do
+            if type(v) == "string" then
+                return v
+            end
+        end
+    end
+    
+    return default_char or GUI_CONSTANTS.default_fill_char
+end
+
+-- Get text color for a field
+local function get_text_color(obj)
+    return get_color_code(obj, "field_text_color", "default")
+end
+
+-- Get title color for a field
+local function get_title_color(obj)
+    return get_color_code(obj, "field_title_color", "default")
+end
+
+-- Get border color for a field
+local function get_border_color(obj)
+    return get_color_code(obj, "field_border_color", "default")
+end
+
+-- Get footer color for a field
+local function get_footer_color(obj)
+    return get_color_code(obj, "field_footer_color", "default")
+end
+
 -- Align text within a given width
 -- text: the text to align (can be a table with .initial or .edited)
 -- width: the target width
 -- align: "left", "center", or "right"
+-- fill_char: optional character to use for padding (defaults to space)
 -- Returns: the aligned text padded to the specified width
-local function align_text(text, width, align)
+local function align_text(text, width, align, fill_char)
     -- Resolve text if it's a table (from properties like field_footer_title = {initial = value})
     if type(text) == "table" then
         text = resolve_property_value(text) or ""
@@ -220,6 +406,8 @@ local function align_text(text, width, align)
     end
     text = tostring(text)
     
+    fill_char = fill_char or " "
+    
     local text_dw = display_width(text)
     if text_dw >= width then
         return text
@@ -227,13 +415,13 @@ local function align_text(text, width, align)
     
     local padding = width - text_dw
     if align == "left" then
-        return text .. string.rep(" ", padding)
+        return text .. string.rep(fill_char, padding)
     elseif align == "right" then
-        return string.rep(" ", padding) .. text
+        return string.rep(fill_char, padding) .. text
     else -- center
         local left_pad = math.floor(padding / 2)
         local right_pad = padding - left_pad
-        return string.rep(" ", left_pad) .. text .. string.rep(" ", right_pad)
+        return string.rep(fill_char, left_pad) .. text .. string.rep(fill_char, right_pad)
     end
 end
 
@@ -279,7 +467,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "none")
-    local fill_char = get_gui_simple_value(obj, "field_fill_char", " ")
+    local fill_char = get_fill_char(obj, " ")
     local value = get_gui_property(obj, "field_initial") or ""
     if value and type(value) == "table" then value = value.initial_value or "" end
     
@@ -291,6 +479,16 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local title_align = get_title_align(obj, "center")
     local footer_align = get_footer_align(obj, "center")
     
+    -- Get color properties
+    local text_color = get_text_color(obj)
+    local title_color = get_title_color(obj)
+    local border_color = get_border_color(obj)
+    local footer_color = get_footer_color(obj)
+    
+    -- Get prefix and suffix for title
+    local title_prefix = get_title_prefix(obj)
+    local title_suffix = get_title_suffix(obj)
+    
     -- Get footer properties
     local footer_title = get_gui_property(obj, "field_footer_title") or ""
     local footer_fill_char = get_gui_simple_value(obj, "field_footer_fill_char", " ")
@@ -300,7 +498,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     -- Calculate minimum width based on content
     local label = label_text or ""
     local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
-    local full_label = label .. required_marker
+    local full_label = title_prefix .. label .. required_marker .. title_suffix
     local full_label_dw = display_width(full_label)
     local value_dw = display_width(value)
     local min_width = math.max(full_label_dw + 2, value_dw + 2, width)  -- +2 for border characters
@@ -322,7 +520,9 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         if border_style ~= "none" then
             local content_width = actual_width - 2
             local label_content = align_text(full_label, content_width, title_align)
-            local top_line = border_chars.top_left .. label_content .. border_chars.top_right
+            -- Apply title color
+            local colored_label = title_color .. label_content .. GUI_CONSTANTS.color_codes.default
+            local top_line = border_chars.top_left .. colored_label .. border_chars.top_right
             table.insert(lines, top_line)
         else
             table.insert(lines, full_label)
@@ -331,7 +531,8 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     
     -- Field content area
     if border_style == "none" then
-        table.insert(lines, value or "")
+        -- Apply text color
+        table.insert(lines, text_color .. (value or "") .. GUI_CONSTANTS.color_codes.default)
     else
         local content_height = height - (label_text and 1 or 0) - 1
         
@@ -340,32 +541,33 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
             -- Add empty lines before content
             local empty_lines = math.floor((content_height - 1) / 2)
             for i = 1, empty_lines do
-                table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+                table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
             end
         elseif vertical_align == "bottom" then
             -- Add empty lines before content (all but one)
             for i = 1, content_height - 1 do
-                table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+                table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
             end
         end
         
-        -- Content line
+        -- Content line with text color and fill character
         local content = value or ""
         local content_dw = display_width(content)
         local inner_width = actual_width - 2
-        local aligned_content = align_text(content, inner_width, text_align)
-        table.insert(lines, border_chars.left .. aligned_content .. border_chars.right)
+        local aligned_content = align_text(content, inner_width, text_align, fill_char)
+        -- Apply text color to content
+        table.insert(lines, border_chars.left .. text_color .. aligned_content .. GUI_CONSTANTS.color_codes.default .. border_chars.right)
         
         -- Handle vertical alignment - add remaining empty lines after content
         if vertical_align == "middle" then
             local empty_lines = content_height - 1 - math.floor((content_height - 1) / 2)
             for i = 1, empty_lines do
-                table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+                table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
             end
         elseif vertical_align == "top" then
             -- Add remaining empty lines
             for i = 1, content_height - 1 do
-                table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
+                table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
             end
         end
     end
@@ -406,7 +608,9 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
             else
                 footer_content = footer_text
             end
-            table.insert(lines, border_chars.bottom_left .. footer_content .. border_chars.bottom_right)
+            -- Apply footer color
+            local colored_footer = footer_color .. footer_content .. GUI_CONSTANTS.color_codes.default
+            table.insert(lines, border_chars.bottom_left .. colored_footer .. border_chars.bottom_right)
         else
             -- Standard bottom border
             table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) .. border_chars.bottom_right)
@@ -826,6 +1030,30 @@ function create_gui_object(obj_type, options)
         end
         if options.footer_fill_char then
             obj.field_footer_fill_char = {initial = options.footer_fill_char, edited = nil}
+        end
+        -- Color properties
+        if options.text_color then
+            obj.field_text_color = {initial = options.text_color, edited = nil}
+        end
+        if options.title_color then
+            obj.field_title_color = {initial = options.title_color, edited = nil}
+        end
+        if options.border_color then
+            obj.field_border_color = {initial = options.border_color, edited = nil}
+        end
+        if options.footer_color then
+            obj.field_footer_color = {initial = options.footer_color, edited = nil}
+        end
+        -- Prefix and suffix for title
+        if options.title_prefix then
+            obj.field_title_prefix = {initial = options.title_prefix, edited = nil}
+        end
+        if options.title_suffix then
+            obj.field_title_suffix = {initial = options.title_suffix, edited = nil}
+        end
+        -- Fill character
+        if options.fill_char then
+            obj.field_fill_char = {initial = options.fill_char, edited = nil}
         end
     end
     
