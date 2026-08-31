@@ -1,0 +1,64 @@
+-- Lua draft pour le rendu graphique d'un type complexe (tableau de champs) dans l'éditeur WYSIWYG CICS BMS ncurses
+-- rendu graphique d'un type complexe
+-- ************************************************
+myObject = OBJECTS_DEFINITIONS.new(OBJECTS_DEFINITIONS.field_type.enum.Field) -- Crée un objet de type Field, avec .default pointant vers.default[TYPE] et .initial = nil, .edited = nil
+gui_attr_ref = myObject.field_position.default -- Récupère les attributs de position du champ
+
+gui_attr_ref = { -- test en dur pour le rendu graphique d'un type complexe (tableau de champs)
+    gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_list_textornum_with_label_field,
+    position = {
+        row = 0,
+        col = 0,
+        rowend = 0,
+        colend = 0
+    }
+} -- ==> pour faire le rendu graphique du field
+
+counter = 0
+lst_values = Object.values(gui_attr_ref)
+if #lst_values > 0 and gui_attr_ref.gui_field_type ~= nil then
+    print("Rendu GUI, gui_field_type=" .. tostring(gui_attr_ref.gui_field_type) ..
+              " , rprops={kprops=unknown,kprops=unknown, ..N...} ==>> tostring(kprops) \":\" [text field]")
+
+    for i, value in ipairs(lst_values) do
+        if type(value) == "table" then
+            if value.gui_field_type == OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_list_textornum_with_label_field then
+                for k, v in pairs(value) do
+                    print("Clé: " .. k .. ", Valeur: " .. tostring(v))
+                end
+            elseif value.gui_field_type == OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string then
+                print(" select with label string")
+                for k, v in pairs(value) do
+                    print("Clé: " .. k .. ", Valeur: " .. tostring(v))
+                end
+            else
+                print("Valeur: " .. tostring(value))
+            end
+        end
+    end
+else
+    print("Aucun champ GUI à afficher.")
+end
+-- ************************************************
+-- Rendu GUI, gui_field_type=OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_string , rprops={kprops=string,kprops=string, ..N...} ==>> tostring(kprops) ":" [text field]
+---------------------
+-- [rprops]
+--  kprops : __string__ <<--- text field
+--  kprops : __string__ <<--- text field
+--  ..N...
+---------------------
+-- ************************************************
+-- Rendu GUI, gui_field_type=OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_numeric , rprops={kprops=numeric,kprops=numeric, ..N...} ==>> tostring(kprops) ":" [text field]
+---------------------
+-- [rprops]
+--  kprops : __numeric__ <<--- text field
+--  kprops : __numeric__ <<--- text field
+--  ..N...
+---------------------
+-- ************************************************
+-- ************************************************
+-- Rendu GUI, gui_field_type=OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select , rprops={kprops=numeric,kprops=numeric, ..N...} ==>> tostring(kprops) ":" [text field]
+---------------------
+-- [rprops] : [ ... |v]  <<--- select field
+---------------------
+-- ************************************************

@@ -3,7 +3,64 @@
 
 dofile('OBJECTS-DEFINITIONS.lua')
 
-print("=== VISUAL TEST: Big Fieldset with All Field Types ===\n")
+-- ===== VALIDATION: Check that all fixes are in place =====
+local validation_passed = true
+
+-- Check field_avail_pos.enum has all required keys
+local enum = OBJECTS_DEFINITIONS.field_avail_pos.enum
+if enum.row == nil or enum.col == nil or enum.rowend == nil or enum.colend == nil then
+    print("FAIL: field_avail_pos.enum missing row/col/rowend/colend keys")
+    validation_passed = false
+else
+    print("PASS: field_avail_pos.enum has all position keys")
+end
+
+-- Check field_footer_title exists
+if OBJECTS_DEFINITIONS.field_footer_title == nil then
+    print("FAIL: field_footer_title is missing")
+    validation_passed = false
+else
+    print("PASS: field_footer_title exists")
+end
+
+-- Check aliases
+if OBJECTS_DEFINITIONS.field_min_width == nil or OBJECTS_DEFINITIONS.field_max_width == nil then
+    print("FAIL: field_min_width or field_max_width alias missing")
+    validation_passed = false
+else
+    print("PASS: field_min_width and field_max_width aliases exist")
+end
+
+-- Check field_footer_fill_char.default and field_footer_align.default
+if OBJECTS_DEFINITIONS.field_footer_fill_char.default == nil then
+    print("FAIL: field_footer_fill_char.default is missing")
+    validation_passed = false
+else
+    print("PASS: field_footer_fill_char.default exists")
+end
+
+if OBJECTS_DEFINITIONS.field_footer_align.default == nil then
+    print("FAIL: field_footer_align.default is missing")
+    validation_passed = false
+else
+    print("PASS: field_footer_align.default exists")
+end
+
+-- Check object creation works
+local test_obj = OBJECTS_DEFINITIONS.new('Field')
+if test_obj.field_type.initial ~= 'Field' then
+    print("FAIL: OBJECTS_DEFINITIONS.new() not working correctly")
+    validation_passed = false
+else
+    print("PASS: OBJECTS_DEFINITIONS.new() works")
+end
+
+if not validation_passed then
+    print("\nVALIDATION FAILED - Aborting test")
+    os.exit(1)
+end
+
+print("\n=== VISUAL TEST: Big Fieldset with All Field Types ===\n")
 
 -- Create main container
 local bigFieldset = OBJECTS_DEFINITIONS.new('Fieldset', {
@@ -14,7 +71,7 @@ local bigFieldset = OBJECTS_DEFINITIONS.new('Fieldset', {
 -- Get fieldset border style (double by default)
 local fs_border = bigFieldset.field_border.initial
 local fs_chars = fs_border.chars.double
-local width = OBJECTS_DEFINITIONS.field_width.default.Fieldset
+local width = OBJECTS_DEFINITIONS.field_width.default.Fieldset.initial
 
 -- RENDER MAIN FIELDSET CONTAINER
 -- line 0: border top + title
@@ -73,7 +130,7 @@ for i, ftype in ipairs(fieldTypes) do
     local style = border.style[1]
     local b = chars[style] or chars.double or chars.single
     
-    local fwidth = OBJECTS_DEFINITIONS.field_width.default[ftype]
+    local fwidth = OBJECTS_DEFINITIONS.field_width.default[ftype].initial
     if ftype == "Line" then fwidth = 50 end
     if ftype == "BooleanField" then fwidth = 15 end
     
@@ -111,8 +168,8 @@ for _, ftype in ipairs(fieldTypes) do
     local field = OBJECTS_DEFINITIONS.new(ftype)
     local border = field.field_border.initial
     print("  " .. ftype .. ": border_style=" .. table.concat(border.style, ",") .. 
-          ", height=" .. OBJECTS_DEFINITIONS.field_height.default[ftype] .. 
-          ", width=" .. OBJECTS_DEFINITIONS.field_width.default[ftype])
+          ", height=" .. OBJECTS_DEFINITIONS.field_height.default[ftype].initial .. 
+          ", width=" .. OBJECTS_DEFINITIONS.field_width.default[ftype].initial)
 end
 
 print("\n=== Test Complete ===")
