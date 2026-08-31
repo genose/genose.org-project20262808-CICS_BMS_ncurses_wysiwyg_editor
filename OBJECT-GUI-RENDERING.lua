@@ -182,6 +182,11 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local min_width = math.max(full_label_dw + 2, value_dw + 2, width)  -- +2 for border characters
     local actual_width = override_width or (border_style == "none" and math.max(full_label_dw, value_dw, width) or min_width)
     
+    -- If override_width is provided, strictly respect it (don't let label overflow)
+    if override_width then
+        actual_width = override_width
+    end
+    
     local lines = {}
     
     -- If there's a label, render it
@@ -242,6 +247,11 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     local min_width = math.max(display_width(label) + 4, max_option_len + 2, width)
     local actual_width = override_width or (border_style == "none" and math.max(display_width(label) + 2, max_option_len, width) or min_width)
     
+    -- If override_width is provided, strictly respect it
+    if override_width then
+        actual_width = override_width
+    end
+    
     -- Top line with label
     if label_text and label_text ~= "" then
         local label_dw = display_width(label)
@@ -297,6 +307,11 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     local min_width = math.max(display_width(label) + 4, max_item_len + 2, width)
     local actual_width = override_width or (border_style == "none" and math.max(display_width(label) + 2, max_item_len, width) or min_width)
     
+    -- If override_width is provided, strictly respect it
+    if override_width then
+        actual_width = override_width
+    end
+    
     -- Top border with label
     if border_style ~= "none" then
         local label_dw = display_width(label)
@@ -348,6 +363,11 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     local value_dw = display_width(value)
     local min_width = math.max(label_dw + 4, value_dw + 2, width)  -- +4 for " " + " " padding, +2 for borders
     local actual_width = override_width or (border_style == "none" and math.max(label_dw + 2, value_dw, width) or min_width)
+    
+    -- If override_width is provided, strictly respect it
+    if override_width then
+        actual_width = override_width
+    end
     
     -- Ensure actual_width is at least wide enough for the label
     if border_style ~= "none" then
