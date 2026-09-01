@@ -4,7 +4,7 @@
 //! organized by field type. It mirrors the structure in Lua's OBJECTS_DEFINITIONS_DEFAULTS.
 
 use super::field_types::BmsFieldType;
-use super::types::{Color, BorderStyle, TextAlign, VerticalAlign, FillChar, TextStyle, DecorationType};
+use super::types::{Color, BorderStyle, TextAlign, VerticalAlign, FillChar, TextStyle};
 use super::properties::{Property, ConstrainedProperty, EnumProperty};
 use std::collections::HashMap;
 
@@ -13,6 +13,7 @@ use std::collections::HashMap;
 // ============================================================================
 
 /// Size defaults per field type - mirrors Lua field_size
+#[derive(Debug, Clone)]
 pub struct FieldSizeDefaults {
     pub width: HashMap<BmsFieldType, u16>,
     pub height: HashMap<BmsFieldType, u16>,
@@ -153,6 +154,7 @@ impl Default for FieldSizeDefaults {
 // ============================================================================
 
 /// Color defaults per field type - mirrors Lua field_avail_color.default
+#[derive(Debug, Clone)]
 pub struct FieldColorDefaults {
     /// All available colors
     pub available_colors: Vec<Color>,
@@ -316,6 +318,7 @@ impl Default for FieldColorDefaults {
 // ============================================================================
 
 /// Style defaults per field type - mirrors Lua field_avail_style.default
+#[derive(Debug, Clone)]
 pub struct FieldStyleDefaults {
     /// All available text styles
     pub available_styles: Vec<TextStyle>,
@@ -457,6 +460,7 @@ impl Default for FieldStyleDefaults {
 // ============================================================================
 
 /// Alignment defaults per field type
+#[derive(Debug, Clone)]
 pub struct TextAlignDefaults {
     /// All available text alignments
     pub available_aligns: Vec<TextAlign>,
@@ -580,6 +584,7 @@ impl Default for TextAlignDefaults {
 // ============================================================================
 
 /// Border defaults per field type - mirrors Lua field_avail_border_style.default
+#[derive(Debug, Clone)]
 pub struct BorderDefaults {
     /// All available border styles
     pub available_border_styles: Vec<BorderStyle>,
@@ -678,8 +683,6 @@ impl BorderDefaults {
         let mut default_border_chars = HashMap::new();
         let single_chars = BorderCharSet::single();
         let double_chars = BorderCharSet::double();
-        let dashed_chars = BorderCharSet::dashed();
-        let none_chars = BorderCharSet::none();
 
         for field_type in [
             BmsFieldType::FieldTextORNumeric,
@@ -745,6 +748,7 @@ impl Default for BorderDefaults {
 // ============================================================================
 
 /// Fill character defaults per field type
+#[derive(Debug, Clone)]
 pub struct FillCharDefaults {
     /// All available fill characters
     pub available_fill_chars: Vec<FillChar>,
@@ -886,6 +890,7 @@ impl Default for FillCharDefaults {
 // ============================================================================
 
 /// Vertical alignment defaults per field type
+#[derive(Debug, Clone)]
 pub struct VerticalAlignDefaults {
     /// All available vertical alignments
     pub available_vertical_aligns: Vec<VerticalAlign>,
@@ -978,6 +983,7 @@ impl Default for VerticalAlignDefaults {
 // ============================================================================
 
 /// Vertical margin defaults per field type
+#[derive(Debug, Clone)]
 pub struct VerticalMarginDefaults {
     /// All available vertical margins
     pub available_vertical_margins: Vec<VerticalMargin>,

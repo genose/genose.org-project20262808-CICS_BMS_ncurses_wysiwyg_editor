@@ -8,7 +8,7 @@ use super::properties::{Property, ConstrainedProperty, EnumProperty};
 use super::field_types::{BmsFieldType, GuiFieldType};
 use super::types::{
     Color, BorderStyle, TextAlign, VerticalAlign, FillChar, TextStyle, 
-    Position, BorderCharSet, BorderChars, Marker, PrefixSuffix, Footer, DecorationType, VerticalMargin
+    Position, BorderCharSet, BorderChars, Marker, PrefixSuffix, Footer, VerticalMargin
 };
 use super::defaults::BmsDefaults;
 use serde::{Serialize, Deserialize};
@@ -253,7 +253,7 @@ pub enum VisualRepresentation {
 
 impl VisualRepresentation {
     /// Get default visual representation for a field type
-    pub fn default_for(field_type: BmsFieldType) -> Self {
+    pub fn default_for(_field_type: BmsFieldType) -> Self {
         // For now, use simple function representation
         // In the future, this can be enhanced with actual rendering functions
         VisualRepresentation::Function
@@ -760,13 +760,13 @@ impl BmsField {
     }
     
     /// Get a reference to the children
-    pub fn children(&self) -> &Vec<BmsField> {
-        &self.field_children.get()
+    pub fn children(&self) -> Vec<BmsField> {
+        self.field_children.get()
     }
     
     /// Get mutable reference to children
     pub fn children_mut(&mut self) -> &mut Vec<BmsField> {
-        &mut self.field_children.edited.get_or_insert_with(|| self.field_children.initial.clone())
+        self.field_children.edited.get_or_insert_with(|| self.field_children.initial.clone())
     }
     
     /// Add a child field (for Fieldset/Group)
@@ -917,7 +917,7 @@ impl From<&crate::bms::model::BmsField> for BmsField {
         
         // Set text color if present
         if let Some(color) = &legacy.text_color {
-            field.field_text_color.set(*color).ok();
+            field.field_text_color.set(color.clone().into()).ok();
         }
         
         // Set initial value if present
@@ -947,9 +947,9 @@ impl From<&crate::bms::model::BmsField> for BmsField {
                 crate::bms::model::FieldAttribute::Blink => {}
                 crate::bms::model::FieldAttribute::Reverse => {}
                 crate::bms::model::FieldAttribute::Underline => {}
-                crate::bms::model::FieldAttribute::Left => attrs.field_text_align = Some(TextAlign::Left),
-                crate::bms::model::FieldAttribute::Right => attrs.field_text_align = Some(TextAlign::Right),
-                crate::bms::model::FieldAttribute::Center => attrs.field_text_align = Some(TextAlign::Center),
+                crate::bms::model::FieldAttribute::Left => { field.field_text_align.set(TextAlign::Left).ok(); },
+                crate::bms::model::FieldAttribute::Right => { field.field_text_align.set(TextAlign::Right).ok(); },
+                crate::bms::model::FieldAttribute::Center => { field.field_text_align.set(TextAlign::Center).ok(); },
                 _ => {}
             }
         }

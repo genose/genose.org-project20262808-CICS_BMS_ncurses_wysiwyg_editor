@@ -346,9 +346,9 @@ mod tests {
         
         // This would fail to compile because TestEnum::D doesn't exist
         // but we can test with a string enum
-        let mut prop2 = EnumProperty::new("a", vec!["a".to_string(), "b".to_string()]);
-        assert!(prop2.set("b".to_string()).is_ok());
-        assert!(prop2.set("c".to_string()).is_err());
+        let mut prop2 = EnumProperty::new("a", vec!["a", "b"]);
+        assert!(prop2.set("b").is_ok());
+        assert!(prop2.set("c").is_err());
     }
 
     #[test]

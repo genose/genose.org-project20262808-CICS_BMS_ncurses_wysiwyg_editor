@@ -300,8 +300,6 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
             right_brace = "}",
             left_parenthesis = "(",
             right_parenthesis = ")",
-            less_than = "<",
-            greater_than = ">",
             equal_sign = "=",
             double_quote = '"',
             single_quote = "'",
@@ -2948,8 +2946,8 @@ function render_bordered_field(obj, custom_content)
         local fc_config = fill_char_raw.edited or fill_char_raw.initial
         if fc_config and type(fc_config) == "table" then
             -- Use first available fill char
-            fill_marker = fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or
-                            " "
+            fill_marker =
+                fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or " "
         elseif type(fc_config) == "string" then
             fill_marker = fc_config
         end
@@ -3162,8 +3160,8 @@ function render_fieldset(obj)
         local fc_config = fill_char_raw.edited or fill_char_raw.initial
         if fc_config and type(fc_config) == "table" then
             -- Use first available fill char
-            fill_marker = fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or
-                            " "
+            fill_marker =
+                fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or " "
         elseif type(fc_config) == "string" then
             fill_marker = fc_config
         end
