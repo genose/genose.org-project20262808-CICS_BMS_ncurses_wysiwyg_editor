@@ -8,6 +8,36 @@
 -- each TYPE OBJECT has a set of available fields, each field has a type, a name, a value, and a set of properties (default, initial, edited) to manage the state of the field in the GUI
 -- to render the properties window, we use a template visual, combining the properties of the fields according to the conditions
 -- here exemples of available fields for each TYPE OBJECT, with their default properties, to be used in the properties window
+-- the peroperties window is rendered according to the field's type and its properties, with the appropriate visual representation for each field type, and the adapted values of the existing fields in the properties window are updated accordingly in .initial and .edited,
+-- graphicly rendered as a "Collapsible Object Fieldset" marked by [+] or [-] (using height.min and accorded content height) for each TYPE OBJECT, with the available fields and their default properties, to be used in the properties window
+-- This file defines how the properties window should be structured and rendered for each type of object, using the available fields and their properties.
+-- rendred like following the "Collapsible Object Fieldset" pattern, with the available fields and their default properties,
+-- to be used in the properties window
+-- rendering a value depends of gui_field_type, and the rendering is done according to the field's type and its properties,
+-- with the appropriate visual representation for each field type, and the adapted values of the existing fields in the properties window are updated accordingly in .initial and .edited,
+-- "Window Properties" always list properties from .default with selected values from order of precedence: .edited | .initial | .default
+-- mechanism of insert object is "Add Field", showing "Window Properties" with the available fields from .default for the selected object type, and the existing values of the Object.
+-- from action "Add Field" initialize the field's value from .default, and replicate value to .initial and .edited, by replacing the value of the field.
+-- from action "Edit Field" on seleted Object, show value from .initial, and replicate value to .edited, by replacing the value of the field.
+-- for selected object, the properties window will display the fields according to the order of precedence: .edited | .initial | .default
+-- ***********************************************************
+-- | ========================= | Object Properties (mode/action: Add Field | Edit Field) | ==================================  |
+-- | | ==[+] ======== | (marked field N <name>) field_(name) | ========================================  |     |
+-- | | .default[TYPE].(props key P <name>) : [ .... props values (Select String/ Select Numeric) .... |v] |    |     |
+-- | | .default[TYPE].(props key P <name>) : [ .... props values (Text String/ Text Numeric) .... ] |    |     |
+-- | | .default[TYPE].(props key P <name>) : [ .... props values (boolean) .... ] |    |     |
+-- | | ... P props fields ...
+-- | | ===========================================================  | |
+-- |  ...N marked fields ...
+-- |  ==============================================================  |
+-- ***********************************************************
+-- | ========================= | Object Properties (mode/action: Add Field | Edit Field) | ==================================  |
+-- | | ==[-] ======== | (marked field N <name>) field_(name) | ==============  |     |
+-- | | ****************** [ COLLAPSED ] ********************     | |
+-- | | ===========================================================  | |
+-- |  ...N marked fields ...
+-- | ===========================================================  | |
+-- ***********************************************************
 -- Check if OBJECTS_DEFINITIONS is loaded
 if not OBJECTS_DEFINITIONS then
     dofile("OBJECTS-DEFINITIONS.lua")
@@ -38,10 +68,7 @@ end
 
 -- ***********************************************************
 test_gui_object = OBJECTS_DEFINITIONS.new(OBJECTS_DEFINITIONS.field_type.enum.Field) -- Crée un objet de type Field, avec .default pointant vers.default[TYPE] et .initial = nil, .edited = nil
-test_gui_object.field_border_style.default = OBJECTS_DEFINITIONS.field_border_style.default[test_gui_object.field_type
-                                                 .initial] -- Récupère les attributs de border_style du champ
-test_gui_object.field_border_style.initial = test_gui_object.field_border_style.default -- Initialise la valeur initiale à la valeur par défaut
-test_gui_object.field_border_style.edited = test_gui_object.field_border_style.initial -- Initialise la valeur éditée à la valeur initiale
+-- .default is already defined for the field_border_style of the test_gui_object by .new() constructor, but we can re-assign it to the default value for the specific type of the test_gui_object
 -- using the already defined : test_gui_object.field_border_style.gui_field_type for rendering the border style field in the properties window
 myPropsToShow = test_gui_object.field_border_style -- Récupère les attributs de border_style du champ
 -- using decoration (Fieldset) section is rendered like this in the properties window:
