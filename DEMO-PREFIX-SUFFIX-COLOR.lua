@@ -1,5 +1,4 @@
 -- Demo file for prefix, suffix, fill, and color properties
-
 dofile('OBJECT-GUI-RENDERING.lua')
 
 print(string.rep("=", 60))
@@ -17,9 +16,15 @@ local field1 = create_gui_object('Field', {
     field_initial = "john_doe",
     title_prefix = "[ ",
     title_suffix = " ]",
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 3},
-    field_width = {initial = 25}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 3
+    },
+    field_width = {
+        initial = 25
+    }
 })
 print("\n--- Prefix '[ ' and Suffix ' ]' ---")
 print(field1:render_gui())
@@ -30,9 +35,15 @@ local field2 = create_gui_object('Field', {
     field_initial = "********",
     is_required = true,
     title_suffix = " *",
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 3},
-    field_width = {initial = 25}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 3
+    },
+    field_width = {
+        initial = 25
+    }
 })
 print("\n--- Required field with suffix ---")
 print(field2:render_gui())
@@ -48,9 +59,15 @@ local field3 = create_gui_object('Field', {
     field_initial = "ON",
     fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 5},
-    field_width = {initial = 20}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 5
+    },
+    field_width = {
+        initial = 20
+    }
 })
 print("\n--- Fill with dashes ---")
 print(field3:render_gui())
@@ -61,9 +78,15 @@ local field4 = create_gui_object('Field', {
     field_initial = "50%",
     fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dot,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double},
-    field_height = {initial = 4},
-    field_width = {initial = 20}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double
+    },
+    field_height = {
+        initial = 4
+    },
+    field_width = {
+        initial = 20
+    }
 })
 print("\n--- Fill with dots ---")
 print(field4:render_gui())
@@ -74,9 +97,15 @@ local field5 = create_gui_object('Field', {
     field_initial = "text",
     fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.underscore,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 4},
-    field_width = {initial = 20}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 4
+    },
+    field_width = {
+        initial = 20
+    }
 })
 print("\n--- Fill with underscores ---")
 print(field5:render_gui())
@@ -92,9 +121,15 @@ local field6 = create_gui_object('Field', {
     field_initial = "Invalid value",
     text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.red,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 3},
-    field_width = {initial = 25}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 3
+    },
+    field_width = {
+        initial = 25
+    }
 })
 print("\n--- Red text (error) ---")
 print(field6:render_gui())
@@ -105,9 +140,15 @@ local field7 = create_gui_object('Field', {
     field_initial = "Operation completed",
     text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.green,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 3},
-    field_width = {initial = 28}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 3
+    },
+    field_width = {
+        initial = 28
+    }
 })
 print("\n--- Green text (success) ---")
 print(field7:render_gui())
@@ -118,9 +159,15 @@ local field8 = create_gui_object('Field', {
     field_initial = "System message",
     text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.blue,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 3},
-    field_width = {initial = 25}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 3
+    },
+    field_width = {
+        initial = 25
+    }
 })
 print("\n--- Blue text (info) ---")
 print(field8:render_gui())
@@ -136,9 +183,15 @@ local field9 = create_gui_object('Field', {
     field_initial = "Caution: Low disk space",
     title_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.yellow,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 4},
-    field_width = {initial = 35}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 4
+    },
+    field_width = {
+        initial = 35
+    }
 })
 print("\n--- Yellow title (warning) ---")
 print(field9:render_gui())
@@ -149,9 +202,15 @@ local field10 = create_gui_object('Field', {
     field_initial = "Please read carefully",
     title_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.magenta,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double},
-    field_height = {initial = 3},
-    field_width = {initial = 35}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double
+    },
+    field_height = {
+        initial = 3
+    },
+    field_width = {
+        initial = 35
+    }
 })
 print("\n--- Magenta title ---")
 print(field10:render_gui())
@@ -168,9 +227,15 @@ local field11 = create_gui_object('Field', {
     footer_title = "URGENT",
     footer_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.red,
     footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.exclamation,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 4},
-    field_width = {initial = 25}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 4
+    },
+    field_width = {
+        initial = 25
+    }
 })
 print("\n--- Red footer ---")
 print(field11:render_gui())
@@ -182,9 +247,15 @@ local field12 = create_gui_object('Field', {
     footer_title = "INFO",
     footer_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.cyan,
     footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.equal,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 4},
-    field_width = {initial = 25}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 4
+    },
+    field_width = {
+        initial = 25
+    }
 })
 print("\n--- Cyan footer ---")
 print(field12:render_gui())
@@ -198,8 +269,8 @@ print("\n\n=== COMBINED PROPERTIES ===")
 local field13 = create_gui_object('Field', {
     label = "System Status",
     field_initial = "RUNNING",
-    title_prefix = "< ",
-    title_suffix = " >",
+    title_prefix = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.less_than,
+    title_suffix = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.greater_than,
     title_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.green,
     text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.white,
     fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dot,
@@ -209,9 +280,15 @@ local field13 = create_gui_object('Field', {
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     title_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     footer_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double},
-    field_height = {initial = 5},
-    field_width = {initial = 30}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double
+    },
+    field_height = {
+        initial = 5
+    },
+    field_width = {
+        initial = 30
+    }
 })
 print("\n--- All properties combined ---")
 print(field13:render_gui())
@@ -225,9 +302,15 @@ local field14 = create_gui_object('Field', {
     text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.cyan,
     fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.space,
     is_required = true,
-    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
-    field_height = {initial = 3},
-    field_width = {initial = 35}
+    field_border_style = {
+        initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
+    },
+    field_height = {
+        initial = 3
+    },
+    field_width = {
+        initial = 35
+    }
 })
 print("\n--- Form field with prefix and colors ---")
 print(field14:render_gui())
