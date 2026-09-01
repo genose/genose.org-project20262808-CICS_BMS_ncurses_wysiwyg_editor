@@ -107,9 +107,9 @@ local function resolve_property_value(prop)
         return resolve_property_value(prop.marker)
     end
     -- Priority 4: known border styles (fallback to checking common style keys)
-    local style_priority = {"none", "single", "double", "solid", "dashed", "dotted"}
-    for _, style in ipairs(style_priority) do
-        if prop[style] ~= nil then
+    local style_priority = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum
+    for _, style in pairs(style_priority) do
+        if type(style) == "string" and prop[style] ~= nil then
             return resolve_property_value(prop[style])
         end
     end
@@ -301,6 +301,34 @@ local function get_fill_char(obj, default_char)
         return default_char or OBJECTS_DEFINITIONS_DEFAULTS.default_fill_char
     end
 
+    -- Check if this is a property definition table (from OBJECTS_DEFINITIONS.new)
+    -- If gui_field_name exists, it's a property definition, not a value
+    if fill_prop.gui_field_name then
+        -- Extract default value for this object's type
+        local obj_type = obj.field_type or "Field"
+        if type(obj_type) == "table" then
+            obj_type = obj_type.initial or obj_type.edited or "Field"
+        end
+        local default_table = fill_prop.default
+        if default_table and type(default_table) == "table" then
+            local type_default = default_table[obj_type]
+            if type_default and type(type_default) == "table" then
+                -- type_default is a table of fill characters, use the first one or space
+                if type_default.space and type(type_default.space) == "string" then
+                    return type_default.space
+                end
+                for _, v in pairs(type_default) do
+                    if type(v) == "string" then
+                        return v
+                    end
+                end
+            elseif type(type_default) == "string" then
+                return type_default
+            end
+        end
+        return default_char or OBJECTS_DEFINITIONS_DEFAULTS.default_fill_char
+    end
+
     -- Check if user has explicitly set a fill_char (not from defaults)
     -- If fill_prop.initial is a simple string (not a table), use it
     if fill_prop.initial and type(fill_prop.initial) == "string" then
@@ -384,20 +412,106 @@ end
 
 -- Get required marker for a field
 local function get_required_marker(obj)
-    local marker = get_gui_simple_value(obj, "field_required_marker", OBJECTS_DEFINITIONS_DEFAULTS.required_marker)
-    if marker and type(marker) == "table" then
-        marker = resolve_property_value(marker) or OBJECTS_DEFINITIONS_DEFAULTS.required_marker
+    local marker_prop = obj.field_required_marker
+    
+    -- If property doesn't exist, use default
+    if not marker_prop then
+        return OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str
     end
-    return marker or OBJECTS_DEFINITIONS_DEFAULTS.required_marker
+    
+    -- Check if this is a property definition table (from OBJECTS_DEFINITIONS.new)
+    -- If gui_field_name exists, it's a property definition, not a value
+    if marker_prop.gui_field_name then
+        -- Extract default value for this object's type
+        local obj_type = obj.field_type or "Field"
+        if type(obj_type) == "table" then
+            obj_type = obj_type.initial or obj_type.edited or "Field"
+        end
+        local default_table = marker_prop.default
+        if default_table and type(default_table) == "table" then
+            local type_default = default_table[obj_type]
+            if type_default and type(type_default) == "table" then
+                -- type_default might contain marker configuration
+                if type_default.marker_fill and type(type_default.marker_fill) == "string" then
+                    return type_default.marker_fill
+                end
+            elseif type(type_default) == "string" then
+                return type_default
+            end
+        end
+        return OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str
+    end
+    
+    -- Check if user has explicitly set a marker
+    if marker_prop.initial and type(marker_prop.initial) == "string" then
+        return marker_prop.initial
+    end
+    if marker_prop.edited and type(marker_prop.edited) == "string" then
+        return marker_prop.edited
+    end
+    if marker_prop.marker and type(marker_prop.marker) == "string" then
+        return marker_prop.marker
+    end
+    
+    -- Resolve the marker value as fallback
+    local marker = resolve_property_value(marker_prop)
+    if type(marker) == "string" then
+        return marker
+    end
+    
+    return OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str
 end
 
 -- Get error marker for a field
 local function get_error_marker(obj)
-    local marker = get_gui_simple_value(obj, "field_error_marker", OBJECTS_DEFINITIONS_DEFAULTS.error_marker)
-    if marker and type(marker) == "table" then
-        marker = resolve_property_value(marker) or OBJECTS_DEFINITIONS_DEFAULTS.error_marker
+    local marker_prop = obj.field_error_marker
+    
+    -- If property doesn't exist, use default
+    if not marker_prop then
+        return OBJECTS_DEFINITIONS_DEFAULTS.error_marker_str
     end
-    return marker or OBJECTS_DEFINITIONS_DEFAULTS.error_marker
+    
+    -- Check if this is a property definition table (from OBJECTS_DEFINITIONS.new)
+    -- If gui_field_name exists, it's a property definition, not a value
+    if marker_prop.gui_field_name then
+        -- Extract default value for this object's type
+        local obj_type = obj.field_type or "Field"
+        if type(obj_type) == "table" then
+            obj_type = obj_type.initial or obj_type.edited or "Field"
+        end
+        local default_table = marker_prop.default
+        if default_table and type(default_table) == "table" then
+            local type_default = default_table[obj_type]
+            if type_default and type(type_default) == "table" then
+                -- type_default might contain marker configuration
+                if type_default.marker_fill and type(type_default.marker_fill) == "string" then
+                    return type_default.marker_fill
+                end
+            elseif type(type_default) == "string" then
+                return type_default
+            end
+        end
+        return OBJECTS_DEFINITIONS_DEFAULTS.error_marker_str
+    end
+    
+    -- Check if user has explicitly set a marker
+    if marker_prop.initial and type(marker_prop.initial) == "string" then
+        return marker_prop.initial
+    end
+    if marker_prop.edited and type(marker_prop.edited) == "string" then
+        return marker_prop.edited
+    end
+    if marker_prop.marker and type(marker_prop.marker) == "string" then
+        return marker_prop.marker
+    end
+    
+    -- Resolve the marker value as fallback
+    local marker = resolve_property_value(marker_prop)
+    if type(marker) == "string" then
+        return marker
+    end
+    
+    return OBJECTS_DEFINITIONS_DEFAULTS.error_marker_str
 end
 
 -- Align text within a given width
@@ -621,9 +735,9 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         elseif footer_error_marker and footer_error_marker ~= "" then
             footer_text = resolve_property_value(footer_error_marker) or ""
         elseif is_required then
-            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.required_marker
+            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str
         elseif has_error then
-            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.error_marker
+            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.error_marker_str
         end
 
         if footer_text ~= "" then
@@ -681,7 +795,7 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     local border_chars = get_border_chars(obj)
 
     -- Calculate minimum width based on label and options
-    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
     local label = (label_text or "") .. required_marker
     local max_option_len = 0
     for _, option in ipairs(options or {}) do
@@ -755,7 +869,7 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     local title_align = get_title_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
 
     local lines = {}
-    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
     local label = (label_text or "") .. required_marker
 
     -- Calculate minimum width based on label and items
@@ -830,7 +944,7 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
         border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     end
     local border_chars = get_border_chars(obj)
-    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
     local label = (label_text or "") .. required_marker
 
     -- Calculate minimum width based on content
@@ -914,7 +1028,7 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     local text_align = get_text_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left)
 
     local lines = {}
-    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
     local title_text = (title or obj.field_name.initial or "Fieldset") .. required_marker
 
     -- Calculate minimum width based on title
@@ -939,7 +1053,7 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
         for _, child in ipairs(children) do
             local child_label = child.label or get_gui_property(child, "field_name") or ""
             local child_required = child.is_required or false
-            local child_req_marker = child_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
+            local child_req_marker = child_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
             local child_full_label = child_label .. child_req_marker
             local child_value = get_gui_property(child, "field_initial") or ""
             if child_value and type(child_value) == "table" then
@@ -1213,7 +1327,7 @@ function create_gui_form(fields, options)
         local max_field_width = 20 -- Start with minimum readable width
         for _, field in ipairs(form.fields) do
             local label = field.label or get_gui_property(field, "field_name") or ""
-            local required_marker = field.is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
+            local required_marker = field.is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
             local full_label = label .. required_marker
             local value = get_gui_property(field, "field_initial") or ""
             if value and type(value) == "table" then
@@ -1225,7 +1339,7 @@ function create_gui_form(fields, options)
             if field.gui_field_type == "gui_fieldset_field" and field.children then
                 for _, child in ipairs(field.children) do
                     local child_label = child.label or get_gui_property(child, "field_name") or ""
-                    local child_required = child.is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
+                    local child_required = child.is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
                     local child_full_label = child_label .. child_required
                     local child_value = get_gui_property(child, "field_initial") or ""
                     if child_value and type(child_value) == "table" then

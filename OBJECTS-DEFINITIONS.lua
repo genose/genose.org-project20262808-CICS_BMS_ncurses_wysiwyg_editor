@@ -324,6 +324,13 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
         },
         default = "none" -- Default error marker configuration
     },
+    -- String constants for marker characters (extracted from enum for easy access)
+    required_marker_str = " *",
+    error_marker_str = " /!\\ ",
+    selected_marker = "[X]",
+    unselected_marker = "[ ]",
+    -- Default fill character as a simple string
+    default_fill_char = " ",
     border_char = {
         enum = {
             single = {
