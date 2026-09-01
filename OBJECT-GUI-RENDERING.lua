@@ -844,7 +844,7 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     local label = (label_text or "") .. required_marker
     local max_option_len = 0
     for _, option in ipairs(options or {}) do
-        local option_text = " " .. OBJECTS_DEFINITIONS_DEFAULTS.selected_marker .. " " .. tostring(option)
+        local option_text = " " .. OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.selected_marker .. " " .. tostring(option)
         max_option_len = math.max(max_option_len, display_width(option_text))
     end
     local min_width = math.max(display_width(label) + 4, max_option_len + 2, width)
@@ -870,8 +870,8 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
 
     -- Options area
     for i, option in ipairs(options or {}) do
-        local marker = (i == selected_index) and OBJECTS_DEFINITIONS_DEFAULTS.selected_marker or
-                           OBJECTS_DEFINITIONS_DEFAULTS.unselected_marker
+        local marker = (i == selected_index) and OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.selected_marker or
+                           OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.selected_marker
         local option_text = " " .. marker .. " " .. tostring(option)
         local option_dw = display_width(option_text)
         -- Truncate if too long
@@ -1403,7 +1403,7 @@ function create_gui_form(fields, options)
             -- For select fields, consider option lengths
             if field.options and #field.options > 0 then
                 for _, opt in ipairs(field.options) do
-                    local opt_text = " " .. OBJECTS_DEFINITIONS_DEFAULTS.selected_marker .. " " .. tostring(opt)
+                    local opt_text = " " .. OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.selected_marker .. " " .. tostring(opt)
                     field_width = math.max(field_width, display_width(opt_text) + 2)
                 end
             end
