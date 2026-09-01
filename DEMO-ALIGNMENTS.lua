@@ -147,7 +147,7 @@ local footer_left_field = create_gui_object('Field', {
     gui_field_type = "gui_text_field",
     footer_title = "-- left --",
     footer_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left,
-    footer_fill_char = "-",
+    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 4},
     field_width = {initial = 25}
@@ -161,7 +161,7 @@ local footer_center_field = create_gui_object('Field', {
     gui_field_type = "gui_text_field",
     footer_title = "-- center --",
     footer_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-    footer_fill_char = "-",
+    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 4},
     field_width = {initial = 25}
@@ -175,7 +175,7 @@ local footer_right_field = create_gui_object('Field', {
     gui_field_type = "gui_text_field",
     footer_title = "-- right --",
     footer_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.right,
-    footer_fill_char = "-",
+    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 4},
     field_width = {initial = 25}
@@ -249,7 +249,7 @@ local fieldset_left = create_gui_object('Fieldset', {
         create_gui_object('Field', {
             label = "Name",
             field_initial = "John",
-            text_align = "center"
+            text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center
         })
     }
 })
@@ -267,7 +267,7 @@ local fieldset_center = create_gui_object('Fieldset', {
         create_gui_object('Field', {
             label = "Name",
             field_initial = "John",
-            text_align = "center"
+            text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center
         })
     }
 })
@@ -285,7 +285,7 @@ local fieldset_right = create_gui_object('Fieldset', {
         create_gui_object('Field', {
             label = "Name",
             field_initial = "John",
-            text_align = "center"
+            text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center
         })
     }
 })
@@ -367,17 +367,17 @@ local complete_form = create_gui_form({
             create_gui_object('Field', {
                 label = "Street",
                 field_initial = "123 Main St",
-                text_align = "left"
+                text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left
             }),
             create_gui_object('Field', {
                 label = "City",
                 field_initial = "New York",
-                text_align = "center"
+                text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center
             }),
             create_gui_object('Field', {
                 label = "ZIP",
                 field_initial = "10001",
-                text_align = "right"
+                text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.right
             })
         },
         position = {row = 16}
@@ -416,7 +416,7 @@ local all_align_field = create_gui_object('Field', {
     title_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.right,
     footer_title = "footer",
     footer_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left,
-    footer_fill_char = "=",
+    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.equal,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double},
     field_height = {initial = 6},
     field_width = {initial = 30}
@@ -466,7 +466,7 @@ local fill_dash_field = create_gui_object('Field', {
     label = "Fill with dashes",
     field_initial = "value",
     gui_field_type = "gui_text_field",
-    fill_char = "-",
+    fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 5},
@@ -479,7 +479,7 @@ local fill_dot_field = create_gui_object('Field', {
     label = "Fill with dots",
     field_initial = "value",
     gui_field_type = "gui_text_field",
-    fill_char = ".",
+    fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dot,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double},
     field_height = {initial = 4},
@@ -497,7 +497,7 @@ local red_text_field = create_gui_object('Field', {
     label = "Error Field",
     field_initial = "Invalid input",
     gui_field_type = "gui_text_field",
-    text_color = "red",
+    text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.red,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 3},
@@ -510,7 +510,7 @@ local green_text_field = create_gui_object('Field', {
     label = "Success Field",
     field_initial = "Valid input",
     gui_field_type = "gui_text_field",
-    text_color = "green",
+    text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.green,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 3},
@@ -523,7 +523,7 @@ local blue_text_field = create_gui_object('Field', {
     label = "Info Field",
     field_initial = "Information",
     gui_field_type = "gui_text_field",
-    text_color = "blue",
+    text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.blue,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 3},
@@ -541,7 +541,7 @@ local yellow_title_field = create_gui_object('Field', {
     label = "Warning",
     field_initial = "Caution!",
     gui_field_type = "gui_text_field",
-    title_color = "yellow",
+    title_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.yellow,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 3},
@@ -554,7 +554,7 @@ local magenta_title_field = create_gui_object('Field', {
     label = "Important",
     field_initial = "Read this",
     gui_field_type = "gui_text_field",
-    title_color = "magenta",
+    title_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.magenta,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 3},
@@ -573,8 +573,8 @@ local red_footer_field = create_gui_object('Field', {
     field_initial = "warning",
     gui_field_type = "gui_text_field",
     footer_title = "URGENT",
-    footer_color = "red",
-    footer_fill_char = "-",
+    footer_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.red,
+    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 4},
@@ -589,7 +589,7 @@ local cyan_footer_field = create_gui_object('Field', {
     gui_field_type = "gui_text_field",
     footer_title = "INFO",
     footer_color = "cyan",
-    footer_fill_char = "=",
+    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.equal,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single},
     field_height = {initial = 4},
@@ -611,10 +611,10 @@ local combined_field = create_gui_object('Field', {
     title_suffix = " ]",
     title_color = "green",
     text_color = "white",
-    fill_char = ".",
+    fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dot,
     footer_title = "ready",
     footer_color = "cyan",
-    footer_fill_char = "-",
+    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     title_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     footer_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,

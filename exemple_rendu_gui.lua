@@ -235,7 +235,7 @@ local dashed_border_field = create_gui_object('Field', {
     label = "Bordure pointillee",
     gui_field_type = "gui_textornum_with_label_field",
     position = {row = 1, col = 1, rowend = 3, colend = 25},
-    field_border_style = {initial = "dashed"}
+    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.dashed}
 })
 print(dashed_border_field:render_gui())
 print()

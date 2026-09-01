@@ -23,7 +23,7 @@ local field_required = OBJECTS_DEFINITIONS.new("Field", {
         initial = {
             enabled = true,
             required = true,
-            suffix_char = " "
+            suffix_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.space
         }
     }
 })
@@ -48,7 +48,7 @@ local field_error = OBJECTS_DEFINITIONS.new("Field", {
         initial = {
             enabled = true,
             errors = true,
-            suffix_char = " "
+            suffix_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.space
         }
     }
 })
@@ -74,7 +74,7 @@ local field_both = OBJECTS_DEFINITIONS.new("Field", {
             enabled = true,
             required = true,
             errors = true,
-            suffix_char = " "
+            suffix_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.space
         }
     }
 })
@@ -99,7 +99,7 @@ local field_prefix = OBJECTS_DEFINITIONS.new("Field", {
         initial = {
             enabled = true,
             required = true,
-            prefix_char = " "
+            prefix_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.space
         }
     }
 })
@@ -123,7 +123,7 @@ local fieldset_required = OBJECTS_DEFINITIONS.new("Fieldset", {
         initial = {
             enabled = true,
             required = true,
-            suffix_char = " "
+            suffix_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.space
         }
     }
 })
@@ -148,7 +148,7 @@ local field_footer = OBJECTS_DEFINITIONS.new("Field", {
         initial = {
             title = "Required field",
             align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-            fill_char = "-",
+            fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
             required_marker = {
                 initial = {
                     marker = " [*] "
@@ -178,7 +178,7 @@ local field_footer_error = OBJECTS_DEFINITIONS.new("Field", {
         initial = {
             title = "Error: Passwords do not match",
             align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
-            fill_char = "-",
+            fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
             error_marker = {
                 initial = {
                     marker = " [X] "
@@ -213,7 +213,7 @@ local literal_required = OBJECTS_DEFINITIONS.new("Literal", {
         initial = {
             enabled = true,
             required = true,
-            suffix_char = " "
+            suffix_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.space
         }
     }
 })
