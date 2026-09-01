@@ -176,44 +176,44 @@ end
 -- Returns: "left", "center", or "right"
 local function get_text_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_text_align",
-        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_text_align.default)
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.text_align.default)
     if align and is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum) then
         return align
     end
-    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_text_align.default
+    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.text_align.default
 end
 
 -- Get vertical alignment for an object
 -- Returns: "top", "middle", or "bottom"
 local function get_vertical_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_vertical_align",
-        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_vertical_align.default)
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.default)
     if align and is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum) then
         return align
     end
-    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_vertical_align.default
+    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.default
 end
 
 -- Get title alignment for an object
 -- Returns: "left", "center", or "right"
 local function get_title_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_title_align",
-        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default)
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.text_align.default)
     if align and is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum) then
         return align
     end
-    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default
+    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.text_align.default
 end
 
 -- Get footer alignment for an object
 -- Returns: "left", "center", or "right"
 local function get_footer_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_footer_align",
-        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default)
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.text_align.default)
     if align and is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum) then
         return align
     end
-    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default
+    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.text_align.default
 end
 
 -- Get color property and return ANSI code
@@ -430,7 +430,7 @@ local function align_text(text, width, align, fill_char)
 
     -- Validate align against text_align enum, fallback to center if invalid
     if not align or not is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum) then
-        align = "center"
+        align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center
     end
 
     local padding = width - text_dw
@@ -457,10 +457,10 @@ end
 
 -- Get border characters for a given style (uses get_gui_simple_value)
 local function get_border_chars(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", "none")
-    -- Validate border_style against enum, fallback to "none" if invalid
+    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none)
+    -- Validate border_style against enum, fallback to none if invalid
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
-        border_style = "none"
+        border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none
     end
     local obj_type = get_gui_simple_value(obj, "field_type", "Field")
     local chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default[obj_type]
@@ -495,10 +495,10 @@ end
 function render_gui_text_field(obj, label_text, is_selected, is_required, has_error, override_width)
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", "none")
+    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
-        border_style = "none"
+        border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none
     end
     local fill_char = get_fill_char(obj, " ")
     local value = get_gui_property(obj, "field_initial") or ""
@@ -507,10 +507,10 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     end
 
     -- Get alignment properties
-    local text_align = get_text_align(obj, "center")
-    local vertical_align = get_vertical_align(obj, "top")
-    local title_align = get_title_align(obj, "center")
-    local footer_align = get_footer_align(obj, "center")
+    local text_align = get_text_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
+    local vertical_align = get_vertical_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.top)
+    local title_align = get_title_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
+    local footer_align = get_footer_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
 
     -- Get color properties
     local text_color = get_text_color(obj)
@@ -670,16 +670,16 @@ end
 function render_gui_select_field(obj, label_text, options, selected_index, is_required, has_error, override_width)
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", "single")
+    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
-        border_style = "single"
+        border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     end
     local value = get_gui_property(obj, "field_initial") or false
 
     -- Get alignment properties
-    local text_align = get_text_align(obj, "left")
-    local title_align = get_title_align(obj, "center")
+    local text_align = get_text_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left)
+    local title_align = get_title_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
 
     local lines = {}
     local border_chars = get_border_chars(obj)
@@ -747,16 +747,16 @@ end
 function render_gui_list_field(obj, label_text, items, is_required, has_error, override_width)
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", "single")
+    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
-        border_style = "single"
+        border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     end
     local border_chars = get_border_chars(obj)
 
     -- Get alignment properties
-    local text_align = get_text_align(obj, "left")
-    local title_align = get_title_align(obj, "center")
+    local text_align = get_text_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left)
+    local title_align = get_title_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
 
     local lines = {}
     local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
@@ -824,14 +824,14 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     end
 
     -- Get alignment properties
-    local text_align = get_text_align(obj, "left")
-    local vertical_align = get_vertical_align(obj, "top")
-    local title_align = get_title_align(obj, "center")
+    local text_align = get_text_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left)
+    local vertical_align = get_vertical_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.top)
+    local title_align = get_title_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
 
-    local border_style = get_gui_simple_value(obj, "field_border_style", "single")
+    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
-        border_style = "single"
+        border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     end
     local border_chars = get_border_chars(obj)
     local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
@@ -906,16 +906,16 @@ end
 function render_gui_fieldset(obj, children, title, is_required, has_error, override_width)
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", "double")
+    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
-        border_style = "double"
+        border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double
     end
     local border_chars = get_border_chars(obj)
 
     -- Get alignment properties
-    local title_align = get_title_align(obj, "center")
-    local text_align = get_text_align(obj, "left")
+    local title_align = get_title_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
+    local text_align = get_text_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left)
 
     local lines = {}
     local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
