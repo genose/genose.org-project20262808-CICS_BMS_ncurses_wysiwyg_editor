@@ -33,7 +33,7 @@ print(field1:render_gui())
 local field2 = create_gui_object('Field', {
     label = "Password",
     field_initial = "********",
-    title_suffix = OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str,
+    title_suffix = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker,
     field_border_style = {
         initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     },
@@ -56,7 +56,7 @@ print("\n\n=== FILL CHARACTER ===")
 local field3 = create_gui_object('Field', {
     label = "Status",
     field_initial = "ON",
-    fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dash,
+    fill_marker = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.dash,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {
         initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
@@ -75,7 +75,7 @@ print(field3:render_gui())
 local field4 = create_gui_object('Field', {
     label = "Progress",
     field_initial = "50%",
-    fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dot,
+    fill_marker = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.dot,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     field_border_style = {
         initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double
@@ -94,7 +94,7 @@ print(field4:render_gui())
 local field5 = create_gui_object('Field', {
     label = "Input",
     field_initial = "text",
-    fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.underscore,
+    fill_marker = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.underscore,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left,
     field_border_style = {
         initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
@@ -225,7 +225,7 @@ local field11 = create_gui_object('Field', {
     field_initial = "Warning message",
     footer_title = "URGENT",
     footer_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.red,
-    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.exclamation,
+    footer_fill_marker = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.exclamation,
     field_border_style = {
         initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     },
@@ -245,7 +245,7 @@ local field12 = create_gui_object('Field', {
     field_initial = "Additional info",
     footer_title = "INFO",
     footer_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.cyan,
-    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.equal,
+    footer_fill_marker = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.equal,
     field_border_style = {
         initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     },
@@ -268,14 +268,14 @@ print("\n\n=== COMBINED PROPERTIES ===")
 local field13 = create_gui_object('Field', {
     label = "System Status",
     field_initial = "RUNNING",
-    title_prefix = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.less_than,
-    title_suffix = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.greater_than,
+    title_prefix = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.less_than,
+    title_suffix = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.greater_than,
     title_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.green,
     text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.white,
-    fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.dot,
+    fill_marker = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.dot,
     footer_title = "OK",
     footer_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.green,
-    footer_fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.equal,
+    footer_fill_marker = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.equal,
     text_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     title_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
     footer_align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
@@ -299,7 +299,7 @@ local field14 = create_gui_object('Field', {
     title_prefix = "[*]",
     title_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.yellow,
     text_color = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.enum.cyan,
-    fill_char = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum.space,
+    fill_marker = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum.space,
     is_required = true,
     field_border_style = {
         initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single

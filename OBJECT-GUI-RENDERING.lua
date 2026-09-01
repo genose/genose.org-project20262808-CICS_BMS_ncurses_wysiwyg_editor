@@ -157,7 +157,7 @@ local function get_gui_simple_value(obj, prop_name, default_value)
     if prop.edited ~= nil then
         return prop.edited
     end
-    
+
     -- If gui_field_name exists, it's a property definition, not a value
     if prop.gui_field_name then
         -- Extract default value for this object's type
@@ -454,12 +454,12 @@ end
 -- Get required marker for a field
 local function get_required_marker(obj)
     local marker_prop = obj.field_required_marker
-    
+
     -- If property doesn't exist, use default
     if not marker_prop then
-        return OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str
+        return OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker
     end
-    
+
     -- Check if this is a property definition table (from OBJECTS_DEFINITIONS.new)
     -- If gui_field_name exists, it's a property definition, not a value
     if marker_prop.gui_field_name then
@@ -480,9 +480,9 @@ local function get_required_marker(obj)
                 return type_default
             end
         end
-        return OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str
+        return OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker
     end
-    
+
     -- Check if user has explicitly set a marker
     if marker_prop.initial and type(marker_prop.initial) == "string" then
         return marker_prop.initial
@@ -493,25 +493,25 @@ local function get_required_marker(obj)
     if marker_prop.marker and type(marker_prop.marker) == "string" then
         return marker_prop.marker
     end
-    
+
     -- Resolve the marker value as fallback
     local marker = resolve_property_value(marker_prop)
     if type(marker) == "string" then
         return marker
     end
-    
-    return OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str
+
+    return OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker
 end
 
 -- Get error marker for a field
 local function get_error_marker(obj)
     local marker_prop = obj.field_error_marker
-    
+
     -- If property doesn't exist, use default
     if not marker_prop then
-        return OBJECTS_DEFINITIONS_DEFAULTS.error_marker_str
+        return OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.error_marker
     end
-    
+
     -- Check if this is a property definition table (from OBJECTS_DEFINITIONS.new)
     -- If gui_field_name exists, it's a property definition, not a value
     if marker_prop.gui_field_name then
@@ -532,9 +532,9 @@ local function get_error_marker(obj)
                 return type_default
             end
         end
-        return OBJECTS_DEFINITIONS_DEFAULTS.error_marker_str
+        return OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.error_marker
     end
-    
+
     -- Check if user has explicitly set a marker
     if marker_prop.initial and type(marker_prop.initial) == "string" then
         return marker_prop.initial
@@ -545,14 +545,14 @@ local function get_error_marker(obj)
     if marker_prop.marker and type(marker_prop.marker) == "string" then
         return marker_prop.marker
     end
-    
+
     -- Resolve the marker value as fallback
     local marker = resolve_property_value(marker_prop)
     if type(marker) == "string" then
         return marker
     end
-    
-    return OBJECTS_DEFINITIONS_DEFAULTS.error_marker_str
+
+    return OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.error_marker
 end
 
 -- Align text within a given width
@@ -608,7 +608,8 @@ end
 
 -- Get border characters for a given style (uses get_gui_simple_value)
 local function get_border_chars(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none)
+    local border_style = get_gui_simple_value(obj, "field_border_style",
+        OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none)
     -- Validate border_style against enum, fallback to none if invalid
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
         border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none
@@ -646,7 +647,8 @@ end
 function render_gui_text_field(obj, label_text, is_selected, is_required, has_error, override_width)
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none)
+    local border_style = get_gui_simple_value(obj, "field_border_style",
+        OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
         border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none
@@ -693,7 +695,8 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local value_dw = display_width(value)
     local min_width = math.max(full_label_dw + 2, value_dw + 2, width) -- +2 for border characters
     local actual_width = override_width or
-                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(full_label_dw, value_dw, width) or min_width)
+                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and
+                                 math.max(full_label_dw, value_dw, width) or min_width)
 
     -- If override_width is provided, strictly respect it (don't let label overflow)
     if override_width then
@@ -776,9 +779,9 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         elseif footer_error_marker and footer_error_marker ~= "" then
             footer_text = resolve_property_value(footer_error_marker) or ""
         elseif is_required then
-            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str
+            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker
         elseif has_error then
-            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.error_marker_str
+            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.error_marker
         end
 
         if footer_text ~= "" then
@@ -821,7 +824,8 @@ end
 function render_gui_select_field(obj, label_text, options, selected_index, is_required, has_error, override_width)
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
+    local border_style = get_gui_simple_value(obj, "field_border_style",
+        OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
         border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
@@ -836,7 +840,7 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     local border_chars = get_border_chars(obj)
 
     -- Calculate minimum width based on label and options
-    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker or ""
     local label = (label_text or "") .. required_marker
     local max_option_len = 0
     for _, option in ipairs(options or {}) do
@@ -844,9 +848,8 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
         max_option_len = math.max(max_option_len, display_width(option_text))
     end
     local min_width = math.max(display_width(label) + 4, max_option_len + 2, width)
-    local actual_width = override_width or
-                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(display_width(label) + 2, max_option_len, width) or
-                                 min_width)
+    local actual_width = override_width or (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and
+                             math.max(display_width(label) + 2, max_option_len, width) or min_width)
 
     -- If override_width is provided, strictly respect it
     if override_width then
@@ -898,7 +901,8 @@ end
 function render_gui_list_field(obj, label_text, items, is_required, has_error, override_width)
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
+    local border_style = get_gui_simple_value(obj, "field_border_style",
+        OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
         border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
@@ -910,7 +914,7 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     local title_align = get_title_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
 
     local lines = {}
-    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker or ""
     local label = (label_text or "") .. required_marker
 
     -- Calculate minimum width based on label and items
@@ -919,9 +923,8 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
         max_item_len = math.max(max_item_len, display_width("  " .. tostring(item))) -- +2 for "  " prefix
     end
     local min_width = math.max(display_width(label) + 4, max_item_len + 2, width)
-    local actual_width = override_width or
-                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(display_width(label) + 2, max_item_len, width) or
-                                 min_width)
+    local actual_width = override_width or (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and
+                             math.max(display_width(label) + 2, max_item_len, width) or min_width)
 
     -- If override_width is provided, strictly respect it
     if override_width then
@@ -979,13 +982,14 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     local vertical_align = get_vertical_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.top)
     local title_align = get_title_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center)
 
-    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
+    local border_style = get_gui_simple_value(obj, "field_border_style",
+        OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
         border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     end
     local border_chars = get_border_chars(obj)
-    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker or ""
     local label = (label_text or "") .. required_marker
 
     -- Calculate minimum width based on content
@@ -993,7 +997,8 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     local value_dw = display_width(value)
     local min_width = math.max(label_dw + 4, value_dw + 2, width) -- +4 for " " + " " padding, +2 for borders
     local actual_width = override_width or
-                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(label_dw + 2, value_dw, width) or min_width)
+                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and
+                                 math.max(label_dw + 2, value_dw, width) or min_width)
 
     -- If override_width is provided, strictly respect it
     if override_width then
@@ -1057,7 +1062,8 @@ end
 function render_gui_fieldset(obj, children, title, is_required, has_error, override_width)
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
-    local border_style = get_gui_simple_value(obj, "field_border_style", OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double)
+    local border_style = get_gui_simple_value(obj, "field_border_style",
+        OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double)
     -- Validate border_style against enum
     if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
         border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double
@@ -1069,13 +1075,15 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     local text_align = get_text_align(obj, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left)
 
     local lines = {}
-    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker or ""
     local title_text = (title or obj.field_name.initial or "Fieldset") .. required_marker
 
     -- Calculate minimum width based on title
     local title_dw = display_width(title_text)
     local min_width = math.max(title_dw + 4, width) -- +4 for spaces and border corners
-    local actual_width = override_width or (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(title_dw, width) or min_width)
+    local actual_width = override_width or
+                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and
+                                 math.max(title_dw, width) or min_width)
 
     -- Top border with title (using title_align)
     if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
@@ -1094,7 +1102,7 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
         for _, child in ipairs(children) do
             local child_label = child.label or get_gui_property(child, "field_name") or ""
             local child_required = child.is_required or false
-            local child_req_marker = child_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
+            local child_req_marker = child_required and OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker or ""
             local child_full_label = child_label .. child_req_marker
             local child_value = get_gui_property(child, "field_initial") or ""
             if child_value and type(child_value) == "table" then
@@ -1368,7 +1376,7 @@ function create_gui_form(fields, options)
         local max_field_width = 20 -- Start with minimum readable width
         for _, field in ipairs(form.fields) do
             local label = field.label or get_gui_property(field, "field_name") or ""
-            local required_marker = field.is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
+            local required_marker = field.is_required and OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker or ""
             local full_label = label .. required_marker
             local value = get_gui_property(field, "field_initial") or ""
             if value and type(value) == "table" then
@@ -1380,7 +1388,8 @@ function create_gui_form(fields, options)
             if field.gui_field_type == "gui_fieldset_field" and field.children then
                 for _, child in ipairs(field.children) do
                     local child_label = child.label or get_gui_property(child, "field_name") or ""
-                    local child_required = child.is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str or ""
+                    local child_required = child.is_required and
+                                               OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.required_marker or ""
                     local child_full_label = child_label .. child_required
                     local child_value = get_gui_property(child, "field_initial") or ""
                     if child_value and type(child_value) == "table" then
