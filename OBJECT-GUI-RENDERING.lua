@@ -159,12 +159,25 @@ local function get_gui_simple_value(obj, prop_name, default_value)
     return resolved or default_value
 end
 
+-- Helper function to check if a value is valid for a given enum
+local function is_valid_enum_value(value, enum_table)
+    if not value or not enum_table then
+        return false
+    end
+    for k, v in pairs(enum_table) do
+        if v == value then
+            return true
+        end
+    end
+    return false
+end
+
 -- Get text alignment (horizontal) for an object
 -- Returns: "left", "center", or "right"
 local function get_text_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_text_align",
         default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_text_align.default)
-    if align and (align == "left" or align == "center" or align == "right") then
+    if align and is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum) then
         return align
     end
     return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_text_align.default
@@ -175,7 +188,7 @@ end
 local function get_vertical_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_vertical_align",
         default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_vertical_align.default)
-    if align and (align == "top" or align == "middle" or align == "bottom") then
+    if align and is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum) then
         return align
     end
     return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_vertical_align.default
@@ -186,7 +199,7 @@ end
 local function get_title_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_title_align",
         default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default)
-    if align and (align == "left" or align == "center" or align == "right") then
+    if align and is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum) then
         return align
     end
     return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default
@@ -197,7 +210,7 @@ end
 local function get_footer_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_footer_align",
         default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default)
-    if align and (align == "left" or align == "center" or align == "right") then
+    if align and is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum) then
         return align
     end
     return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default
@@ -209,15 +222,18 @@ local function get_color_code(obj, prop_name, default_color)
     local color_prop = obj[prop_name]
     -- If property doesn't exist, use default
     if not color_prop then
-        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[default_color or "default"] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default))
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[default_color or "default"] or
+                   OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default))
     end
 
     -- Check if user has explicitly set a color (not from defaults)
     if color_prop.initial and type(color_prop.initial) == "string" then
-        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.initial] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.initial] or
+                   OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
     end
     if color_prop.edited and type(color_prop.edited) == "string" then
-        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.edited] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.edited] or
+                   OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
     end
 
     -- Resolve the color value
@@ -232,11 +248,13 @@ local function get_color_code(obj, prop_name, default_color)
     if type(color) == "table" then
         -- First check if 'default' key exists
         if color.default and type(color.default) == "string" then
-            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color.default] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color.default] or
+                       OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
         end
         -- Check if any key is "default"
         if color["default"] and type(color["default"]) == "string" then
-            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color["default"]] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color["default"]] or
+                       OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
         end
         -- Look for any valid color string
         for k, v in pairs(color) do
@@ -530,7 +548,8 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
             local content_width = actual_width - 2
             local label_content = align_text(full_label, content_width, title_align)
             -- Apply title color
-            local colored_label = title_color .. label_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default
+            local colored_label = title_color .. label_content ..
+                                      OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default
             local top_line = border_chars.top_left .. colored_label .. border_chars.top_right
             table.insert(lines, top_line)
         else
@@ -565,8 +584,9 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         local inner_width = actual_width - 2
         local aligned_content = align_text(content, inner_width, text_align, fill_char)
         -- Apply text color to content
-        table.insert(lines, border_chars.left .. text_color .. aligned_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default ..
-            border_chars.right)
+        table.insert(lines,
+            border_chars.left .. text_color .. aligned_content ..
+                OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default .. border_chars.right)
 
         -- Handle vertical alignment - add remaining empty lines after content
         if vertical_align == "middle" then
@@ -620,7 +640,8 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
                 footer_content = footer_text
             end
             -- Apply footer color
-            local colored_footer = footer_color .. footer_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default
+            local colored_footer = footer_color .. footer_content ..
+                                       OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default
             table.insert(lines, border_chars.bottom_left .. colored_footer .. border_chars.bottom_right)
         else
             -- Standard bottom border
@@ -678,7 +699,8 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
 
     -- Options area
     for i, option in ipairs(options or {}) do
-        local marker = (i == selected_index) and OBJECTS_DEFINITIONS_DEFAULTS.selected_marker or OBJECTS_DEFINITIONS_DEFAULTS.unselected_marker
+        local marker = (i == selected_index) and OBJECTS_DEFINITIONS_DEFAULTS.selected_marker or
+                           OBJECTS_DEFINITIONS_DEFAULTS.unselected_marker
         local option_text = " " .. marker .. " " .. tostring(option)
         local option_dw = display_width(option_text)
         -- Truncate if too long
