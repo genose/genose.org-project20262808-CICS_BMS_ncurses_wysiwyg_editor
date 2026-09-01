@@ -17,7 +17,7 @@ dofile('OBJECTS-DEFINITIONS.lua')
 -- ===== GUI RENDERING CONSTANTS =====
 -- for reference, see OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type in OBJECTS-DEFINITIONS.lua
 -- use dynamic notation not constant, so all must came from OBJECTS_DEFINITIONS.field_*.enum and OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type or from the object itself from .default
-local OBJECTS_DEFINITIONS_DEFAULTS = nil; -- deprecated, use OBJECTS_DEFINITIONS and OBJECTS_DEFINITIONS_GUI_TYPE instead
+-- local OBJECTS_DEFINITIONS_DEFAULTS = nil; -- deprecated, use OBJECTS_DEFINITIONS and OBJECTS_DEFINITIONS_GUI_TYPE instead
 
 -- ===== HELPER FUNCTIONS =====
 
@@ -75,7 +75,10 @@ local function get_position(obj)
     if pos and type(pos) == "table" then
         return pos.initial or pos.edited or pos
     end
-    return obj.field_pos.default or OBJECTS_DEFINITIONS_DEFAULTS.field_pos.default
+    if obj.field_pos and obj.field_pos.default then
+        return obj.field_pos.default
+    end
+    return OBJECTS_DEFINITIONS_DEFAULTS.field_pos.default
 end
 
 -- Helper: Recursively resolve property value through nested tables
@@ -172,7 +175,7 @@ end
 local function get_vertical_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_vertical_align",
         default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_vertical_align.default)
-    if align and (align in values(obj.enum.values)) then -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default)) 
+    if align and (align == "top" or align == "middle" or align == "bottom") then
         return align
     end
     return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_vertical_align.default
@@ -182,8 +185,8 @@ end
 -- Returns: "left", "center", or "right"
 local function get_title_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_title_align",
-        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default) -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default))
-    if align and (align in values(obj.enum.values)) then
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default)
+    if align and (align == "left" or align == "center" or align == "right") then
         return align
     end
     return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default
@@ -193,8 +196,8 @@ end
 -- Returns: "left", "center", or "right"
 local function get_footer_align(obj, default_align)
     local align = get_gui_simple_value(obj, "field_footer_align",
-        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default) -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default))
-    if align and (align in values(obj.enum.values)) then
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default)
+    if align and (align == "left" or align == "center" or align == "right") then
         return align
     end
     return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default
@@ -233,8 +236,6 @@ local function get_color_code(obj, prop_name, default_color)
         end
         -- Check if any key is "default"
         if color["default"] and type(color["default"]) == "string" then
-            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color["default"]] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
-        end
             return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color["default"]] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
         end
         -- Look for any valid color string
@@ -529,7 +530,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
             local content_width = actual_width - 2
             local label_content = align_text(full_label, content_width, title_align)
             -- Apply title color
-            local colored_label = title_color .. label_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_codes.default
+            local colored_label = title_color .. label_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default
             local top_line = border_chars.top_left .. colored_label .. border_chars.top_right
             table.insert(lines, top_line)
         else
@@ -540,7 +541,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     -- Field content area
     if border_style == "none" then
         -- Apply text color
-        table.insert(lines, text_color .. (value or "") .. OBJECTS_DEFINITIONS_DEFAULTS.color_codes.default)
+        table.insert(lines, text_color .. (value or "") .. OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default)
     else
         local content_height = height - (label_text and 1 or 0) - 1
 
@@ -564,7 +565,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         local inner_width = actual_width - 2
         local aligned_content = align_text(content, inner_width, text_align, fill_char)
         -- Apply text color to content
-        table.insert(lines, border_chars.left .. text_color .. aligned_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_codes.default ..
+        table.insert(lines, border_chars.left .. text_color .. aligned_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default ..
             border_chars.right)
 
         -- Handle vertical alignment - add remaining empty lines after content
@@ -619,7 +620,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
                 footer_content = footer_text
             end
             -- Apply footer color
-            local colored_footer = footer_color .. footer_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_codes.default
+            local colored_footer = footer_color .. footer_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default
             table.insert(lines, border_chars.bottom_left .. colored_footer .. border_chars.bottom_right)
         else
             -- Standard bottom border

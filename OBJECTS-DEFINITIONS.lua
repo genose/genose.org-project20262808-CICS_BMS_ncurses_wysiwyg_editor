@@ -107,6 +107,15 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
             ImageAsciiArt = 3,
             Line = 1,
             Fieldset = 1
+        },
+        max_height = {
+            FieldTextORNumeric = 80,
+            Literal = 80,
+            ProtectedLiteral = 80,
+            BooleanField = 3,
+            ImageAsciiArt = 40,
+            Line = 1,
+            Fieldset = 80
         }
     },
     field_pos = {
@@ -368,8 +377,8 @@ OBJECTS_DEFINITIONS = {
         gui_field_name = "Name",
         collapsed = false,
         collapsable = true,
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_name.enum,
-        default = OBJECTS_DEFINITIONS_DEFAULTS.field_name.default, -- Available field names
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.objects_types.field_name.enum,
+        default = OBJECTS_DEFINITIONS_DEFAULTS.objects_types.field_name.default, -- Available field names
         initial = nil, -- Default field name
         edited = nil -- name after editing
     },
@@ -379,35 +388,35 @@ OBJECTS_DEFINITIONS = {
         gui_field_name = "Type",
         collapsed = false,
         collapsable = true,
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_type.enum, -- Available field types
-        default = OBJECTS_DEFINITIONS_DEFAULTS.field_type.enum[0], -- default type for each field type
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.objects_types.field_type.enum, -- Available field types
+        default = OBJECTS_DEFINITIONS_DEFAULTS.objects_types.field_type.default, -- default type for each field type
         initial = nil, -- Default field type
         edited = nil
     },
 
     field_min_height = { -- Height of the field, can be any positive integer
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_size.height.min,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_size.min_height,
         default = nil, --  Default height for each field type
         initial = nil, -- Default height for the initial field type
         edited = nil
     },
 
     field_max_height = { -- Maximum height of the field, can be any positive integer
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_size.height.max,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_size.max_height,
         default = nil, --  Default max height for each field type
         initial = nil, -- Default max height for the initial field type
         edited = nil
     },
 
     field_width_max = { -- Maximum length of the field, can be any positive integer
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_size.width.max,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_size.max_width,
         default = nil, -- Default max length for each field type
         initial = nil, -- Default max length for the initial field type
         edited = nil -- Max length after editing
     },
 
     field_width_min = { -- Minimum length of the field, can be any positive integer
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_size.width.min,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.field_size.min_width,
         default = nil, -- Default min length for each field type
         initial = nil, -- Default min length for the initial field type
         edited = nil -- Min length after editing
@@ -562,7 +571,7 @@ OBJECTS_DEFINITIONS = {
     ----- ===== STYLE DU TEXTE =====
     -- enum for text style: default, bold, italic, underline, strikethrough, blink, reverse
     field_avail_style = {
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.text_style.enum,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.text_style.styles.enum,
         avail_style_help = OBJECTS_DEFINITIONS_DEFAULTS.text_style.style_help,
         avail_style_exported_value = OBJECTS_DEFINITIONS_DEFAULTS.text_style.style_exported_value,
         default = nil -- Styles disponibles par type (1er = valeur par defaut pour .initial)
@@ -574,7 +583,7 @@ OBJECTS_DEFINITIONS = {
         gui_field_name = "Style",
         collapsed = false,
         collapsable = true,
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.text_style.enum,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.text_style.styles.enum,
         avail_style_help = OBJECTS_DEFINITIONS_DEFAULTS.text_style.style_help,
         avail_style_exported_value = OBJECTS_DEFINITIONS_DEFAULTS.text_style.style_exported_value,
         default = nil, -- Style par defaut pour chaque type
@@ -620,7 +629,7 @@ OBJECTS_DEFINITIONS = {
     -- ===== PERSONNALISATION DES CARACTERES =====
     -- Caractères de bordure personnalisables (pour remplacer ┌─┐│├└┘)
     field_avail_border_chars = {
-        default = nil, -- Default border characters for each field type
+        default = OBJECTS_DEFINITIONS_DEFAULTS.border_char.enum, -- Default border characters for each field type
         initial = nil,
         edited = nil
     },
@@ -645,6 +654,7 @@ OBJECTS_DEFINITIONS = {
     -- respresents the border style for each field type, which can be "single", "double", "dashed", or "none". The border style can be customized for each field type, allowing for a flexible and extensible way to create user interfaces for BMS applications. The border style can be used to indicate the state of the field, such as whether it is required or in an error state. The border style can also be used to enhance the visual appearance of the field, providing a more engaging user experience.
     -- this is used to render the border of the field, which can be customized for each field type. The border style can be used to indicate the state of the field, such as whether it is required or in an error state. The border style can also be used to enhance the visual appearance of the field, providing a more engaging user experience.
     field_border = nil, -- Will be set after table construction to reference field_avail_border_style and field_avail_border_chars
+    field_border_chars = nil, -- Will be set after table construction to reference field_avail_border_chars
 
     -- Caractère de remplissage pour le titre dans la bordure supérieure
     field_title_fill_char = {
@@ -1539,14 +1549,16 @@ OBJECTS_DEFINITIONS.field_avail_border_chars.default = {
     Fieldset = OBJECTS_DEFINITIONS_DEFAULTS.border_char.enum
 } -- Available border characters for each field type
 
-OBJECTS_DEFINITIONS.field_border_chars.default = {
-    FieldTextORNumeric = OBJECTS_DEFINITIONS.field_avail_border_chars.default.FieldTextORNumeric,
-    Literal = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Literal,
-    ProtectedLiteral = OBJECTS_DEFINITIONS.field_avail_border_chars.default.ProtectedLiteral,
-    BooleanField = OBJECTS_DEFINITIONS.field_avail_border_chars.default.BooleanField,
-    ImageAsciiArt = OBJECTS_DEFINITIONS.field_avail_border_chars.default.ImageAsciiArt,
-    Line = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Line,
-    Fieldset = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Fieldset
+OBJECTS_DEFINITIONS.field_border_chars = {
+    default = {
+        FieldTextORNumeric = OBJECTS_DEFINITIONS.field_avail_border_chars.default.FieldTextORNumeric,
+        Literal = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Literal,
+        ProtectedLiteral = OBJECTS_DEFINITIONS.field_avail_border_chars.default.ProtectedLiteral,
+        BooleanField = OBJECTS_DEFINITIONS.field_avail_border_chars.default.BooleanField,
+        ImageAsciiArt = OBJECTS_DEFINITIONS.field_avail_border_chars.default.ImageAsciiArt,
+        Line = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Line,
+        Fieldset = OBJECTS_DEFINITIONS.field_avail_border_chars.default.Fieldset
+    }
 } -- Default border characters for each field type
 
 -- field_avail_border_style: Styles de bordure disponibles
