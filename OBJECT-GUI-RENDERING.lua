@@ -149,6 +149,38 @@ local function get_gui_simple_value(obj, prop_name, default_value)
         return default_value
     end
 
+    -- Check if this is a property definition table (from OBJECTS_DEFINITIONS.new)
+    -- If gui_field_name exists, it's a property definition, not a value
+    if prop.gui_field_name then
+        -- Extract default value for this object's type
+        local obj_type = obj.field_type or "Field"
+        if type(obj_type) == "table" then
+            obj_type = obj_type.initial or obj_type.edited or "Field"
+        end
+        local default_table = prop.default
+        if default_table and type(default_table) == "table" then
+            local type_default = default_table[obj_type]
+            if type_default and type(type_default) == "table" then
+                -- type_default might be a table, try to extract initial value
+                if type_default.initial ~= nil then
+                    return type_default.initial
+                end
+                if type_default.edited ~= nil then
+                    return type_default.edited
+                end
+                -- For tables like {space = " ", dash = "-"}, return the first string value
+                for _, v in pairs(type_default) do
+                    if type(v) == "string" or type(v) == "number" or type(v) == "boolean" then
+                        return v
+                    end
+                end
+            elseif type(type_default) ~= nil then
+                return type_default
+            end
+        end
+        return default_value
+    end
+
     -- Recursively resolve the property value
     local resolved = resolve_property_value(prop)
 
