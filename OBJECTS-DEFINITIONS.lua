@@ -267,7 +267,7 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
         },
         default = "none" -- Default border style
     },
-    fill_marker = { -- used to fill and mark avoiding guplicate declation of a stupid copy constant !!!
+    fill_marker = { -- used to fill and mark avoiding duplicate declation of a stupid copy constant !!!
         enum = {
             space = " ",
             dash = "─",
@@ -690,7 +690,7 @@ OBJECTS_DEFINITIONS = {
 
     -- Caractère de remplissage pour le titre dans la bordure supérieure
     field_title_fill_char = {
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum,
         default = nil,
         initial = nil,
         edited = nil
@@ -702,7 +702,7 @@ OBJECTS_DEFINITIONS = {
         gui_field_name = "Fill Char",
         collapsed = false,
         collapsable = true,
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum,
         default = nil,
         initial = nil,
         edited = nil
@@ -812,7 +812,7 @@ OBJECTS_DEFINITIONS = {
     },
 
     field_footer_fill_char = {
-        enum = OBJECTS_DEFINITIONS_DEFAULTS.fill_char.enum,
+        enum = OBJECTS_DEFINITIONS_DEFAULTS.fill_marker.enum,
         default = nil,
         initial = nil,
         edited = nil
@@ -2132,7 +2132,7 @@ OBJECTS_DEFINITIONS.field_footer.default = {
     FieldTextORNumeric = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.FieldTextORNumeric,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.FieldTextORNumeric,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.FieldTextORNumeric,
+        fill_marker = OBJECTS_DEFINITIONS.field_footer_fill_char.default.FieldTextORNumeric,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.FieldTextORNumeric,
         required_marker = nil,
         error_marker = nil
@@ -2140,7 +2140,7 @@ OBJECTS_DEFINITIONS.field_footer.default = {
     Literal = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.Literal,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.Literal,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Literal,
+        fill_marker = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Literal,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.Literal,
         required_marker = nil,
         error_marker = nil
@@ -2148,7 +2148,7 @@ OBJECTS_DEFINITIONS.field_footer.default = {
     ProtectedLiteral = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.ProtectedLiteral,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.ProtectedLiteral,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.ProtectedLiteral,
+        fill_marker = OBJECTS_DEFINITIONS.field_footer_fill_char.default.ProtectedLiteral,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.ProtectedLiteral,
         required_marker = nil,
         error_marker = nil
@@ -2156,7 +2156,7 @@ OBJECTS_DEFINITIONS.field_footer.default = {
     BooleanField = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.BooleanField,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.BooleanField,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.BooleanField,
+        fill_marker = OBJECTS_DEFINITIONS.field_footer_fill_char.default.BooleanField,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.BooleanField,
         required_marker = nil,
         error_marker = nil
@@ -2164,7 +2164,7 @@ OBJECTS_DEFINITIONS.field_footer.default = {
     ImageAsciiArt = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.ImageAsciiArt,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.ImageAsciiArt,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.ImageAsciiArt,
+        fill_marker = OBJECTS_DEFINITIONS.field_footer_fill_char.default.ImageAsciiArt,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.ImageAsciiArt,
         required_marker = nil,
         error_marker = nil
@@ -2172,7 +2172,7 @@ OBJECTS_DEFINITIONS.field_footer.default = {
     Line = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.Line,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.Line,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Line,
+        fill_marker = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Line,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.Line,
         required_marker = nil,
         error_marker = nil
@@ -2180,7 +2180,7 @@ OBJECTS_DEFINITIONS.field_footer.default = {
     Fieldset = {
         color = OBJECTS_DEFINITIONS.field_footer_color.default.Fieldset,
         align = OBJECTS_DEFINITIONS.field_footer_align.default.Fieldset,
-        fill_char = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Fieldset,
+        fill_marker = OBJECTS_DEFINITIONS.field_footer_fill_char.default.Fieldset,
         title = OBJECTS_DEFINITIONS.field_footer_title.default.Fieldset,
         required_marker = nil,
         error_marker = nil
@@ -2772,14 +2772,14 @@ local function build_footer(obj, width)
         return ""
     end
 
-    -- Handle fill_char: can be a string or a table with fill char options
-    local fill_char_raw = footer_config.fill_char or " "
-    local fill_char = " "
+    -- Handle fill_marker: can be a string or a table with fill char options
+    local fill_char_raw = footer_config.fill_marker or " "
+    local fill_marker = " "
     if type(fill_char_raw) == "table" then
         -- Extract first available fill char
-        fill_char = fill_char_raw.space or fill_char_raw.dash or fill_char_raw.underscore or fill_char_raw.dot or " "
+        fill_marker = fill_char_raw.space or fill_char_raw.dash or fill_char_raw.underscore or fill_char_raw.dot or " "
     elseif type(fill_char_raw) == "string" then
-        fill_char = fill_char_raw
+        fill_marker = fill_char_raw
     end
 
     -- Handle title: can be a string or a table { title = "..." }
@@ -2904,13 +2904,13 @@ local function build_footer(obj, width)
     local padding = width - #content
     if padding > 0 then
         if align == "left" then
-            content = content .. string.rep(fill_char, padding)
+            content = content .. string.rep(fill_marker, padding)
         elseif align == "right" then
-            content = string.rep(fill_char, padding) .. content
+            content = string.rep(fill_marker, padding) .. content
         else -- center
             local left_pad = math.floor(padding / 2)
             local right_pad = padding - left_pad
-            content = string.rep(fill_char, left_pad) .. content .. string.rep(fill_char, right_pad)
+            content = string.rep(fill_marker, left_pad) .. content .. string.rep(fill_marker, right_pad)
         end
     else
         -- If still too long after truncating title, do a final truncation
@@ -2943,18 +2943,18 @@ function render_bordered_field(obj, custom_content)
     local border_chars = get_border_chars(obj)
     local fill_char_raw = get_property(obj, "field_fill_char")
     -- Extract the fill character from the table (default to space)
-    local fill_char = " "
+    local fill_marker = " "
     if fill_char_raw and type(fill_char_raw) == "table" then
         local fc_config = fill_char_raw.edited or fill_char_raw.initial
         if fc_config and type(fc_config) == "table" then
             -- Use first available fill char
-            fill_char = fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or
+            fill_marker = fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or
                             " "
         elseif type(fc_config) == "string" then
-            fill_char = fc_config
+            fill_marker = fc_config
         end
     elseif type(fill_char_raw) == "string" then
-        fill_char = fill_char_raw
+        fill_marker = fill_char_raw
     end
     local obj_type = get_property(obj, "field_type") or "Field"
 
@@ -2983,7 +2983,7 @@ function render_bordered_field(obj, custom_content)
     -- If no border, just return content centered
     if border_style == "none" then
         if height >= 1 then
-            local line = string.rep(fill_char, width)
+            local line = string.rep(fill_marker, width)
             -- Try to center content in the line
             if content and #content > 0 and #content <= width then
                 local padding = math.floor((width - #content) / 2)
@@ -3097,11 +3097,11 @@ function render_bordered_field(obj, custom_content)
             end
             -- Truncate if too long
             content_line = content_line:sub(1, width)
-            -- Pad with fill_char if still too short
-            content_line = content_line .. string.rep(fill_char, width - #content_line)
+            -- Pad with fill_marker if still too short
+            content_line = content_line .. string.rep(fill_marker, width - #content_line)
             table.insert(lines, border_chars.left .. content_line .. border_chars.right)
         else
-            table.insert(lines, border_chars.left .. string.rep(fill_char, width) .. border_chars.right)
+            table.insert(lines, border_chars.left .. string.rep(fill_marker, width) .. border_chars.right)
         end
     end
 
@@ -3157,18 +3157,18 @@ function render_fieldset(obj)
     local border_chars = get_border_chars(obj)
     local fill_char_raw = get_property(obj, "field_fill_char")
     -- Extract the fill character from the table (default to space)
-    local fill_char = " "
+    local fill_marker = " "
     if fill_char_raw and type(fill_char_raw) == "table" then
         local fc_config = fill_char_raw.edited or fill_char_raw.initial
         if fc_config and type(fc_config) == "table" then
             -- Use first available fill char
-            fill_char = fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or
+            fill_marker = fc_config.space or fc_config.dash or fc_config.underscore or fc_config.dot or fc_config.equal or
                             " "
         elseif type(fc_config) == "string" then
-            fill_char = fc_config
+            fill_marker = fc_config
         end
     elseif type(fill_char_raw) == "string" then
-        fill_char = fill_char_raw
+        fill_marker = fill_char_raw
     end
 
     local lines = {}
@@ -3230,7 +3230,7 @@ function render_fieldset(obj)
 
     -- Content area
     for i = 1, height - 2 do
-        table.insert(lines, border_chars.left .. string.rep(fill_char, width) .. border_chars.right)
+        table.insert(lines, border_chars.left .. string.rep(fill_marker, width) .. border_chars.right)
     end
 
     -- Bottom border or footer
