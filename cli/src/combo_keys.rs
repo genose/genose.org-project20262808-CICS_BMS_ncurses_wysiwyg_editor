@@ -2,9 +2,17 @@
 //!
 //! This module provides a structured system for handling keyboard combinations
 //! (Ctrl, Alt, Shift modifiers) with proper state management and action dispatching.
+//!
+//! # Features:
+//! - **Combo key detection**: Handles Ctrl, Alt, Shift modifier combinations
+//! - **Context-aware**: Key bindings can be context-specific (edit mode, properties mode, etc.)
+//! - **Fallback handling**: Provides alternative bindings for terminals that don't capture certain combinations
+//! - **VSCode compatibility**: Handles limitations of VSCode embedded terminals
+//! - **Sequential key support**: Supports leader key patterns (e.g., space + key sequences)
 
 use crossterm::event::{KeyCode, KeyModifiers, KeyEvent};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
+use std::time::{Instant, Duration};
 
 /// Represents a keyboard combination (modifier + key)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -256,11 +264,102 @@ impl ComboContext {
     }
 }
 
+/// Terminal type for capability detection
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TerminalType {
+    /// Standard terminal with full key support
+    Standard,
+    /// VSCode embedded terminal (limited key support)
+    VSCode,
+    /// Windows Terminal
+    WindowsTerminal,
+    /// iTerm2 on macOS
+    ITerm2,
+    /// Other/Unknown terminal
+    Unknown,
+}
+
+impl TerminalType {
+    /// Detect the current terminal type
+    pub fn detect() -> Self {
+        let term = std::env::var("TERM").unwrap_or_default();
+        let vscode = std::env::var("VSCODE_INJECTION").is_ok();
+        
+        if vscode || term.contains("vscode") || term.contains("xterm-256color") && is_likely_vscode() {
+            TerminalType::VSCode
+        } else if term.contains("windows") || term.contains("wt") || term.contains("Windows Terminal") {
+            TerminalType::WindowsTerminal
+        } else if term.contains("iterm") || term.contains("iTerm") {
+            TerminalType::ITerm2
+        } else if term.is_empty() || term == "dumb" {
+            TerminalType::Unknown
+        } else {
+            TerminalType::Standard
+        }
+    }
+    
+    /// Check if this terminal has limitations
+    pub fn has_limitations(&self) -> bool {
+        matches!(self, TerminalType::VSCode | TerminalType::Unknown)
+    }
+    
+    /// Check if Alt combinations work reliably
+    pub fn supports_alt_combinations(&self) -> bool {
+        !matches!(self, TerminalType::VSCode)
+    }
+    
+    /// Check if Shift+modifier combinations work reliably
+    pub fn supports_shift_combinations(&self) -> bool {
+        !matches!(self, TerminalType::VSCode | TerminalType::Unknown)
+    }
+}
+
+/// Check if we're likely running in VSCode
+fn is_likely_vscode() -> bool {
+    // Check for VSCode-specific environment variables
+    std::env::var("VSCODE_PID").is_ok() ||
+    std::env::var("VSCODE_IPC_HOOK").is_ok() ||
+    std::env::var("VSCODE_CWD").is_ok()
+}
+
+/// Key sequence for leader key patterns (e.g., Space + key)
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct KeySequence {
+    pub keys: Vec<KeyCode>,
+    pub timeout: Duration,
+}
+
+impl KeySequence {
+    pub fn new(keys: Vec<KeyCode>, timeout: Duration) -> Self {
+        Self { keys, timeout }
+    }
+    
+    pub fn is_complete(&self, input_keys: &[KeyCode]) -> bool {
+        if input_keys.len() < self.keys.len() {
+            return false;
+        }
+        self.keys == input_keys[..self.keys.len()]
+    }
+    
+    pub fn matches_partial(&self, input_keys: &[KeyCode]) -> bool {
+        if input_keys.is_empty() {
+            return true;
+        }
+        input_keys.starts_with(&self.keys[..input_keys.len().min(self.keys.len())])
+    }
+}
+
 /// Combo key manager for handling key bindings
 #[derive(Debug, Default)]
 pub struct ComboKeyManager {
     bindings: HashMap<ComboKey, ComboKeyBinding>,
     context_stack: Vec<ComboContext>,
+    terminal_type: TerminalType,
+    fallback_bindings: HashMap<ComboAction, Vec<ComboKey>>,
+    leader_key: Option<KeyCode>,
+    pending_sequence: VecDeque<KeyCode>,
+    sequence_timeout: Duration,
+    last_key_time: Option<Instant>,
 }
 
 impl ComboKeyManager {
@@ -268,6 +367,12 @@ impl ComboKeyManager {
         Self {
             bindings: HashMap::new(),
             context_stack: Vec::new(),
+            terminal_type: TerminalType::detect(),
+            fallback_bindings: HashMap::new(),
+            leader_key: None,
+            pending_sequence: VecDeque::new(),
+            sequence_timeout: Duration::from_millis(1000), // 1 second timeout for sequences
+            last_key_time: None,
         }
     }
     
@@ -350,9 +455,172 @@ impl ComboKeyManager {
         lines
     }
     
+    /// Set the terminal type manually (for testing or override)
+    pub fn set_terminal_type(&mut self, terminal_type: TerminalType) {
+        self.terminal_type = terminal_type;
+    }
+    
+    /// Get the current terminal type
+    pub fn terminal_type(&self) -> TerminalType {
+        self.terminal_type.clone()
+    }
+    
+    /// Set the leader key for sequential commands
+    pub fn set_leader_key(&mut self, key_code: KeyCode) {
+        self.leader_key = Some(key_code);
+    }
+    
+    /// Set timeout for key sequences
+    pub fn set_sequence_timeout(&mut self, timeout: Duration) {
+        self.sequence_timeout = timeout;
+    }
+    
+    /// Register fallback bindings for an action (alternative key combos)
+    pub fn register_fallbacks(&mut self, action: ComboAction, fallback_keys: Vec<ComboKey>) {
+        self.fallback_bindings.entry(action).or_default().extend(fallback_keys);
+    }
+    
+    /// Reset any pending key sequences (call this on mode change)
+    pub fn reset_pending_sequences(&mut self) {
+        self.pending_sequence.clear();
+        self.last_key_time = None;
+    }
+    
+    /// Handle a key event with enhanced logic for sequences and fallbacks
+    pub fn handle_key(&mut self, event: &KeyEvent) -> Option<ComboAction> {
+        let now = Instant::now();
+        
+        // Check if we have a pending sequence that timed out
+        if let Some(last_time) = self.last_key_time {
+            if now.duration_since(last_time) > self.sequence_timeout {
+                self.pending_sequence.clear();
+            }
+        }
+        self.last_key_time = Some(now);
+        
+        // Check if this key starts or continues a sequence
+        if let Some(leader) = self.leader_key {
+            if event.code == leader && event.modifiers.is_empty() {
+                // Leader key pressed - start a new sequence
+                self.pending_sequence.clear();
+                self.pending_sequence.push_back(event.code);
+                return None; // Don't execute action yet, wait for next key
+            }
+            
+            if !self.pending_sequence.is_empty() {
+                // We're in a sequence - add this key
+                self.pending_sequence.push_back(event.code);
+                
+                // Check if this completes any sequence
+                // For now, we'll handle this in the main input loop
+                return None;
+            }
+        }
+        
+        // Try primary bindings first
+        if let Some(action) = self.try_handle_with_context(event) {
+            return Some(action);
+        }
+        
+        // Try fallback bindings for this terminal
+        if self.terminal_type.has_limitations() {
+            return self.try_fallback_bindings(event);
+        }
+        
+        None
+    }
+    
+    /// Handle key with context checking (original logic)
+    fn try_handle_with_context(&self, event: &KeyEvent) -> Option<ComboAction> {
+        for (combo_key, binding) in &self.bindings {
+            if combo_key.matches(event) && self.is_context_active(&binding.context) {
+                return Some(binding.action.clone());
+            }
+        }
+        None
+    }
+    
+    /// Try fallback bindings when primary doesn't match
+    fn try_fallback_bindings(&self, event: &KeyEvent) -> Option<ComboAction> {
+        // Check for terminal-specific fallbacks
+        match self.terminal_type {
+            TerminalType::VSCode => self.try_vscode_fallbacks(event),
+            TerminalType::WindowsTerminal => self.try_windows_fallbacks(event),
+            _ => None,
+        }
+    }
+    
+    /// VSCode-specific fallback bindings
+    fn try_vscode_fallbacks(&self, event: &KeyEvent) -> Option<ComboAction> {
+        // In VSCode, Alt combinations often don't work, so we use Ctrl+Alt or just Ctrl
+        match (event.modifiers, event.code) {
+            // VSCode: Ctrl+Alt+P instead of Ctrl+P for panel toggle
+            (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Char('p')) => {
+                self.find_action_for(ComboAction::TogglePanel)
+            }
+            // VSCode: Ctrl+Alt+Space instead of Ctrl+Space for preview
+            (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Char(' ')) => {
+                self.find_action_for(ComboAction::TogglePreview)
+            }
+            // VSCode: Ctrl+Alt+Arrows instead of Alt+Arrows for fast scroll
+            (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Up) => {
+                self.find_action_for(ComboAction::FastScrollUp)
+            }
+            (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Down) => {
+                self.find_action_for(ComboAction::FastScrollDown)
+            }
+            (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Left) => {
+                self.find_action_for(ComboAction::FastScrollLeft)
+            }
+            (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Right) => {
+                self.find_action_for(ComboAction::FastScrollRight)
+            }
+            _ => None,
+        }
+    }
+    
+    /// Windows Terminal-specific fallback bindings
+    fn try_windows_fallbacks(&self, event: &KeyEvent) -> Option<ComboAction> {
+        // Windows sometimes has different behavior for Alt combinations
+        match (event.modifiers, event.code) {
+            // Windows: Use Ctrl+Alt for some Alt-only combos
+            (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Char(c)) => {
+                // Try to find the corresponding Alt-only binding
+                let alt_event = KeyEvent {
+                    code: KeyCode::Char(c),
+                    modifiers: KeyModifiers::ALT,
+                    kind: event.kind,
+                    state: event.state,
+                };
+                self.try_handle_with_context(&alt_event)
+            }
+            _ => None,
+        }
+    }
+    
+    /// Find a binding for a specific action (used for fallbacks)
+    fn find_action_for(&self, action: ComboAction) -> Option<ComboAction> {
+        for binding in self.bindings.values() {
+            if binding.action == action && self.is_context_active(&binding.context) {
+                return Some(action);
+            }
+        }
+        None
+    }
+    
+    /// Get the current pending sequence
+    pub fn get_pending_sequence(&self) -> Vec<KeyCode> {
+        self.pending_sequence.iter().cloned().collect()
+    }
+    
+    /// Check if we're waiting for a sequence to complete
+    pub fn is_waiting_for_sequence(&self) -> bool {
+        !self.pending_sequence.is_empty()
+    }
+
     /// Get default bindings for the BMS editor
     pub fn default_bindings() -> Vec<ComboKeyBinding> {
-        vec![
+        let mut bindings = vec![
             // Panel switching
             ComboKeyBinding::new(
                 ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char('p')),
@@ -360,10 +628,11 @@ impl ComboKeyManager {
                 "Toggle Canvas/Sidebar",
                 ComboContext::Global,
             ),
+            // VSCode fallback for panel toggle
             ComboKeyBinding::new(
                 ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Char('p')),
                 ComboAction::TogglePanel,
-                "Toggle Canvas/Sidebar (alternate)",
+                "Toggle Canvas/Sidebar (VSCode)",
                 ComboContext::Global,
             ),
             
@@ -576,6 +845,119 @@ impl ComboKeyManager {
                 "Select Object",
                 ComboContext::SidebarPanel,
             ),
+            
+            // VSCode-specific fallbacks (these will be filtered by terminal type)
+            // Alt combinations often don't work in VSCode, so we provide Ctrl+Alt alternatives
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Up),
+                ComboAction::FastScrollUp,
+                "Fast Scroll Up (VSCode)",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Down),
+                ComboAction::FastScrollDown,
+                "Fast Scroll Down (VSCode)",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Left),
+                ComboAction::FastScrollLeft,
+                "Fast Scroll Left (VSCode)",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Right),
+                ComboAction::FastScrollRight,
+                "Fast Scroll Right (VSCode)",
+                ComboContext::EditMode,
+            ),
+            
+            // Leader key sequences (Space + key) - these are handled separately
+            // These are not ComboKey bindings but sequential key patterns
         ]
+    }
+    
+    /// Get leader key sequences for VSCode compatibility
+    pub fn default_leader_sequences() -> Vec<(KeyCode, Vec<(KeyCode, ComboAction)>)> {
+        vec![
+            // Space as leader key
+            (KeyCode::Char(' '), vec![
+                (KeyCode::Char('p'), ComboAction::TogglePanel),
+                (KeyCode::Char('s'), ComboAction::SaveMap),
+                (KeyCode::Char('o'), ComboAction::OpenMap),
+                (KeyCode::Char('n'), ComboAction::NewMap),
+                (KeyCode::Char('g'), ComboAction::GenerateCobol),
+                (KeyCode::Char('h'), ComboAction::ToggleHelp),
+                (KeyCode::Char('q'), ComboAction::ExitApplication),
+                (KeyCode::Char('c'), ComboAction::CopyField),
+                (KeyCode::Char('v'), ComboAction::PasteField),
+                (KeyCode::Char('z'), ComboAction::Undo),
+                (KeyCode::Char('y'), ComboAction::Redo),
+            ]),
+            
+            // Alternative leader key: Backslash
+            (KeyCode::Char('\\'), vec![
+                (KeyCode::Char('p'), ComboAction::TogglePreview),
+                (KeyCode::Char('e'), ComboAction::ShowFieldProperties),
+                (KeyCode::Char('d'), ComboAction::DeleteObject),
+            ]),
+        ]
+    }
+    
+    /// Handle leader key sequence
+    pub fn handle_leader_sequence(&mut self, key_code: KeyCode) -> Option<ComboAction> {
+        if !self.is_waiting_for_sequence() {
+            return None;
+        }
+        
+        let sequence = self.get_pending_sequence();
+        let mut all_keys = sequence.clone();
+        all_keys.push(key_code);
+        
+        // Check if this completes any known sequence
+        let leader_sequences = Self::default_leader_sequences();
+        
+        for (leader, mappings) in leader_sequences {
+            if !all_keys.is_empty() && all_keys[0] == leader {
+                // This sequence starts with our leader key
+                if all_keys.len() == 2 {
+                    // We have leader + one more key
+                    for (key, action) in mappings {
+                        if all_keys[1] == key {
+                            self.pending_sequence.clear();
+                            return Some(action);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If no sequence matched, clear and return None
+        self.pending_sequence.clear();
+        None
+    }
+    
+    /// Get all available actions for the current context
+    pub fn get_available_actions(&self) -> Vec<ComboAction> {
+        let mut actions = Vec::new();
+        
+        for binding in self.bindings.values() {
+            if self.is_context_active(&binding.context) && !actions.contains(&binding.action) {
+                actions.push(binding.action.clone());
+            }
+        }
+        
+        actions
+    }
+    
+    /// Check if a specific action is available in the current context
+    pub fn is_action_available(&self, action: &ComboAction) -> bool {
+        for binding in self.bindings.values() {
+            if binding.action == *action && self.is_context_active(&binding.context) {
+                return true;
+            }
+        }
+        false
     }
 }
