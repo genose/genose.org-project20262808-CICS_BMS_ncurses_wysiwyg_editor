@@ -823,16 +823,36 @@ OBJECTS_DEFINITIONS = {
         -- line N: reserved for border bottom + footer
         default = {
             FieldTextORNumeric = function(obj)
-                return render_bordered_field(obj)
+                if obj.field_border_style.edited ~= nil and obj.field_border_style.edited.style ~=
+                    OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
+                    return render_bordered_field(obj)
+                else
+                    return render_field(obj)
+                end
             end,
             Literal = function(obj)
-                return render_bordered_field(obj)
+                if obj.field_border_style.edited ~= nil and obj.field_border_style.edited.style ~=
+                    OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
+                    return render_bordered_field(obj)
+                else
+                    return render_field(obj)
+                end
             end,
             ProtectedLiteral = function(obj)
-                return render_bordered_field(obj)
+                if obj.field_border_style.edited ~= nil and obj.field_border_style.edited.style ~=
+                    OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
+                    return render_bordered_field(obj)
+                else
+                    return render_field(obj)
+                end
             end,
             BooleanField = function(obj)
-                return render_bordered_field(obj)
+                if obj.field_border_style.edited ~= nil and obj.field_border_style.edited.style ~=
+                    OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
+                    return render_bordered_field(obj)
+                else
+                    return render_field(obj)
+                end
             end,
             ImageAsciiArt = function(obj)
                 -- Display ASCII art from option_value.ascii_code
@@ -840,7 +860,11 @@ OBJECTS_DEFINITIONS = {
                 if ascii and type(ascii) == "table" then
                     return table.concat(ascii, "\n")
                 end
-                return render_bordered_field(obj, "[ImageAsciiArt]")
+                if ascii and type(ascii) == "string" then
+                    return ascii
+                else
+                    return render_bordered_field(obj, "[ImageAsciiArt(nil): No ASCII art available]")
+                end
             end,
             Line = function(obj)
                 return render_line(obj)
