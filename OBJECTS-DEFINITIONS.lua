@@ -278,7 +278,35 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
             pipe = "|",
             exclamation = "!",
             plus = "+",
-            question = "?"
+            question = "?",
+            tilde = "~",
+            hash = "#",
+            percent = "%",
+            ampersand = "&",
+            at = "@",
+            caret = "^",
+            dollar = "$",
+            semicolon = ";",
+            colon = ":",
+            comma = ",",
+            period = ".",
+            slash = "/",
+            backslash = "\\",
+            left_bracket = "[",
+            right_bracket = "]",
+            left_brace = "{",
+            right_brace = "}",
+            left_parenthesis = "(",
+            right_parenthesis = ")",
+            less_than = "<",
+            greater_than = ">",
+            equal_sign = "=",
+            double_quote = '"',
+            single_quote = "'",
+            required_marker = " *",
+            error_marker = " /!\\ ",
+            selected_marker = "[X]",
+            unselected_marker = "[ ]"
         },
         default = "space" -- Default fill character
     },
@@ -324,11 +352,6 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
         },
         default = "none" -- Default error marker configuration
     },
-    -- String constants for marker characters (extracted from enum for easy access)
-    required_marker_str = " *",
-    error_marker_str = " /!\\ ",
-    selected_marker = "[X]",
-    unselected_marker = "[ ]",
     -- Default fill character as a simple string
     default_fill_char = " ",
     border_char = {
