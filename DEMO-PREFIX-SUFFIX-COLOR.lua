@@ -33,8 +33,7 @@ print(field1:render_gui())
 local field2 = create_gui_object('Field', {
     label = "Password",
     field_initial = "********",
-    is_required = true,
-    title_suffix = " *",
+    title_suffix = OBJECTS_DEFINITIONS_DEFAULTS.required_marker_str,
     field_border_style = {
         initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
     },

@@ -267,7 +267,7 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
         },
         default = "none" -- Default border style
     },
-    fill_char = {
+    fill_marker = { -- used to fill and mark avoiding guplicate declation of a stupid copy constant !!!
         enum = {
             space = " ",
             dash = "─",
@@ -279,6 +279,8 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
             exclamation = "!",
             plus = "+",
             question = "?",
+            less_than = "<",
+            greater_than = ">",
             tilde = "~",
             hash = "#",
             percent = "%",
@@ -352,8 +354,6 @@ OBJECTS_DEFINITIONS_DEFAULTS = {
         },
         default = "none" -- Default error marker configuration
     },
-    -- Default fill character as a simple string
-    default_fill_char = " ",
     border_char = {
         enum = {
             single = {

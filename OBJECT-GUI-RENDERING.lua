@@ -150,6 +150,14 @@ local function get_gui_simple_value(obj, prop_name, default_value)
     end
 
     -- Check if this is a property definition table (from OBJECTS_DEFINITIONS.new)
+    -- But first check if it has explicit initial/edited values set by user
+    if prop.initial ~= nil then
+        return prop.initial
+    end
+    if prop.edited ~= nil then
+        return prop.edited
+    end
+    
     -- If gui_field_name exists, it's a property definition, not a value
     if prop.gui_field_name then
         -- Extract default value for this object's type
@@ -178,6 +186,7 @@ local function get_gui_simple_value(obj, prop_name, default_value)
                 return type_default
             end
         end
+        -- If we couldn't extract a value from the default table, fall back to default_value
         return default_value
     end
 
