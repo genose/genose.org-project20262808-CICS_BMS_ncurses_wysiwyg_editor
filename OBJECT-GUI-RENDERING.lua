@@ -8,72 +8,25 @@
 -- Description : Uses position = {row, col, rowend, colend} structure for screen placement
 -- Description : Supports complex GUI field types with labels, selections, and rendering properties
 -- ***********************************************************
-
 -- ===== DEPENDENCIES =====
 dofile('OBJECTS-DEFINITIONS.lua')
 
 -- ===== GUI FIELD TYPES =====
-OBJECTS_DEFINITIONS_GUI_TYPE = {
-    gui_field_type = {
-        enum = {
-            gui_text_field = "gui_text_field",
-            gui_literal_field = "gui_literal_field",
-            gui_protected_literal_field = "gui_protected_literal_field",
-            gui_boolean_field = "gui_boolean_field",
-            gui_image_field = "gui_image_field",
-            gui_line_field = "gui_line_field",
-            gui_fieldset_field = "gui_fieldset_field",
-            gui_list_textornum_with_label_field = "gui_list_textornum_with_label_field",
-            gui_select_with_label_string = "gui_select_with_label_string",
-            gui_select_with_label_numeric = "gui_select_with_label_numeric",
-            gui_select_field = "gui_select_field",
-            gui_list_field = "gui_list_field"
-        }
-    }
-}
+-- from OBJECTS-DEFINITIONS.lua, we have gui_field_type enum for rendering different field types
 
 -- ===== GUI RENDERING CONSTANTS =====
-local GUI_CONSTANTS = {
-    default_border_style = "single",
-    default_color = "default",
-    default_fill_char = " ",
-    label_separator = ": ",
-    selected_marker = "[X]",
-    unselected_marker = "[ ]",
-    required_marker = " *",
-    error_marker = " /!\\",
-    -- Default alignment values
-    default_text_align = "left",
-    default_vertical_align = "top",
-    default_title_align = "center",
-    -- Color ANSI codes for terminal display
-    color_codes = {
-        default = "\27[0m",
-        black = "\27[30m",
-        red = "\27[31m",
-        green = "\27[32m",
-        yellow = "\27[33m",
-        blue = "\27[34m",
-        magenta = "\27[35m",
-        cyan = "\27[36m",
-        white = "\27[37m",
-        bright_black = "\27[90m",
-        bright_red = "\27[91m",
-        bright_green = "\27[92m",
-        bright_yellow = "\27[93m",
-        bright_blue = "\27[94m",
-        bright_magenta = "\27[95m",
-        bright_cyan = "\27[96m",
-        bright_white = "\27[97m"
-    }
-}
+-- for reference, see OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type in OBJECTS-DEFINITIONS.lua
+-- use dynamic notation not constant, so all must came from OBJECTS_DEFINITIONS.field_*.enum and OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type or from the object itself from .default
+local OBJECTS_DEFINITIONS_DEFAULTS = nil; -- deprecated, use OBJECTS_DEFINITIONS and OBJECTS_DEFINITIONS_GUI_TYPE instead
 
 -- ===== HELPER FUNCTIONS =====
 
 -- Display width calculation that treats multi-byte UTF-8 box-drawing characters as width 1
 -- This is necessary because Lua's # operator counts bytes, not display width
 local function display_width(s)
-    if s == nil then return 0 end
+    if s == nil then
+        return 0
+    end
     local width = 0
     local i = 1
     while i <= #s do
@@ -83,11 +36,11 @@ local function display_width(s)
             -- Multi-byte character - count as 1 display width
             -- Determine how many bytes this character uses
             if byte >= 240 then
-                i = i + 4  -- 4-byte sequence
+                i = i + 4 -- 4-byte sequence
             elseif byte >= 224 then
-                i = i + 3  -- 3-byte sequence
+                i = i + 3 -- 3-byte sequence
             elseif byte >= 192 then
-                i = i + 2  -- 2-byte sequence
+                i = i + 2 -- 2-byte sequence
             end
             width = width + 1
         else
@@ -102,10 +55,16 @@ end
 -- Get the current value for a property (edited if set, otherwise initial)
 local function get_gui_property(obj, prop_name)
     local prop = obj[prop_name]
-    if not prop then return nil end
+    if not prop then
+        return nil
+    end
     if type(prop) == "table" then
-        if prop.edited ~= nil then return prop.edited end
-        if prop.initial ~= nil then return prop.initial end
+        if prop.edited ~= nil then
+            return prop.edited
+        end
+        if prop.initial ~= nil then
+            return prop.initial
+        end
     end
     return prop
 end
@@ -116,19 +75,21 @@ local function get_position(obj)
     if pos and type(pos) == "table" then
         return pos.initial or pos.edited or pos
     end
-    return {row = 0, col = 0, rowend = 0, colend = 0}
+    return obj.field_pos.default or OBJECTS_DEFINITIONS_DEFAULTS.field_pos.default
 end
 
 -- Helper: Recursively resolve property value through nested tables
 -- Handles structures like {initial = {initial = value}} or {style = "single"}
 local function resolve_property_value(prop)
-    if prop == nil then return nil end
-    
+    if prop == nil then
+        return nil
+    end
+
     -- If it's a simple value (number, string, boolean), return it
     if type(prop) ~= "table" then
         return prop
     end
-    
+
     -- If it's a table, try to find a value
     -- Priority 1: .initial
     if prop.initial ~= nil then
@@ -143,7 +104,7 @@ local function resolve_property_value(prop)
         return resolve_property_value(prop.marker)
     end
     -- Priority 4: known border styles
-    local style_priority = {"single", "double", "dashed", "none"}
+    local style_priority = obj.field_border_styles or {"none"}
     for _, style in ipairs(style_priority) do
         if prop[style] ~= nil then
             return resolve_property_value(prop[style])
@@ -172,7 +133,7 @@ local function resolve_property_value(prop)
             return v
         end
     end
-    
+
     return prop
 end
 
@@ -181,56 +142,62 @@ end
 -- For tables like {min=1, max=10, initial=5}, returns .initial
 local function get_gui_simple_value(obj, prop_name, default_value)
     local prop = obj[prop_name]
-    if prop == nil then return default_value end
-    
+    if prop == nil then
+        return default_value
+    end
+
     -- Recursively resolve the property value
     local resolved = resolve_property_value(prop)
-    
+
     if resolved == nil or resolved == prop then
         return default_value
     end
-    
+
     return resolved or default_value
 end
 
 -- Get text alignment (horizontal) for an object
 -- Returns: "left", "center", or "right"
 local function get_text_align(obj, default_align)
-    local align = get_gui_simple_value(obj, "field_text_align", default_align or GUI_CONSTANTS.default_text_align)
+    local align = get_gui_simple_value(obj, "field_text_align",
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_text_align.default)
     if align and (align == "left" or align == "center" or align == "right") then
         return align
     end
-    return default_align or GUI_CONSTANTS.default_text_align
+    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_text_align.default
 end
 
 -- Get vertical alignment for an object
 -- Returns: "top", "middle", or "bottom"
 local function get_vertical_align(obj, default_align)
-    local align = get_gui_simple_value(obj, "field_vertical_align", default_align or GUI_CONSTANTS.default_vertical_align)
-    if align and (align == "top" or align == "middle" or align == "bottom") then
+    local align = get_gui_simple_value(obj, "field_vertical_align",
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_vertical_align.default)
+    if align and (align in values(obj.enum.values)) then -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default)) 
         return align
     end
-    return default_align or GUI_CONSTANTS.default_vertical_align
+    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_vertical_align.default
 end
 
 -- Get title alignment for an object
 -- Returns: "left", "center", or "right"
 local function get_title_align(obj, default_align)
-    local align = get_gui_simple_value(obj, "field_title_align", default_align or GUI_CONSTANTS.default_title_align)
-    if align and (align == "left" or align == "center" or align == "right") then
+    local align = get_gui_simple_value(obj, "field_title_align",
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default) -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default))
+    if align and (align in values(obj.enum.values)) then
         return align
     end
-    return default_align or GUI_CONSTANTS.default_title_align
+    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_title_align.default
 end
 
 -- Get footer alignment for an object
 -- Returns: "left", "center", or "right"
 local function get_footer_align(obj, default_align)
-    local align = get_gui_simple_value(obj, "field_footer_align", default_align or "center")
-    if align and (align == "left" or align == "center" or align == "right") then
+    local align = get_gui_simple_value(obj, "field_footer_align",
+        default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default) -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default))
+    if align and (align in values(obj.enum.values)) then
         return align
     end
-    return default_align or "center"
+    return default_align or OBJECTS_DEFINITIONS_DEFAULTS.field_footer_align.default
 end
 
 -- Get color property and return ANSI code
@@ -239,44 +206,46 @@ local function get_color_code(obj, prop_name, default_color)
     local color_prop = obj[prop_name]
     -- If property doesn't exist, use default
     if not color_prop then
-        return GUI_CONSTANTS.color_codes[default_color or "default"] or GUI_CONSTANTS.color_codes.default
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[default_color or "default"] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default))
     end
-    
+
     -- Check if user has explicitly set a color (not from defaults)
     if color_prop.initial and type(color_prop.initial) == "string" then
-        return GUI_CONSTANTS.color_codes[color_prop.initial] or GUI_CONSTANTS.color_codes.default
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.initial] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
     end
     if color_prop.edited and type(color_prop.edited) == "string" then
-        return GUI_CONSTANTS.color_codes[color_prop.edited] or GUI_CONSTANTS.color_codes.default
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.edited] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
     end
-    
+
     -- Resolve the color value
     local color = resolve_property_value(color_prop)
-    
+
     -- If color is a string and valid, use it
-    if type(color) == "string" and GUI_CONSTANTS.color_codes[color] then
-        return GUI_CONSTANTS.color_codes[color]
+    if type(color) == "string" and OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color] then
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color]
     end
-    
+
     -- Handle case where color is a table (from field_text_color.default.Field)
     if type(color) == "table" then
         -- First check if 'default' key exists
         if color.default and type(color.default) == "string" then
-            return GUI_CONSTANTS.color_codes[color.default] or GUI_CONSTANTS.color_codes.default
+            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color.default] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
         end
         -- Check if any key is "default"
         if color["default"] and type(color["default"]) == "string" then
-            return GUI_CONSTANTS.color_codes[color["default"]] or GUI_CONSTANTS.color_codes.default
+            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color["default"]] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+        end
+            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color["default"]] or OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
         end
         -- Look for any valid color string
         for k, v in pairs(color) do
-            if type(v) == "string" and GUI_CONSTANTS.color_codes[v] then
-                return GUI_CONSTANTS.color_codes[v]
+            if type(v) == "string" and OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[v] then
+                return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[v]
             end
         end
     end
-    
-    return GUI_CONSTANTS.color_codes.default
+
+    return OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
 end
 
 -- Get title prefix (can be table with .initial)
@@ -314,9 +283,9 @@ local function get_fill_char(obj, default_char)
     local fill_prop = obj.field_fill_char
     -- If property doesn't exist, use default
     if not fill_prop then
-        return default_char or GUI_CONSTANTS.default_fill_char
+        return default_char or OBJECTS_DEFINITIONS_DEFAULTS.default_fill_char
     end
-    
+
     -- Check if user has explicitly set a fill_char (not from defaults)
     -- If fill_prop.initial is a simple string (not a table), use it
     if fill_prop.initial and type(fill_prop.initial) == "string" then
@@ -325,7 +294,7 @@ local function get_fill_char(obj, default_char)
     if fill_prop.edited and type(fill_prop.edited) == "string" then
         return fill_prop.edited
     end
-    
+
     -- If fill_prop.initial is the defaults table, look for space
     if fill_prop.initial and type(fill_prop.initial) == "table" then
         -- Try direct access first
@@ -343,15 +312,15 @@ local function get_fill_char(obj, default_char)
             end
         end
     end
-    
+
     -- Resolve the fill value as fallback
     local fill = resolve_property_value(fill_prop)
-    
+
     -- If fill is a string, return it
     if type(fill) == "string" then
         return fill
     end
-    
+
     -- Handle case where fill is a table
     if type(fill) == "table" then
         -- Try to get the space value
@@ -374,46 +343,46 @@ local function get_fill_char(obj, default_char)
             end
         end
     end
-    
-    return default_char or GUI_CONSTANTS.default_fill_char
+
+    return default_char or OBJECTS_DEFINITIONS_DEFAULTS.default_fill_char
 end
 
 -- Get text color for a field
 local function get_text_color(obj)
-    return get_color_code(obj, "field_text_color", "default")
+    return get_color_code(obj, "field_text_color")
 end
 
 -- Get title color for a field
 local function get_title_color(obj)
-    return get_color_code(obj, "field_title_color", "default")
+    return get_color_code(obj, "field_title_color")
 end
 
 -- Get border color for a field
 local function get_border_color(obj)
-    return get_color_code(obj, "field_border_color", "default")
+    return get_color_code(obj, "field_border_color")
 end
 
 -- Get footer color for a field
 local function get_footer_color(obj)
-    return get_color_code(obj, "field_footer_color", "default")
+    return get_color_code(obj, "field_footer_color")
 end
 
 -- Get required marker for a field
 local function get_required_marker(obj)
-    local marker = get_gui_simple_value(obj, "field_required_marker", GUI_CONSTANTS.required_marker)
+    local marker = get_gui_simple_value(obj, "field_required_marker", OBJECTS_DEFINITIONS_DEFAULTS.required_marker)
     if marker and type(marker) == "table" then
-        marker = resolve_property_value(marker) or GUI_CONSTANTS.required_marker
+        marker = resolve_property_value(marker) or OBJECTS_DEFINITIONS_DEFAULTS.required_marker
     end
-    return marker or GUI_CONSTANTS.required_marker
+    return marker or OBJECTS_DEFINITIONS_DEFAULTS.required_marker
 end
 
 -- Get error marker for a field
 local function get_error_marker(obj)
-    local marker = get_gui_simple_value(obj, "field_error_marker", GUI_CONSTANTS.error_marker)
+    local marker = get_gui_simple_value(obj, "field_error_marker", OBJECTS_DEFINITIONS_DEFAULTS.error_marker)
     if marker and type(marker) == "table" then
-        marker = resolve_property_value(marker) or GUI_CONSTANTS.error_marker
+        marker = resolve_property_value(marker) or OBJECTS_DEFINITIONS_DEFAULTS.error_marker
     end
-    return marker or GUI_CONSTANTS.error_marker
+    return marker or OBJECTS_DEFINITIONS_DEFAULTS.error_marker
 end
 
 -- Align text within a given width
@@ -432,14 +401,14 @@ local function align_text(text, width, align, fill_char)
         text = ""
     end
     text = tostring(text)
-    
+
     fill_char = fill_char or " "
-    
+
     local text_dw = display_width(text)
     if text_dw >= width then
         return text
     end
-    
+
     local padding = width - text_dw
     if align == "left" then
         return text .. string.rep(fill_char, padding)
@@ -458,7 +427,7 @@ end
 local function get_dimensions(obj)
     local height = get_gui_simple_value(obj, "field_height", 3)
     local width = get_gui_simple_value(obj, "field_width", 10)
-    
+
     return height, width
 end
 
@@ -467,7 +436,7 @@ local function get_border_chars(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "none")
     local obj_type = get_gui_simple_value(obj, "field_type", "Field")
     local chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default[obj_type]
-    
+
     if chars and chars[border_style] then
         return chars[border_style]
     end
@@ -481,9 +450,14 @@ local function get_border_chars(obj)
     end
     -- Ultimate fallback to ASCII
     return {
-        top_left = "+", top = "-", top_right = "+",
-        left = "|", right = "|",
-        bottom_left = "+", bottom = "-", bottom_right = "+"
+        top_left = "+",
+        top = "-",
+        top_right = "+",
+        left = "|",
+        right = "|",
+        bottom_left = "+",
+        bottom = "-",
+        bottom_right = "+"
     }
 end
 
@@ -496,32 +470,32 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local border_style = get_gui_simple_value(obj, "field_border_style", "none")
     local fill_char = get_fill_char(obj, " ")
     local value = get_gui_property(obj, "field_initial") or ""
-    if value and type(value) == "table" then value = value.initial_value or "" end
-    
+    if value and type(value) == "table" then
+        value = value.initial_value or ""
+    end
 
-    
     -- Get alignment properties
     local text_align = get_text_align(obj, "center")
     local vertical_align = get_vertical_align(obj, "top")
     local title_align = get_title_align(obj, "center")
     local footer_align = get_footer_align(obj, "center")
-    
+
     -- Get color properties
     local text_color = get_text_color(obj)
     local title_color = get_title_color(obj)
     local border_color = get_border_color(obj)
     local footer_color = get_footer_color(obj)
-    
+
     -- Get prefix and suffix for title
     local title_prefix = get_title_prefix(obj)
     local title_suffix = get_title_suffix(obj)
-    
+
     -- Get footer properties
     local footer_title = get_gui_property(obj, "field_footer_title") or ""
     local footer_fill_char = get_gui_simple_value(obj, "field_footer_fill_char", " ")
     local footer_required_marker = get_gui_property(obj, "field_footer_required_marker") or ""
     local footer_error_marker = get_gui_property(obj, "field_footer_error_marker") or ""
-    
+
     -- Calculate minimum width based on content
     local label = label_text or ""
     local required_marker = ""
@@ -534,41 +508,42 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local full_label = title_prefix .. label .. required_marker .. error_marker .. title_suffix
     local full_label_dw = display_width(full_label)
     local value_dw = display_width(value)
-    local min_width = math.max(full_label_dw + 2, value_dw + 2, width)  -- +2 for border characters
-    local actual_width = override_width or (border_style == "none" and math.max(full_label_dw, value_dw, width) or min_width)
-    
+    local min_width = math.max(full_label_dw + 2, value_dw + 2, width) -- +2 for border characters
+    local actual_width = override_width or
+                             (border_style == "none" and math.max(full_label_dw, value_dw, width) or min_width)
+
     -- If override_width is provided, strictly respect it (don't let label overflow)
     if override_width then
         actual_width = override_width
     end
-    
+
     local lines = {}
     local border_chars = get_border_chars(obj)
-    
+
     -- If there's a label, render it
     if label_text and label_text ~= "" then
         local label_color = has_error and "red" or (is_required and "yellow" or "default")
-        
+
         -- Top line: label + field border
         if border_style ~= "none" then
             local content_width = actual_width - 2
             local label_content = align_text(full_label, content_width, title_align)
             -- Apply title color
-            local colored_label = title_color .. label_content .. GUI_CONSTANTS.color_codes.default
+            local colored_label = title_color .. label_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_codes.default
             local top_line = border_chars.top_left .. colored_label .. border_chars.top_right
             table.insert(lines, top_line)
         else
             table.insert(lines, full_label)
         end
     end
-    
+
     -- Field content area
     if border_style == "none" then
         -- Apply text color
-        table.insert(lines, text_color .. (value or "") .. GUI_CONSTANTS.color_codes.default)
+        table.insert(lines, text_color .. (value or "") .. OBJECTS_DEFINITIONS_DEFAULTS.color_codes.default)
     else
         local content_height = height - (label_text and 1 or 0) - 1
-        
+
         -- Handle vertical alignment
         if vertical_align == "middle" then
             -- Add empty lines before content
@@ -582,15 +557,16 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
                 table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
             end
         end
-        
+
         -- Content line with text color and fill character
         local content = value or ""
         local content_dw = display_width(content)
         local inner_width = actual_width - 2
         local aligned_content = align_text(content, inner_width, text_align, fill_char)
         -- Apply text color to content
-        table.insert(lines, border_chars.left .. text_color .. aligned_content .. GUI_CONSTANTS.color_codes.default .. border_chars.right)
-        
+        table.insert(lines, border_chars.left .. text_color .. aligned_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_codes.default ..
+            border_chars.right)
+
         -- Handle vertical alignment - add remaining empty lines after content
         if vertical_align == "middle" then
             local empty_lines = content_height - 1 - math.floor((content_height - 1) / 2)
@@ -604,7 +580,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
             end
         end
     end
-    
+
     -- Footer line (if footer_title is set, replace bottom border with footer)
     if border_style ~= "none" then
         local footer_text = ""
@@ -615,11 +591,11 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         elseif footer_error_marker and footer_error_marker ~= "" then
             footer_text = resolve_property_value(footer_error_marker) or ""
         elseif is_required then
-            footer_text = GUI_CONSTANTS.required_marker
+            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.required_marker
         elseif has_error then
-            footer_text = GUI_CONSTANTS.error_marker
+            footer_text = OBJECTS_DEFINITIONS_DEFAULTS.error_marker
         end
-        
+
         if footer_text ~= "" then
             -- Ensure footer_text is a string
             footer_text = tostring(footer_text)
@@ -636,20 +612,22 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
                 else -- center
                     local left_pad = math.floor(padding_needed / 2)
                     local right_pad = padding_needed - left_pad
-                    footer_content = string.rep(footer_fill_char, left_pad) .. footer_text .. string.rep(footer_fill_char, right_pad)
+                    footer_content = string.rep(footer_fill_char, left_pad) .. footer_text ..
+                                         string.rep(footer_fill_char, right_pad)
                 end
             else
                 footer_content = footer_text
             end
             -- Apply footer color
-            local colored_footer = footer_color .. footer_content .. GUI_CONSTANTS.color_codes.default
+            local colored_footer = footer_color .. footer_content .. OBJECTS_DEFINITIONS_DEFAULTS.color_codes.default
             table.insert(lines, border_chars.bottom_left .. colored_footer .. border_chars.bottom_right)
         else
             -- Standard bottom border
-            table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) .. border_chars.bottom_right)
+            table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) ..
+                border_chars.bottom_right)
         end
     end
-    
+
     return table.concat(lines, "\n")
 end
 
@@ -659,44 +637,47 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
     local value = get_gui_property(obj, "field_initial") or false
-    
+
     -- Get alignment properties
     local text_align = get_text_align(obj, "left")
     local title_align = get_title_align(obj, "center")
-    
+
     local lines = {}
     local border_chars = get_border_chars(obj)
-    
+
     -- Calculate minimum width based on label and options
-    local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
     local label = (label_text or "") .. required_marker
     local max_option_len = 0
     for _, option in ipairs(options or {}) do
-        local option_text = " " .. GUI_CONSTANTS.selected_marker .. " " .. tostring(option)
+        local option_text = " " .. OBJECTS_DEFINITIONS_DEFAULTS.selected_marker .. " " .. tostring(option)
         max_option_len = math.max(max_option_len, display_width(option_text))
     end
     local min_width = math.max(display_width(label) + 4, max_option_len + 2, width)
-    local actual_width = override_width or (border_style == "none" and math.max(display_width(label) + 2, max_option_len, width) or min_width)
-    
+    local actual_width = override_width or
+                             (border_style == "none" and math.max(display_width(label) + 2, max_option_len, width) or
+                                 min_width)
+
     -- If override_width is provided, strictly respect it
     if override_width then
         actual_width = override_width
     end
-    
+
     -- Top line with label
     if label_text and label_text ~= "" then
         local label_dw = display_width(label)
-        local content_width = actual_width - 4  -- -4 for " " + " " + 2 border chars
+        local content_width = actual_width - 4 -- -4 for " " + " " + 2 border chars
         local label_content = align_text(label, content_width, title_align)
         local label_line = border_chars.top_left .. " " .. label_content .. " " .. border_chars.top_right
         table.insert(lines, label_line)
     else
-        table.insert(lines, border_chars.top_left .. string.rep(border_chars.top, actual_width - 2) .. border_chars.top_right)
+        table.insert(lines,
+            border_chars.top_left .. string.rep(border_chars.top, actual_width - 2) .. border_chars.top_right)
     end
-    
+
     -- Options area
     for i, option in ipairs(options or {}) do
-        local marker = (i == selected_index) and GUI_CONSTANTS.selected_marker or GUI_CONSTANTS.unselected_marker
+        local marker = (i == selected_index) and OBJECTS_DEFINITIONS_DEFAULTS.selected_marker or OBJECTS_DEFINITIONS_DEFAULTS.unselected_marker
         local option_text = " " .. marker .. " " .. tostring(option)
         local option_dw = display_width(option_text)
         -- Truncate if too long
@@ -708,7 +689,7 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
         local content = align_text(option_text, inner_width, text_align)
         table.insert(lines, border_chars.left .. content .. border_chars.right)
     end
-    
+
     -- Bottom border
     local line_count = #lines
     if height > line_count then
@@ -716,8 +697,9 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
             table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
         end
     end
-    table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) .. border_chars.bottom_right)
-    
+    table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) ..
+        border_chars.bottom_right)
+
     return table.concat(lines, "\n")
 end
 
@@ -727,28 +709,30 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
     local border_chars = get_border_chars(obj)
-    
+
     -- Get alignment properties
     local text_align = get_text_align(obj, "left")
     local title_align = get_title_align(obj, "center")
-    
+
     local lines = {}
-    local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
     local label = (label_text or "") .. required_marker
-    
+
     -- Calculate minimum width based on label and items
     local max_item_len = 0
     for _, item in ipairs(items or {}) do
-        max_item_len = math.max(max_item_len, display_width("  " .. tostring(item)))  -- +2 for "  " prefix
+        max_item_len = math.max(max_item_len, display_width("  " .. tostring(item))) -- +2 for "  " prefix
     end
     local min_width = math.max(display_width(label) + 4, max_item_len + 2, width)
-    local actual_width = override_width or (border_style == "none" and math.max(display_width(label) + 2, max_item_len, width) or min_width)
-    
+    local actual_width = override_width or
+                             (border_style == "none" and math.max(display_width(label) + 2, max_item_len, width) or
+                                 min_width)
+
     -- If override_width is provided, strictly respect it
     if override_width then
         actual_width = override_width
     end
-    
+
     -- Top border with label
     if border_style ~= "none" then
         local label_dw = display_width(label)
@@ -759,7 +743,7 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     else
         table.insert(lines, label)
     end
-    
+
     -- List items
     for i, item in ipairs(items or {}) do
         local item_text = "  " .. tostring(item)
@@ -776,12 +760,13 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
             table.insert(lines, content)
         end
     end
-    
+
     -- Bottom border
     if border_style ~= "none" then
-        table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) .. border_chars.bottom_right)
+        table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) ..
+            border_chars.bottom_right)
     end
-    
+
     return table.concat(lines, "\n")
 end
 
@@ -790,36 +775,39 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
     local value = get_gui_property(obj, "field_initial") or ""
-    if value and type(value) == "table" then value = value.initial_value or "" end
-    
+    if value and type(value) == "table" then
+        value = value.initial_value or ""
+    end
+
     -- Get alignment properties
     local text_align = get_text_align(obj, "left")
     local vertical_align = get_vertical_align(obj, "top")
     local title_align = get_title_align(obj, "center")
-    
+
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
     local border_chars = get_border_chars(obj)
-    local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
     local label = (label_text or "") .. required_marker
-    
+
     -- Calculate minimum width based on content
     local label_dw = display_width(label)
     local value_dw = display_width(value)
-    local min_width = math.max(label_dw + 4, value_dw + 2, width)  -- +4 for " " + " " padding, +2 for borders
-    local actual_width = override_width or (border_style == "none" and math.max(label_dw + 2, value_dw, width) or min_width)
-    
+    local min_width = math.max(label_dw + 4, value_dw + 2, width) -- +4 for " " + " " padding, +2 for borders
+    local actual_width = override_width or
+                             (border_style == "none" and math.max(label_dw + 2, value_dw, width) or min_width)
+
     -- If override_width is provided, strictly respect it
     if override_width then
         actual_width = override_width
     end
-    
+
     -- Ensure actual_width is at least wide enough for the label
     if border_style ~= "none" then
         actual_width = math.max(actual_width, label_dw + 4)
     end
-    
+
     local lines = {}
-    
+
     -- Top border with label
     if border_style ~= "none" then
         local content_width = actual_width - 4
@@ -830,12 +818,12 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
         table.insert(lines, label .. ": " .. value)
         return table.concat(lines, "\n")
     end
-    
+
     -- Value line with horizontal alignment
-    local content_height = height - 1  -- -1 for the label line
+    local content_height = height - 1 -- -1 for the label line
     local inner_width = actual_width - 2
     local value_content = align_text(value, inner_width, text_align)
-    
+
     -- Handle vertical alignment
     if vertical_align == "middle" then
         local empty_lines_before = math.floor((content_height - 1) / 2)
@@ -858,10 +846,11 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
             table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
         end
     end
-    
+
     -- Bottom border
-    table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) .. border_chars.bottom_right)
-    
+    table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) ..
+        border_chars.bottom_right)
+
     return table.concat(lines, "\n")
 end
 
@@ -871,30 +860,30 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "double")
     local border_chars = get_border_chars(obj)
-    
+
     -- Get alignment properties
     local title_align = get_title_align(obj, "center")
     local text_align = get_text_align(obj, "left")
-    
+
     local lines = {}
-    local required_marker = is_required and GUI_CONSTANTS.required_marker or ""
+    local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
     local title_text = (title or obj.field_name.initial or "Fieldset") .. required_marker
-    
+
     -- Calculate minimum width based on title
     local title_dw = display_width(title_text)
-    local min_width = math.max(title_dw + 4, width)  -- +4 for spaces and border corners
+    local min_width = math.max(title_dw + 4, width) -- +4 for spaces and border corners
     local actual_width = override_width or (border_style == "none" and math.max(title_dw, width) or min_width)
-    
+
     -- Top border with title (using title_align)
     if border_style ~= "none" then
-        local content_width = actual_width - 4  -- -4 for spaces and border corners
+        local content_width = actual_width - 4 -- -4 for spaces and border corners
         local title_content = align_text(title_text, content_width, title_align)
         local top_line = border_chars.top_left .. " " .. title_content .. " " .. border_chars.top_right
         table.insert(lines, top_line)
     else
         table.insert(lines, title_text)
     end
-    
+
     -- Render children
     if children and #children > 0 then
         -- Calculate max child width for consistent alignment
@@ -902,16 +891,18 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
         for _, child in ipairs(children) do
             local child_label = child.label or get_gui_property(child, "field_name") or ""
             local child_required = child.is_required or false
-            local child_req_marker = child_required and GUI_CONSTANTS.required_marker or ""
+            local child_req_marker = child_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
             local child_full_label = child_label .. child_req_marker
             local child_value = get_gui_property(child, "field_initial") or ""
-            if child_value and type(child_value) == "table" then child_value = child_value.initial_value or "" end
+            if child_value and type(child_value) == "table" then
+                child_value = child_value.initial_value or ""
+            end
             local child_width = math.max(display_width(child_full_label) + 4, display_width(child_value) + 2)
             max_child_width = math.max(max_child_width, child_width)
         end
         -- Ensure minimum width for readability
         max_child_width = math.max(max_child_width, 20)
-        
+
         -- If children need more space than available, expand the fieldset (but only if no override_width)
         -- If override_width is set (e.g., from a form), respect it
         if override_width then
@@ -924,9 +915,11 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
             end
             max_child_width = math.min(max_child_width, actual_width - 6)
         end
-        
+
         for _, child in ipairs(children) do
-            local child_render = render_gui_object(child, {width = max_child_width})
+            local child_render = render_gui_object(child, {
+                width = max_child_width
+            })
             for line in child_render:gmatch("[^\n]+") do
                 local line_dw = display_width(line)
                 local inner_width = actual_width - 4
@@ -940,12 +933,13 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
             table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
         end
     end
-    
+
     -- Bottom border
     if border_style ~= "none" then
-        table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) .. border_chars.bottom_right)
+        table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) ..
+            border_chars.bottom_right)
     end
-    
+
     return table.concat(lines, "\n")
 end
 
@@ -956,15 +950,15 @@ function render_gui_object(obj, custom_options)
     if not obj or not obj.field_type then
         return "[Invalid GUI Object]"
     end
-    
+
     local obj_type = get_gui_property(obj, "field_type") or "Field"
     -- Try obj.gui_field_type first (set by create_gui_object), then custom_options
     local gui_type = obj.gui_field_type or (custom_options and custom_options.gui_field_type)
     local label = custom_options and custom_options.label
     local is_required = obj.is_required or (custom_options and custom_options.is_required) or false
     local has_error = obj.has_error or (custom_options and custom_options.has_error) or false
-    local override_width = custom_options and custom_options.width  -- Optional width override
-    
+    local override_width = custom_options and custom_options.width -- Optional width override
+
     -- Determine GUI field type from object or custom options
     if not gui_type then
         -- Map OBJECTS_DEFINITIONS type to GUI type
@@ -979,13 +973,13 @@ function render_gui_object(obj, custom_options)
         }
         gui_type = type_map[obj_type] or "gui_text_field"
     end
-    
+
     -- Get default label if not provided
     if not label then
         -- Try obj.label first (set by create_gui_object), then field_name, then obj_type
         label = obj.label or get_gui_property(obj, "field_name") or obj_type
     end
-    
+
     -- Render based on GUI type, passing override_width if provided
     if gui_type == "gui_list_textornum_with_label_field" then
         return render_gui_textornum_with_label_field(obj, label, is_required, has_error, override_width)
@@ -1019,7 +1013,7 @@ end
 -- Create a GUI object with position and rendering properties
 function create_gui_object(obj_type, options)
     local obj = OBJECTS_DEFINITIONS.new(obj_type, options)
-    
+
     -- Add GUI-specific properties
     obj.gui_field_type = options and options.gui_field_type or "gui_text_field"
     obj.label = options and options.label or ""
@@ -1028,13 +1022,13 @@ function create_gui_object(obj_type, options)
     obj.options = options and options.options or {}
     obj.selected_index = options and options.selected_index or 1
     obj.children = options and options.children or {}
-    
+
     -- Add alignment properties
     obj.text_align = options and options.text_align or nil
     obj.vertical_align = options and options.vertical_align or nil
     obj.title_align = options and options.title_align or nil
     obj.footer_align = options and options.footer_align or nil
-    
+
     -- Set position if provided
     if options and options.position then
         obj.field_pos = {
@@ -1042,59 +1036,98 @@ function create_gui_object(obj_type, options)
             edited = nil
         }
     end
-    
+
     -- Set alignment properties if provided (maps to field_text_align, field_vertical_align, field_title_align, field_footer_align)
     if options then
         if options.text_align then
-            obj.field_text_align = {initial = options.text_align, edited = nil}
+            obj.field_text_align = {
+                initial = options.text_align,
+                edited = nil
+            }
         end
         if options.vertical_align then
-            obj.field_vertical_align = {initial = options.vertical_align, edited = nil}
+            obj.field_vertical_align = {
+                initial = options.vertical_align,
+                edited = nil
+            }
         end
         if options.title_align then
-            obj.field_title_align = {initial = options.title_align, edited = nil}
+            obj.field_title_align = {
+                initial = options.title_align,
+                edited = nil
+            }
         end
         if options.footer_align then
-            obj.field_footer_align = {initial = options.footer_align, edited = nil}
+            obj.field_footer_align = {
+                initial = options.footer_align,
+                edited = nil
+            }
         end
         -- Footer properties
         if options.footer_title then
-            obj.field_footer_title = {initial = options.footer_title, edited = nil}
+            obj.field_footer_title = {
+                initial = options.footer_title,
+                edited = nil
+            }
         end
         if options.footer_fill_char then
-            obj.field_footer_fill_char = {initial = options.footer_fill_char, edited = nil}
+            obj.field_footer_fill_char = {
+                initial = options.footer_fill_char,
+                edited = nil
+            }
         end
         -- Color properties
         if options.text_color then
-            obj.field_text_color = {initial = options.text_color, edited = nil}
+            obj.field_text_color = {
+                initial = options.text_color,
+                edited = nil
+            }
         end
         if options.title_color then
-            obj.field_title_color = {initial = options.title_color, edited = nil}
+            obj.field_title_color = {
+                initial = options.title_color,
+                edited = nil
+            }
         end
         if options.border_color then
-            obj.field_border_color = {initial = options.border_color, edited = nil}
+            obj.field_border_color = {
+                initial = options.border_color,
+                edited = nil
+            }
         end
         if options.footer_color then
-            obj.field_footer_color = {initial = options.footer_color, edited = nil}
+            obj.field_footer_color = {
+                initial = options.footer_color,
+                edited = nil
+            }
         end
         -- Prefix and suffix for title
         if options.title_prefix then
-            obj.field_title_prefix = {initial = options.title_prefix, edited = nil}
+            obj.field_title_prefix = {
+                initial = options.title_prefix,
+                edited = nil
+            }
         end
         if options.title_suffix then
-            obj.field_title_suffix = {initial = options.title_suffix, edited = nil}
+            obj.field_title_suffix = {
+                initial = options.title_suffix,
+                edited = nil
+            }
         end
         -- Fill character
         if options.fill_char then
-            obj.field_fill_char = {initial = options.fill_char, edited = nil}
+            obj.field_fill_char = {
+                initial = options.fill_char,
+                edited = nil
+            }
         end
     end
-    
+
     -- Add render method
     obj.render_gui = function()
         return render_gui_object(obj, options)
     end
-    
+
     return obj
 end
 
@@ -1108,51 +1141,61 @@ function create_gui_form(fields, options)
         height = options.height or 24,
         border_style = options.border_style or "double"
     }
-    
+
     form.render = function()
         local lines = {}
-        local border_chars = get_border_chars({field_border_style = {initial = {style = form.border_style}}})
-        
+        local border_chars = get_border_chars({
+            field_border_style = {
+                initial = {
+                    style = form.border_style
+                }
+            }
+        })
+
         -- Top border with title
         local title_dw = display_width(form.title)
         local padding = form.width - title_dw - 4
         local left_pad = math.floor(padding / 2)
         local right_pad = padding - left_pad
-        table.insert(lines, border_chars.top_left .. 
-                   string.rep(" ", left_pad) .. " " .. form.title .. " " .. 
-                   string.rep(" ", right_pad) .. border_chars.top_right)
-        
+        table.insert(lines,
+            border_chars.top_left .. string.rep(" ", left_pad) .. " " .. form.title .. " " .. string.rep(" ", right_pad) ..
+                border_chars.top_right)
+
         -- Calculate maximum field width for consistent alignment
-        local max_field_width = 20  -- Start with minimum readable width
+        local max_field_width = 20 -- Start with minimum readable width
         for _, field in ipairs(form.fields) do
             local label = field.label or get_gui_property(field, "field_name") or ""
-            local required_marker = field.is_required and GUI_CONSTANTS.required_marker or ""
+            local required_marker = field.is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
             local full_label = label .. required_marker
             local value = get_gui_property(field, "field_initial") or ""
-            if value and type(value) == "table" then value = value.initial_value or "" end
-            
+            if value and type(value) == "table" then
+                value = value.initial_value or ""
+            end
+
             -- For fieldset children, calculate their widths too
             local field_width = math.max(display_width(full_label) + 4, display_width(value) + 2)
             if field.gui_field_type == "gui_fieldset_field" and field.children then
                 for _, child in ipairs(field.children) do
                     local child_label = child.label or get_gui_property(child, "field_name") or ""
-                    local child_required = child.is_required and GUI_CONSTANTS.required_marker or ""
+                    local child_required = child.is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
                     local child_full_label = child_label .. child_required
                     local child_value = get_gui_property(child, "field_initial") or ""
-                    if child_value and type(child_value) == "table" then child_value = child_value.initial_value or "" end
+                    if child_value and type(child_value) == "table" then
+                        child_value = child_value.initial_value or ""
+                    end
                     local child_width = math.max(display_width(child_full_label) + 4, display_width(child_value) + 2)
-                    field_width = math.max(field_width, child_width + 6)  -- Add fieldset border padding
+                    field_width = math.max(field_width, child_width + 6) -- Add fieldset border padding
                 end
             end
-            
+
             -- For select fields, consider option lengths
             if field.options and #field.options > 0 then
                 for _, opt in ipairs(field.options) do
-                    local opt_text = " " .. GUI_CONSTANTS.selected_marker .. " " .. tostring(opt)
+                    local opt_text = " " .. OBJECTS_DEFINITIONS_DEFAULTS.selected_marker .. " " .. tostring(opt)
                     field_width = math.max(field_width, display_width(opt_text) + 2)
                 end
             end
-            
+
             -- For list fields, consider item lengths
             if field.items and #field.items > 0 then
                 for _, item in ipairs(field.items) do
@@ -1160,57 +1203,62 @@ function create_gui_form(fields, options)
                     field_width = math.max(field_width, display_width(item_text) + 2)
                 end
             end
-            
+
             max_field_width = math.max(max_field_width, field_width)
         end
         -- Ensure max_field_width doesn't exceed form width minus margins
         max_field_width = math.min(max_field_width, form.width - 8)
         -- Ensure minimum width of 20 for readability
         max_field_width = math.max(max_field_width, 20)
-        
+
         -- Render each field
-        local current_line = 2  -- Start after the title line (line 1 is title, line 2 is first field)
+        local current_line = 2 -- Start after the title line (line 1 is title, line 2 is first field)
         for _, field in ipairs(form.fields) do
             local pos = get_position(field)
             local height = get_gui_simple_value(field, "field_height", 3)
             local field_render_lines = {}
-            
+
             -- Render the field with consistent width
-            local field_render = render_gui_object(field, {width = max_field_width})
+            local field_render = render_gui_object(field, {
+                width = max_field_width
+            })
             for line in field_render:gmatch("[^\n]+") do
                 table.insert(field_render_lines, line)
             end
-            
+
             -- Target row from position or current line
             local target_row = pos.row or current_line
-            
+
             -- Add empty lines to reach the target row
             while #lines + 1 < target_row do
                 table.insert(lines, border_chars.left .. string.rep(" ", form.width - 2) .. border_chars.right)
             end
-            
+
             -- Insert field render lines
             for _, line in ipairs(field_render_lines) do
                 local line_dw = display_width(line)
-                local padded_line = border_chars.left .. " " .. line .. string.rep(" ", form.width - line_dw - 4) .. " " .. border_chars.right
+                local padded_line =
+                    border_chars.left .. " " .. line .. string.rep(" ", form.width - line_dw - 4) .. " " ..
+                        border_chars.right
                 table.insert(lines, padded_line)
             end
-            
+
             -- Update current line position
             current_line = #lines + 1
         end
-        
+
         -- Fill remaining space
         while #lines < form.height - 1 do
             table.insert(lines, border_chars.left .. string.rep(" ", form.width - 2) .. border_chars.right)
         end
-        
+
         -- Bottom border
-        table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, form.width - 2) .. border_chars.bottom_right)
-        
+        table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, form.width - 2) ..
+            border_chars.bottom_right)
+
         return table.concat(lines, "\n")
     end
-    
+
     return form
 end
 
