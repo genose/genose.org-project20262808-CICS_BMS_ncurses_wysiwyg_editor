@@ -32,6 +32,7 @@ OBJECTS_DEFINITIONS_GUI_TYPE =
 OBJECTS_DEFINITIONS = {
     field_name = { -- Name of the object
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field,
+        gui_field_name = "Field Name",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -58,6 +59,7 @@ OBJECTS_DEFINITIONS = {
 
     field_type = { -- Type of the field, can be Field, Literal, ProtectedLiteral, BooleanField, Image, Line, Fieldset
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Type",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -137,6 +139,7 @@ OBJECTS_DEFINITIONS = {
     ----- ===== DIMENSIONS DU CHAMP =====
     field_height = { -- Height of the field, can be any positive integer
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field,
+        gui_field_name = "Field Height",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -213,6 +216,7 @@ OBJECTS_DEFINITIONS = {
 
     field_border_color = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Border Color",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -233,6 +237,7 @@ OBJECTS_DEFINITIONS = {
 
     field_title_color = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Title Color",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -253,6 +258,7 @@ OBJECTS_DEFINITIONS = {
 
     field_text_color = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Text Color",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -272,6 +278,7 @@ OBJECTS_DEFINITIONS = {
     },
     field_avail_footer_color = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Avail Footer Color",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -292,6 +299,7 @@ OBJECTS_DEFINITIONS = {
     field_footer_color = {
 
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Footer Color",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -384,6 +392,7 @@ OBJECTS_DEFINITIONS = {
     -- Adapted per field type considering user visual experience (UX)
     field_style = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Style",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -429,6 +438,7 @@ OBJECTS_DEFINITIONS = {
     -- field_text_align represents the text alignment for each field type, which can be left, center, or right
     field_text_align = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Text Align",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -456,6 +466,7 @@ OBJECTS_DEFINITIONS = {
     },
     field_pos = { -- Represents the position of the field in the BMS screen (row, col)
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_text_with_label_field,
+        gui_field_name = "Field Pos",
         collapsed = false,
         collapsable = true,
         default = nil, -- Default position for each field type
@@ -483,6 +494,7 @@ OBJECTS_DEFINITIONS = {
 
     field_border_style = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Border Style",
         collapsed = false,
         collapsable = true,
         default = nil, -- Default border style for each field type
@@ -513,6 +525,7 @@ OBJECTS_DEFINITIONS = {
     -- Caractère de remplissage pour les champs vides (ex: "_" pour Field)
     field_fill_char = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Fill Char",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -541,6 +554,7 @@ OBJECTS_DEFINITIONS = {
     -- ===== ALIGNEMENT VERTICAL =====
     field_vertical_align = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Vertical Align",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -555,6 +569,7 @@ OBJECTS_DEFINITIONS = {
 
     field_vertical_margin = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Vertical Margin",
         collapsed = false,
         collapsable = true,
         enum = {
@@ -587,6 +602,7 @@ OBJECTS_DEFINITIONS = {
     -- represents the required marker for each field type, which can be used to indicate that a field is required. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
     field_required_marker = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Required Marker",
         collapsed = false,
         collapsable = true,
         default = nil,
@@ -595,6 +611,7 @@ OBJECTS_DEFINITIONS = {
     },
     field_footer_required_marker = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Footer Required Marker",
         collapsed = false,
         collapsable = true,
         default = nil,
@@ -603,6 +620,7 @@ OBJECTS_DEFINITIONS = {
     },
     field_footer_error_marker = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Footer Error Marker",
         collapsed = false,
         collapsable = true,
         default = nil,
@@ -628,6 +646,7 @@ OBJECTS_DEFINITIONS = {
     -- represents the error marker for each field type, which can be used to indicate that a field is in an error state. The marker can be a string or a boolean value, and can be enabled or disabled for each field type.
     field_error_marker = {
         gui_field_type = OBJECTS_DEFINITIONS_GUI_TYPE.gui_field_type.gui_select_with_label_string,
+        gui_field_name = "Field Error Marker",
         collapsed = false,
         collapsable = true,
         default = nil,
