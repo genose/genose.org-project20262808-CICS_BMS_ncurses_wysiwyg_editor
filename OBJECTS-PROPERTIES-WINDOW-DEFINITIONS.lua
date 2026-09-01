@@ -342,11 +342,12 @@ function render_properties_window(obj, options)
     local lines = {}
     
     -- Render main fieldset header using GUI rendering
-    local main_fieldset = create_gui_object("Fieldset", {
+    local main_fieldset = {
+        field_type = {initial = "Fieldset"},
         field_name = {initial = title},
         field_width = {initial = width},
         field_border_style = {initial = "double"}
-    })
+    }
     
     -- Get the header from the fieldset rendering
     local main_render = render_gui_fieldset(main_fieldset, {}, title, false, false, width)
@@ -375,47 +376,50 @@ function render_properties_window(obj, options)
             end
             
             if cat_is_collapsed then
-                -- Render collapsed category fieldset with marker
-                local collapsed_fieldset = create_gui_object("Fieldset", {
+                -- Render collapsed category fieldset with marker and hidden message as child
+                local collapsed_fieldset = {
+                    field_type = {initial = "Fieldset"},
                     field_name = {initial = cat_title},
                     field_width = {initial = width},
                     field_border_style = {initial = "single"},
                     field_height = {initial = 3}
-                })
-                local collapsed_render = render_gui_fieldset(collapsed_fieldset, {}, cat_title, false, false, width)
+                }
+                local hidden_count = #categorized[cat_name]
+                local hidden_line = string.format("[%d properties hidden]", hidden_count)
+                
+                -- Create a Literal child to display the hidden message
+                local hidden_msg_child = {
+                    field_type = {initial = "Literal"},
+                    field_name = {initial = hidden_line},
+                    field_width = {initial = width - 4},
+                    field_initial = {initial_value = hidden_line}
+                }
+                
+                local collapsed_render = render_gui_fieldset(collapsed_fieldset, {hidden_msg_child}, cat_title, false, false, width)
                 for line in collapsed_render:gmatch("[^\n]+") do
                     table.insert(lines, line)
                 end
-                -- Add hidden properties count
-                local hidden_count = #categorized[cat_name]
-                local hidden_line = string.format("  [%d properties hidden]", hidden_count)
-                -- Pad to fit within borders
-                local border_left = "║"
-                local border_right = "║"
-                local padding = width - #hidden_line - 2
-                table.insert(lines, border_left .. string.rep(" ", padding) .. hidden_line .. border_right)
-                -- Add bottom border
-                table.insert(lines, "╚" .. string.rep("═", width - 2) .. "╝")
             else
                 -- Render category fieldset with properties
-                local cat_fieldset = create_gui_object("Fieldset", {
+                local cat_fieldset = {
+                    field_type = {initial = "Fieldset"},
                     field_name = {initial = cat_title},
                     field_width = {initial = width},
                     field_border_style = {initial = "single"}
-                })
+                }
                 
                 -- Create children for this category
                 local cat_children = {}
                 for _, prop_info in ipairs(categorized[cat_name]) do
                     local prop_gui_type = map_gui_field_type_to_gui_type(prop_info.gui_type)
-                    local prop_obj = create_gui_object("Field", {
-                        field_name = {initial = prop_info.display_name},
+                    local prop_obj = {
                         field_type = {initial = "Field"},
+                        field_name = {initial = prop_info.display_name},
                         field_width = {initial = width - 4},
                         gui_field_type = prop_gui_type,
                         label = prop_info.display_name,
                         field_initial = {initial_value = prop_info.value}
-                    })
+                    }
                     table.insert(cat_children, prop_obj)
                 end
                 
@@ -430,12 +434,13 @@ function render_properties_window(obj, options)
 
     if not has_categories then
         -- If no categories, add empty fieldset
-        local empty_fieldset = create_gui_object("Fieldset", {
+        local empty_fieldset = {
+            field_type = {initial = "Fieldset"},
             field_name = {initial = title},
             field_width = {initial = width},
             field_border_style = {initial = "double"},
             field_height = {initial = 5}
-        })
+        }
         local empty_render = render_gui_fieldset(empty_fieldset, {}, title, false, false, width)
         for line in empty_render:gmatch("[^\n]+") do
             table.insert(lines, line)
@@ -446,18 +451,9 @@ function render_properties_window(obj, options)
 end
 
 -- Helper to map gui_field_type from OBJECTS_DEFINITIONS to gui_field_type for rendering
+-- For now, all properties are rendered as text fields for simplicity
 function map_gui_field_type_to_gui_type(gui_type_str)
-    if not gui_type_str then return "gui_text_field" end
-    
-    -- Map the OBJECTS_DEFINITIONS gui_field_type to OBJECT-GUI-RENDERING gui_field_type
-    local type_map = {
-        ["gui_text_with_label_field"] = "gui_text_field",
-        ["gui_select_with_label_string"] = "gui_select_field",
-        ["gui_select_with_label_numeric"] = "gui_select_field",
-        ["gui_checkbox_with_label_field"] = "gui_boolean_field",
-        ["gui_list_textornum_with_label_field"] = "gui_list_field"
-    }
-    return type_map[gui_type_str] or "gui_text_field"
+    return "gui_text_field"
 end
 
 -- Render a nested Fieldset-based properties window
@@ -475,11 +471,12 @@ function render_properties_fieldset(obj, options)
     local lines = {}
     
     -- Render main fieldset header using GUI rendering
-    local main_fieldset = create_gui_object("Fieldset", {
+    local main_fieldset = {
+        field_type = {initial = "Fieldset"},
         field_name = {initial = title},
         field_width = {initial = width},
         field_border_style = {initial = "double"}
-    })
+    }
     
     -- Get the header from the fieldset rendering
     local main_render = render_gui_fieldset(main_fieldset, {}, title, false, false, width)
@@ -508,27 +505,33 @@ function render_properties_fieldset(obj, options)
         
         if not is_expanded then
             -- Render collapsed group
-            local collapsed_fieldset = create_gui_object("Fieldset", {
+            local collapsed_fieldset = {
+                field_type = {initial = "Fieldset"},
                 field_name = {initial = group_title},
                 field_width = {initial = width},
                 field_border_style = {initial = "single"},
                 field_height = {initial = 3}
-            })
-            local collapsed_render = render_gui_fieldset(collapsed_fieldset, {}, group_title, false, false, width)
-            for line in collapsed_render:gmatch("[^\n]+") do
-                table.insert(lines, line)
-            end
-            -- Add hidden properties count
+            }
+            -- Count hidden properties
             local hidden_count = 0
             for _, prop_name in ipairs(group.props) do
                 if obj[prop_name] then hidden_count = hidden_count + 1 end
             end
-            local hidden_line = string.format("  [%d properties hidden]", hidden_count)
-            local border_left = "║"
-            local border_right = "║"
-            local padding = width - #hidden_line - 2
-            table.insert(lines, border_left .. string.rep(" ", padding) .. hidden_line .. border_right)
-            table.insert(lines, "╚" .. string.rep("═", width - 2) .. "╝")
+            local hidden_line = string.format("[%d properties hidden]", hidden_count)
+            
+            -- Create a Literal child to display the hidden message
+            local hidden_msg_child = {
+                field_type = {initial = "Literal"},
+                field_name = {initial = hidden_line},
+                field_width = {initial = width - 4},
+                field_initial = {initial_value = hidden_line}
+            }
+            
+            -- Render collapsed fieldset with the hidden message as child
+            local collapsed_render = render_gui_fieldset(collapsed_fieldset, {hidden_msg_child}, group_title, false, false, width)
+            for line in collapsed_render:gmatch("[^\n]+") do
+                table.insert(lines, line)
+            end
         else
             -- Render expanded group with properties
             local group_children = {}
@@ -543,23 +546,24 @@ function render_properties_fieldset(obj, options)
                     local prop_gui_type = map_gui_field_type_to_gui_type(gui_type)
                     
                     -- Create property object
-                    local prop_obj = create_gui_object("Field", {
-                        field_name = {initial = display_name},
+                    local prop_obj = {
                         field_type = {initial = "Field"},
+                        field_name = {initial = display_name},
                         field_width = {initial = width - 4},
                         gui_field_type = prop_gui_type,
                         label = display_name,
                         field_initial = {initial_value = value}
-                    })
+                    }
                     table.insert(group_children, prop_obj)
                 end
             end
             
-            local group_fieldset = create_gui_object("Fieldset", {
+            local group_fieldset = {
+                field_type = {initial = "Fieldset"},
                 field_name = {initial = group_title},
                 field_width = {initial = width},
                 field_border_style = {initial = "single"}
-            })
+            }
             
             local group_render = render_gui_fieldset(group_fieldset, group_children, group_title, false, false, width)
             for line in group_render:gmatch("[^\n]+") do
