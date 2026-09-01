@@ -428,10 +428,15 @@ local function align_text(text, width, align, fill_char)
         return text
     end
 
+    -- Validate align against text_align enum, fallback to center if invalid
+    if not align or not is_valid_enum_value(align, OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum) then
+        align = "center"
+    end
+
     local padding = width - text_dw
-    if align == "left" then
+    if align == OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left then
         return text .. string.rep(fill_char, padding)
-    elseif align == "right" then
+    elseif align == OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.right then
         return string.rep(fill_char, padding) .. text
     else -- center
         local left_pad = math.floor(padding / 2)
@@ -453,6 +458,10 @@ end
 -- Get border characters for a given style (uses get_gui_simple_value)
 local function get_border_chars(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "none")
+    -- Validate border_style against enum, fallback to "none" if invalid
+    if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
+        border_style = "none"
+    end
     local obj_type = get_gui_simple_value(obj, "field_type", "Field")
     local chars = OBJECTS_DEFINITIONS.field_avail_border_chars.default[obj_type]
 
@@ -487,6 +496,10 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "none")
+    -- Validate border_style against enum
+    if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
+        border_style = "none"
+    end
     local fill_char = get_fill_char(obj, " ")
     local value = get_gui_property(obj, "field_initial") or ""
     if value and type(value) == "table" then
@@ -529,7 +542,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     local value_dw = display_width(value)
     local min_width = math.max(full_label_dw + 2, value_dw + 2, width) -- +2 for border characters
     local actual_width = override_width or
-                             (border_style == "none" and math.max(full_label_dw, value_dw, width) or min_width)
+                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(full_label_dw, value_dw, width) or min_width)
 
     -- If override_width is provided, strictly respect it (don't let label overflow)
     if override_width then
@@ -544,7 +557,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
         local label_color = has_error and "red" or (is_required and "yellow" or "default")
 
         -- Top line: label + field border
-        if border_style ~= "none" then
+        if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
             local content_width = actual_width - 2
             local label_content = align_text(full_label, content_width, title_align)
             -- Apply title color
@@ -558,20 +571,20 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     end
 
     -- Field content area
-    if border_style == "none" then
+    if border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
         -- Apply text color
         table.insert(lines, text_color .. (value or "") .. OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default)
     else
         local content_height = height - (label_text and 1 or 0) - 1
 
         -- Handle vertical alignment
-        if vertical_align == "middle" then
+        if vertical_align == OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.middle then
             -- Add empty lines before content
             local empty_lines = math.floor((content_height - 1) / 2)
             for i = 1, empty_lines do
                 table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
             end
-        elseif vertical_align == "bottom" then
+        elseif vertical_align == OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.bottom then
             -- Add empty lines before content (all but one)
             for i = 1, content_height - 1 do
                 table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
@@ -589,12 +602,12 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
                 OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default .. border_chars.right)
 
         -- Handle vertical alignment - add remaining empty lines after content
-        if vertical_align == "middle" then
+        if vertical_align == OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.middle then
             local empty_lines = content_height - 1 - math.floor((content_height - 1) / 2)
             for i = 1, empty_lines do
                 table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
             end
-        elseif vertical_align == "top" then
+        elseif vertical_align == OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.top then
             -- Add remaining empty lines
             for i = 1, content_height - 1 do
                 table.insert(lines, border_chars.left .. string.rep(fill_char, actual_width - 2) .. border_chars.right)
@@ -603,7 +616,7 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
     end
 
     -- Footer line (if footer_title is set, replace bottom border with footer)
-    if border_style ~= "none" then
+    if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
         local footer_text = ""
         if footer_title and footer_title ~= "" then
             footer_text = resolve_property_value(footer_title) or ""
@@ -626,9 +639,9 @@ function render_gui_text_field(obj, label_text, is_selected, is_required, has_er
             local footer_content = ""
             if content_width > footer_text_dw then
                 local padding_needed = content_width - footer_text_dw
-                if footer_align == "left" then
+                if footer_align == OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.left then
                     footer_content = footer_text .. string.rep(footer_fill_char, padding_needed)
-                elseif footer_align == "right" then
+                elseif footer_align == OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.right then
                     footer_content = string.rep(footer_fill_char, padding_needed) .. footer_text
                 else -- center
                     local left_pad = math.floor(padding_needed / 2)
@@ -658,6 +671,10 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
+    -- Validate border_style against enum
+    if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
+        border_style = "single"
+    end
     local value = get_gui_property(obj, "field_initial") or false
 
     -- Get alignment properties
@@ -677,7 +694,7 @@ function render_gui_select_field(obj, label_text, options, selected_index, is_re
     end
     local min_width = math.max(display_width(label) + 4, max_option_len + 2, width)
     local actual_width = override_width or
-                             (border_style == "none" and math.max(display_width(label) + 2, max_option_len, width) or
+                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(display_width(label) + 2, max_option_len, width) or
                                  min_width)
 
     -- If override_width is provided, strictly respect it
@@ -731,6 +748,10 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
+    -- Validate border_style against enum
+    if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
+        border_style = "single"
+    end
     local border_chars = get_border_chars(obj)
 
     -- Get alignment properties
@@ -748,7 +769,7 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     end
     local min_width = math.max(display_width(label) + 4, max_item_len + 2, width)
     local actual_width = override_width or
-                             (border_style == "none" and math.max(display_width(label) + 2, max_item_len, width) or
+                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(display_width(label) + 2, max_item_len, width) or
                                  min_width)
 
     -- If override_width is provided, strictly respect it
@@ -757,7 +778,7 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     end
 
     -- Top border with label
-    if border_style ~= "none" then
+    if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
         local label_dw = display_width(label)
         local content_width = actual_width - 4
         local label_content = align_text(label, content_width, title_align)
@@ -777,7 +798,7 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
         end
         local inner_width = actual_width - 2
         local content = align_text(item_text, inner_width, text_align)
-        if border_style ~= "none" then
+        if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
             table.insert(lines, border_chars.left .. content .. border_chars.right)
         else
             table.insert(lines, content)
@@ -785,7 +806,7 @@ function render_gui_list_field(obj, label_text, items, is_required, has_error, o
     end
 
     -- Bottom border
-    if border_style ~= "none" then
+    if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
         table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) ..
             border_chars.bottom_right)
     end
@@ -808,6 +829,10 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     local title_align = get_title_align(obj, "center")
 
     local border_style = get_gui_simple_value(obj, "field_border_style", "single")
+    -- Validate border_style against enum
+    if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
+        border_style = "single"
+    end
     local border_chars = get_border_chars(obj)
     local required_marker = is_required and OBJECTS_DEFINITIONS_DEFAULTS.required_marker or ""
     local label = (label_text or "") .. required_marker
@@ -817,7 +842,7 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     local value_dw = display_width(value)
     local min_width = math.max(label_dw + 4, value_dw + 2, width) -- +4 for " " + " " padding, +2 for borders
     local actual_width = override_width or
-                             (border_style == "none" and math.max(label_dw + 2, value_dw, width) or min_width)
+                             (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(label_dw + 2, value_dw, width) or min_width)
 
     -- If override_width is provided, strictly respect it
     if override_width then
@@ -825,14 +850,14 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     end
 
     -- Ensure actual_width is at least wide enough for the label
-    if border_style ~= "none" then
+    if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
         actual_width = math.max(actual_width, label_dw + 4)
     end
 
     local lines = {}
 
     -- Top border with label
-    if border_style ~= "none" then
+    if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
         local content_width = actual_width - 4
         local label_content = align_text(label, content_width, title_align)
         local top_line = border_chars.top_left .. " " .. label_content .. " " .. border_chars.top_right
@@ -848,7 +873,7 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
     local value_content = align_text(value, inner_width, text_align)
 
     -- Handle vertical alignment
-    if vertical_align == "middle" then
+    if vertical_align == OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.middle then
         local empty_lines_before = math.floor((content_height - 1) / 2)
         for i = 1, empty_lines_before do
             table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
@@ -858,7 +883,7 @@ function render_gui_textornum_with_label_field(obj, label_text, is_required, has
         for i = 1, empty_lines_after do
             table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
         end
-    elseif vertical_align == "bottom" then
+    elseif vertical_align == OBJECTS_DEFINITIONS_DEFAULTS.vertical_align.enum.bottom then
         for i = 1, content_height - 1 do
             table.insert(lines, border_chars.left .. string.rep(" ", actual_width - 2) .. border_chars.right)
         end
@@ -882,6 +907,10 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     local pos = get_position(obj)
     local height, width = get_dimensions(obj)
     local border_style = get_gui_simple_value(obj, "field_border_style", "double")
+    -- Validate border_style against enum
+    if not is_valid_enum_value(border_style, OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum) then
+        border_style = "double"
+    end
     local border_chars = get_border_chars(obj)
 
     -- Get alignment properties
@@ -895,10 +924,10 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     -- Calculate minimum width based on title
     local title_dw = display_width(title_text)
     local min_width = math.max(title_dw + 4, width) -- +4 for spaces and border corners
-    local actual_width = override_width or (border_style == "none" and math.max(title_dw, width) or min_width)
+    local actual_width = override_width or (border_style == OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none and math.max(title_dw, width) or min_width)
 
     -- Top border with title (using title_align)
-    if border_style ~= "none" then
+    if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
         local content_width = actual_width - 4 -- -4 for spaces and border corners
         local title_content = align_text(title_text, content_width, title_align)
         local top_line = border_chars.top_left .. " " .. title_content .. " " .. border_chars.top_right
@@ -958,7 +987,7 @@ function render_gui_fieldset(obj, children, title, is_required, has_error, overr
     end
 
     -- Bottom border
-    if border_style ~= "none" then
+    if border_style ~= OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none then
         table.insert(lines, border_chars.bottom_left .. string.rep(border_chars.bottom, actual_width - 2) ..
             border_chars.bottom_right)
     end
