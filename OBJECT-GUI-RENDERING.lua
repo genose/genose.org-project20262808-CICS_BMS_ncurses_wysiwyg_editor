@@ -106,8 +106,8 @@ local function resolve_property_value(prop)
     if prop.marker ~= nil then
         return resolve_property_value(prop.marker)
     end
-    -- Priority 4: known border styles
-    local style_priority = obj.field_border_styles or {"none"}
+    -- Priority 4: known border styles (fallback to checking common style keys)
+    local style_priority = {"none", "single", "double", "solid", "dashed", "dotted"}
     for _, style in ipairs(style_priority) do
         if prop[style] ~= nil then
             return resolve_property_value(prop[style])
@@ -220,20 +220,18 @@ end
 -- Returns: ANSI color code string
 local function get_color_code(obj, prop_name, default_color)
     local color_prop = obj[prop_name]
+    local fallback = OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes.default or "\27[0m"
     -- If property doesn't exist, use default
     if not color_prop then
-        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[default_color or "default"] or
-                   OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default -- use declared value from object definition itself not static reference : if (arg_value in (...values) then return arg_value else return default(obj, "field_*", OBJECTS_DEFINITIONS.field_*.default))
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[default_color or "default"] or fallback
     end
 
     -- Check if user has explicitly set a color (not from defaults)
     if color_prop.initial and type(color_prop.initial) == "string" then
-        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.initial] or
-                   OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.initial] or fallback
     end
     if color_prop.edited and type(color_prop.edited) == "string" then
-        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.edited] or
-                   OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+        return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color_prop.edited] or fallback
     end
 
     -- Resolve the color value
@@ -248,13 +246,11 @@ local function get_color_code(obj, prop_name, default_color)
     if type(color) == "table" then
         -- First check if 'default' key exists
         if color.default and type(color.default) == "string" then
-            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color.default] or
-                       OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color.default] or fallback
         end
         -- Check if any key is "default"
         if color["default"] and type(color["default"]) == "string" then
-            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color["default"]] or
-                       OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+            return OBJECTS_DEFINITIONS_DEFAULTS.color_enum.color_codes[color["default"]] or fallback
         end
         -- Look for any valid color string
         for k, v in pairs(color) do
@@ -264,7 +260,7 @@ local function get_color_code(obj, prop_name, default_color)
         end
     end
 
-    return OBJECTS_DEFINITIONS_DEFAULTS[prop_name].default
+    return fallback
 end
 
 -- Get title prefix (can be table with .initial)
