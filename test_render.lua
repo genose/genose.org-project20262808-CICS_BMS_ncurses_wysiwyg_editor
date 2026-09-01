@@ -16,7 +16,7 @@ print("2. Field (width=20, height=5, single border):")
 local field2 = OBJECTS_DEFINITIONS.new("Field", {
     field_width = { initial = 20 },
     field_height = { initial = 5 },
-    field_border_style = { initial = "single" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single },
     field_initial = { initial = { initial_value = "Hello World" } }
 })
 print(field2:render())
@@ -26,7 +26,7 @@ print()
 print("3. Literal (no border, width=30):")
 local literal1 = OBJECTS_DEFINITIONS.new("Literal", {
     field_width = { initial = 30 },
-    field_border_style = { initial = "none" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none },
     field_initial = { initial = { initial_value = "This is a literal text" } }
 })
 print(literal1:render())

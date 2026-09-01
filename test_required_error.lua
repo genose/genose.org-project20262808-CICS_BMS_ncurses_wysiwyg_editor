@@ -10,7 +10,7 @@ print("1. Field (required, marker in suffix):")
 local field_required = OBJECTS_DEFINITIONS.new("Field", {
     field_width = { initial = 20 },
     field_height = { initial = 3 },
-    field_border_style = { initial = "single" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single },
     field_name = { initial = "Username" },
     field_initial = { initial = { initial_value = "" } },
     field_attrb = { 
@@ -35,7 +35,7 @@ print("2. Field (error, marker in suffix):")
 local field_error = OBJECTS_DEFINITIONS.new("Field", {
     field_width = { initial = 20 },
     field_height = { initial = 3 },
-    field_border_style = { initial = "single" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single },
     field_name = { initial = "Email" },
     field_initial = { initial = { initial_value = "invalid@email" } },
     field_attrb = { 
@@ -60,7 +60,7 @@ print("3. Field (both required and error):")
 local field_both = OBJECTS_DEFINITIONS.new("Field", {
     field_width = { initial = 25 },
     field_height = { initial = 3 },
-    field_border_style = { initial = "double" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double },
     field_name = { initial = "Password" },
     field_initial = { initial = { initial_value = "" } },
     field_attrb = { 
@@ -86,7 +86,7 @@ print("4. Field (required, marker in prefix):")
 local field_prefix = OBJECTS_DEFINITIONS.new("Field", {
     field_width = { initial = 20 },
     field_height = { initial = 3 },
-    field_border_style = { initial = "single" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single },
     field_name = { initial = "Age" },
     field_initial = { initial = { initial_value = "" } },
     field_attrb = { 
@@ -112,7 +112,7 @@ local fieldset_required = OBJECTS_DEFINITIONS.new("Fieldset", {
     field_width = { initial = 30 },
     field_height = { initial = 5 },
     field_name = { initial = "Personal Info" },
-    field_border_style = { initial = "double" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double },
     field_attrb = { 
         initial = {
             field_required = true,
@@ -135,7 +135,7 @@ print("6. Field (with footer showing required marker):")
 local field_footer = OBJECTS_DEFINITIONS.new("Field", {
     field_width = { initial = 25 },
     field_height = { initial = 4 },
-    field_border_style = { initial = "single" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single },
     field_name = { initial = "Confirm Password" },
     field_initial = { initial = { initial_value = "" } },
     field_attrb = { 
@@ -147,7 +147,7 @@ local field_footer = OBJECTS_DEFINITIONS.new("Field", {
     field_footer = {
         initial = {
             title = "Required field",
-            align = "center",
+            align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
             fill_char = "-",
             required_marker = {
                 initial = {
@@ -165,7 +165,7 @@ print("7. Field (with footer showing error marker):")
 local field_footer_error = OBJECTS_DEFINITIONS.new("Field", {
     field_width = { initial = 25 },
     field_height = { initial = 4 },
-    field_border_style = { initial = "single" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single },
     field_name = { initial = "Confirm Password" },
     field_initial = { initial = { initial_value = "mismatch" } },
     field_attrb = { 
@@ -177,7 +177,7 @@ local field_footer_error = OBJECTS_DEFINITIONS.new("Field", {
     field_footer = {
         initial = {
             title = "Error: Passwords do not match",
-            align = "center",
+            align = OBJECTS_DEFINITIONS_DEFAULTS.text_align.enum.center,
             fill_char = "-",
             error_marker = {
                 initial = {
@@ -195,7 +195,7 @@ print("8. Literal (required with custom marker '***')")
 local literal_required = OBJECTS_DEFINITIONS.new("Literal", {
     field_width = { initial = 30 },
     field_height = { initial = 3 },
-    field_border_style = { initial = "single" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single },
     field_name = { initial = "Important Note" },
     field_initial = { initial = { initial_value = "Please read this" } },
     field_attrb = { 
@@ -225,7 +225,7 @@ print("9. Field (normal, no markers):")
 local field_normal = OBJECTS_DEFINITIONS.new("Field", {
     field_width = { initial = 20 },
     field_height = { initial = 3 },
-    field_border_style = { initial = "single" },
+    field_border_style = { initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single },
     field_name = { initial = "Optional Field" },
     field_initial = { initial = { initial_value = "Some text" } },
     field_attrb = { 

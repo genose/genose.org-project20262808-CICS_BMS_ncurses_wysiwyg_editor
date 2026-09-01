@@ -152,7 +152,7 @@ local login_form = create_gui_form({
     title = "Formulaire d'inscription",
     width = 60,
     height = 24,
-    border_style = "double"
+    border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double
 })
 
 print("Complete Form Rendering:")
@@ -190,7 +190,7 @@ local error_form = create_gui_form({
     title = "Formulaire avec erreurs",
     width = 50,
     height = 15,
-    border_style = "single"
+    border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single
 })
 
 print("Form with Error States:")
@@ -205,7 +205,7 @@ local no_border_field = create_gui_object('Field', {
     label = "Sans bordure",
     gui_field_type = "gui_textornum_with_label_field",
     position = {row = 1, col = 1, rowend = 1, colend = 25},
-    field_border_style = {initial = "none"}
+    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.none}
 })
 print(no_border_field:render_gui())
 print()
@@ -215,7 +215,7 @@ local single_border_field = create_gui_object('Field', {
     label = "Bordure simple",
     gui_field_type = "gui_textornum_with_label_field",
     position = {row = 1, col = 1, rowend = 3, colend = 25},
-    field_border_style = {initial = "single"}
+    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.single}
 })
 print(single_border_field:render_gui())
 print()
@@ -225,7 +225,7 @@ local double_border_field = create_gui_object('Field', {
     label = "Bordure double",
     gui_field_type = "gui_textornum_with_label_field",
     position = {row = 1, col = 1, rowend = 3, colend = 25},
-    field_border_style = {initial = "double"}
+    field_border_style = {initial = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double}
 })
 print(double_border_field:render_gui())
 print()
@@ -338,7 +338,7 @@ local complex_form = create_gui_form({
     title = "Formulaire utilisateur complet",
     width = 82,
     height = 24,
-    border_style = "double"
+    border_style = OBJECTS_DEFINITIONS_DEFAULTS.border_style.enum.double
 })
 
 print("Complex Form with All Types:")
