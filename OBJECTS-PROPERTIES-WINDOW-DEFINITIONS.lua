@@ -95,24 +95,69 @@ local PROPERTY_CATEGORIES = {
     { name = "Attributes", props = {"field_attrb"} }
 }
 
+-- Helper to make value visible (replace empty with placeholder, show special chars)
+local function format_value(value)
+    if value == "" then return "[empty]"
+    elseif value == " " then return "[space]"
+    elseif value == "\t" then return "[tab]"
+    elseif value == nil then return "nil"
+    else return tostring(value)
+    end
+end
+
 -- Helper to recursively extract a string value from a property table
+-- Priority: marker, value, initial_value, suffix_char, prefix_char, style, color, fill_char, then strings
 local function extract_string_value(prop)
     if type(prop) == "string" then return prop end
     if type(prop) == "number" then return tostring(prop) end
     if type(prop) == "boolean" then return prop and "true" or "false" end
     if type(prop) ~= "table" then return "[" .. type(prop) .. "]" end
     
-    -- Check for common value fields
-    if prop.marker then return extract_string_value(prop.marker) end
-    if prop.value then return extract_string_value(prop.value) end
-    if prop.initial_value then return extract_string_value(prop.initial_value) end
-    if prop.style then return extract_string_value(prop.style) end
-    if prop.color then return extract_string_value(prop.color) end
-    if prop.fill_char then return extract_string_value(prop.fill_char) end
+    -- Priority 1: marker (for marker properties)
+    if prop.marker then 
+        local marker_val = extract_string_value(prop.marker)
+        if marker_val and marker_val ~= "[" then return marker_val end
+    end
     
-    -- Check for initial/edited
-    if prop.initial then return extract_string_value(prop.initial) end
-    if prop.edited then return extract_string_value(prop.edited) end
+    -- Priority 2: value
+    if prop.value then 
+        local val = extract_string_value(prop.value)
+        if val and val ~= "[" then return val end
+    end
+    
+    -- Priority 3: initial_value
+    if prop.initial_value then 
+        local iv = extract_string_value(prop.initial_value)
+        if iv and iv ~= "[" then return iv end
+    end
+    
+    -- Priority 4: for title prefix/suffix, check suffix_char/prefix_char
+    if prop.suffix_char then return extract_string_value(prop.suffix_char) end
+    if prop.prefix_char then return extract_string_value(prop.prefix_char) end
+    
+    -- Priority 5: style, color, fill_char
+    if prop.style then 
+        local style = extract_string_value(prop.style)
+        if style and style ~= "[" then return style end
+    end
+    if prop.color then 
+        local color = extract_string_value(prop.color)
+        if color and color ~= "[" then return color end
+    end
+    if prop.fill_char then 
+        local fc = extract_string_value(prop.fill_char)
+        if fc and fc ~= "[" then return fc end
+    end
+    
+    -- Check for initial/edited (recursively)
+    if prop.initial then 
+        local init = extract_string_value(prop.initial)
+        if init and init ~= "[" and init ~= "[table]" then return init end
+    end
+    if prop.edited then 
+        local edit = extract_string_value(prop.edited)
+        if edit and edit ~= "[" and edit ~= "[table]" then return edit end
+    end
     
     -- Check for enum
     if prop.enum then
@@ -122,10 +167,18 @@ local function extract_string_value(prop)
         end
     end
     
-    -- Look for any string in the table
+    -- Look for any string value first
+    for k, v in pairs(prop) do
+        if type(v) == "string" and v ~= "" then return v end
+    end
+    
+    -- Then numbers
     for _, v in pairs(prop) do
-        if type(v) == "string" then return v end
         if type(v) == "number" then return tostring(v) end
+    end
+    
+    -- Then booleans
+    for _, v in pairs(prop) do
         if type(v) == "boolean" then return v and "true" or "false" end
     end
     
@@ -133,7 +186,7 @@ local function extract_string_value(prop)
     for _, v in pairs(prop) do
         if type(v) == "table" then
             local result = extract_string_value(v)
-            if result and result ~= "[table]" then return result end
+            if result and result ~= "[table]" and result ~= "[" then return result end
         end
     end
     
@@ -145,7 +198,8 @@ local function get_property_value(obj, prop_name)
     local prop = obj[prop_name]
     if not prop then return "nil" end
     
-    return extract_string_value(prop)
+    local value = extract_string_value(prop)
+    return format_value(value)
 end
 
 -- Get category for a property
@@ -160,43 +214,29 @@ end
 
 -- Render a single property line
 local function render_property_line(prop_name, value, width, gui_type)
-    local display_name = prop_name:gsub("[_%%]", " "):gsub("^(.)", function(c) return c:upper() end)
-    local control_type = "text"
+    -- Remove "Field" prefix and clean up display name
+    local display_name = prop_name:gsub("field_", ""):gsub("[_%%]", " "):gsub("^(.)", function(c) return c:upper() end)
+    local control_type = "[____]"
     if gui_type then
         if gui_type:find("select") then control_type = "[Select|v]"
         elseif gui_type:find("checkbox") then control_type = "[ ]"
-        elseif gui_type:find("text") then control_type = "[____]"
+        else control_type = "[____]"
         end
     end
     
-    local line = string.format("  %-25s : %s %-15s", display_name, control_type, tostring(value))
+    local line = string.format("  %-25s : %s %s", display_name, control_type, tostring(value))
     return line
 end
 
 -- Render a category section
 local function render_category_section(category_name, props, width)
     local lines = {}
-    local border = "═"
-    local left = "║"
-    local right = "║"
-    local corner_tl = "╔"
-    local corner_tr = "╗"
-    local corner_bl = "╚"
-    local corner_br = "╝"
-    
-    -- Category header
-    local header = string.format(" %s %s %s ", corner_tl, category_name, corner_tr)
-    table.insert(lines, header)
     
     -- Properties
     for _, prop_info in ipairs(props) do
         local line = render_property_line(prop_info.name, prop_info.value, width, prop_info.gui_type)
-        table.insert(lines, left .. line .. right)
+        table.insert(lines, line)
     end
-    
-    -- Category footer
-    local footer = corner_bl .. string.rep(border, width) .. corner_br
-    table.insert(lines, footer)
     
     return table.concat(lines, "\n")
 end
@@ -249,8 +289,14 @@ function render_properties_window(obj, options)
     local category_order = {"Dimensions", "Value & Content", "Colors", "Borders", "Fill & Style", "Alignment", "Markers", "Position", "Attributes", "Other"}
     
     -- Render categories
-    for _, cat_name in ipairs(category_order) do
+    for i, cat_name in ipairs(category_order) do
         if categorized[cat_name] and #categorized[cat_name] > 0 then
+            -- Category header
+            if i > 1 then
+                table.insert(lines, " ════════════════════════════════════════════════════════════════")
+            end
+            table.insert(lines, string.format("  <%s>", cat_name))
+            
             local section = render_category_section(cat_name, categorized[cat_name], width)
             table.insert(lines, section)
         end
@@ -316,7 +362,7 @@ function render_properties_fieldset(obj, options)
                     local prop_def = OBJECTS_DEFINITIONS[prop_name]
                     local gui_type = prop_def and prop_def.gui_field_type or "text"
                     local value = get_property_value(obj, prop_name)
-                    local display_name = prop_name:gsub("[_%%]", " ")
+                    local display_name = prop_name:gsub("field_", ""):gsub("[_%%]", " ")
                     local line = string.format("    %-20s : %s", display_name, tostring(value))
                     table.insert(content_lines, line)
                 end
