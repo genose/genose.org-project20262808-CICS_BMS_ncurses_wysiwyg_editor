@@ -182,3 +182,26 @@ pub fn scan_directory_dirs(directory: &str) -> Vec<String> {
         })
         .unwrap_or_default()
 }
+
+/// Get the minimum height for a field type
+pub fn get_min_height(field_type: &crate::FieldType) -> u16 {
+    use crate::FieldType::*;
+    match field_type {
+        Group => 3,  // Fieldset requires 3 minimum
+        Map => 1,
+        Field => 1,
+        Literal => 1,
+        Attribute => 1,
+        Symbolic => 1,
+        // BMS statement types - most don't need height
+        DFHMSD | DFHMDF | DFHMDI | 
+        DFHMDA | DFHMND | DFHMNT | 
+        DFHMDC | DFHMDL => 1,
+        // Physical vs Symbolic
+        PhysicalMap | SymbolicMap | MapSet => 1,
+        // Special field types
+        InputOnly | FieldType::OutputOnly | FieldType::InputOutput => 1,
+        SymbolicMap | PhysicalMap => 1,
+        _ => 1,  // Default minimum height
+    }
+}
