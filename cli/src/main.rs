@@ -126,6 +126,23 @@ enum Commands {
         /// Fichier BMS a editer (optionnel)
         file: Option<PathBuf>,
     },
+    /// Convertir une image (JPEG/PNG/GIF/BMP) en ASCII Art
+    ImageConvert {
+        /// Chemin vers le fichier image
+        image: PathBuf,
+        /// Largeur de sortie en caracteres
+        #[arg(short, long, default_value = "80")]
+        width: u32,
+        /// Hauteur de sortie en lignes
+        #[arg(long, default_value = "24")]
+        height: u32,
+        /// Fichier de sortie (par defaut: <image>.ascii)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// Utiliser les couleurs
+        #[arg(short, long)]
+        use_color: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -172,6 +189,32 @@ fn main() -> Result<()> {
                 BmsEditor::new()
             };
             run_editor(editor)?;
+        }
+        Commands::ImageConvert { image, width, height, output, use_color } => {
+            use cobol_bms_core::bms::image_to_ascii::image_to_ascii;
+            
+            let ascii_art = image_to_ascii(&image, width, Some(height))
+                .with_context(|| format!("Failed to convert image: {}", image.display()))?;
+            
+            let output_content = ascii_art.to_string(use_color);
+            
+            let output_path = output.unwrap_or_else(|| {
+                let mut path = image.clone();
+                let new_name = path.file_name().unwrap().to_string_lossy().to_string() + ".ascii";
+                path.set_file_name(new_name);
+                path
+            });
+            
+            fs::write(&output_path, output_content)
+                .with_context(|| format!("Failed to write to: {}", output_path.display()))?;
+            
+            println!("Converted image to ASCII art: {}", output_path.display());
+            println!("Dimensions: {}x{}", ascii_art.width, ascii_art.height);
+            if use_color {
+                println!("Colors: enabled");
+            } else {
+                println!("Colors: disabled");
+            }
         }
     }
     

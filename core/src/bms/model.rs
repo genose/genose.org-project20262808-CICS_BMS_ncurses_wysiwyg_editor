@@ -17,6 +17,65 @@ pub struct AsciiArt {
     pub height: u16,
 }
 
+impl fmt::Display for AsciiArt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_string_plain())
+    }
+}
+
+impl AsciiArt {
+    /// Convert to string with optional color codes
+    pub fn to_string(&self, use_color: bool) -> String {
+        if use_color {
+            self.to_string_with_colors()
+        } else {
+            self.to_string_plain()
+        }
+    }
+    
+    /// Convert to plain string without color codes
+    pub fn to_string_plain(&self) -> String {
+        self.to_string(false)
+    }
+    
+    /// Convert to string with ANSI color codes
+    pub fn to_string_with_colors(&self) -> String {
+        let mut result = String::new();
+        for row in &self.data {
+            for ascii_char in row {
+                if let Some(color) = &ascii_char.color {
+                    let ansi_code = color_to_ansi_code(color);
+                    result += &format!("{}{}", ansi_code, ascii_char.character);
+                } else {
+                    result.push(ascii_char.character);
+                }
+            }
+            result += "\n";
+        }
+        result
+    }
+}
+
+/// Convert BMS color name to ANSI escape code
+fn color_to_ansi_code(color: &str) -> String {
+    match color.to_uppercase().as_str() {
+        "BLACK" => "\x1b[30m",
+        "RED" => "\x1b[31m",
+        "GREEN" => "\x1b[32m",
+        "YELLOW" => "\x1b[33m",
+        "BLUE" => "\x1b[34m",
+        "MAGENTA" => "\x1b[35m", 
+        "CYAN" => "\x1b[36m",
+        "WHITE" => "\x1b[37m",
+        "GRAY" | "GREY" => "\x1b[90m",
+        "TURQUOISE" => "\x1b[36m",
+        "PINK" => "\x1b[95m",
+        "ORANGE" => "\x1b[91m",
+        "PURPLE" => "\x1b[95m",
+        _ => "",
+    }.to_string()
+}
+
 /// Justification type for BMS fields
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Justify {
