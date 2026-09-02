@@ -44,6 +44,10 @@ use cobol_bms_core::{
 };
 use cobol_bms_core::model::{Color as BmsColor, DecorationType, Justify, DataType};
 
+// Types module
+mod types;
+use types::{FileFilter, scan_directory_files_with_filter, scan_directory_files};
+
 // Combo key system
 mod combo_keys;
 use combo_keys::{ComboKeyManager, ComboAction, ComboContext, TerminalType};
@@ -56,6 +60,7 @@ use views::combo_key_help::{render as render_combo_key_help, handle_mode as hand
 use views::confirm::{render as render_confirm, handle_mode as handle_confirm_mode};
 use views::help::{render as render_help, handle_mode as handle_help_mode};
 use views::map_type_picker::{render as render_map_type_picker, handle_mode as handle_map_type_picker_mode};
+use views::open_dialog::{render as render_open_dialog, handle_mode as handle_open_dialog_mode};
 use views::save_dialog::{render as render_save_dialog, handle_mode as handle_save_dialog_mode};
 use views::status_bar::render as render_status_bar;
 use views::text_input::{render as render_text_input, handle_mode as handle_text_input_mode};
@@ -207,13 +212,7 @@ fn scan_directory_files(directory: &str, image_only: bool) -> Vec<String> {
     }
 }
 
-/// Scan directory files with a specific filter
-fn scan_directory_files_with_filter(directory: &str, filter: FileFilter) -> Vec<String> {
-    let all_files = scan_directory_files(directory, false);
-    all_files.into_iter()
-        .filter(|f| filter.matches(f))
-        .collect()
-}
+
 
 /// Get subdirectories in a directory
 fn scan_directory_dirs(directory: &str) -> Vec<String> {
@@ -811,7 +810,7 @@ pub struct App {
     file_browser_directory: String,
     file_browser_files: Vec<String>,
     file_browser_selected_index: usize,
-    file_browser_filter: FileFilter,
+    file_browser_filter: types::FileFilter,
     file_browser_scroll: usize,
     // Pour le mode add object
     selected_object_for_add: Option<InsertableObject>,
@@ -858,57 +857,7 @@ pub enum ConfirmAction {
     ClearMap,
 }
 
-/// File type filter for file browser
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum FileFilter {
-    /// Show all files
-    AllFiles,
-    /// Show only BMS files (.bms)
-    BmsFiles,
-    /// Show only COBOL files (.cob, .cbl)
-    CobolFiles,
-    /// Show only text files (.txt)
-    TextFiles,
-}
 
-impl FileFilter {
-    fn next(self) -> Self {
-        match self {
-            FileFilter::AllFiles => FileFilter::BmsFiles,
-            FileFilter::BmsFiles => FileFilter::CobolFiles,
-            FileFilter::CobolFiles => FileFilter::TextFiles,
-            FileFilter::TextFiles => FileFilter::AllFiles,
-        }
-    }
-
-    fn display_name(self) -> &'static str {
-        match self {
-            FileFilter::AllFiles => "All Files",
-            FileFilter::BmsFiles => "BMS Files (*.bms)",
-            FileFilter::CobolFiles => "COBOL Files (*.cob, *.cbl)",
-            FileFilter::TextFiles => "Text Files (*.txt)",
-        }
-    }
-
-    fn file_extensions(self) -> Vec<&'static str> {
-        match self {
-            FileFilter::AllFiles => vec![],
-            FileFilter::BmsFiles => vec![".bms"],
-            FileFilter::CobolFiles => vec![".cob", ".cbl"],
-            FileFilter::TextFiles => vec![".txt"],
-        }
-    }
-
-    fn matches(self, filename: &str) -> bool {
-        match self {
-            FileFilter::AllFiles => true,
-            _ => {
-                let filename_lower = filename.to_lowercase();
-                self.file_extensions().iter().any(|ext| filename_lower.ends_with(ext))
-            }
-        }
-    }
-}
 
 impl App {
     fn new(editor: BmsEditor) -> Self {
@@ -940,7 +889,7 @@ impl App {
             file_browser_directory: String::new(),
             file_browser_files: Vec::new(),
             file_browser_selected_index: 0,
-            file_browser_filter: FileFilter::AllFiles,
+            file_browser_filter: types::FileFilter::AllFiles,
             file_browser_scroll: 0,
             selected_object_for_add: None,
             text_input_prompt: String::new(),
@@ -2683,102 +2632,7 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
 
 
 
-fn handle_open_dialog_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Esc => {
-            app.mode = AppMode::Edit;
-            app.open_path.clear();
-            app.file_browser_directory.clear();
-            app.file_browser_files.clear();
-        }
-        KeyCode::Enter => {
-            // Open selected file or use manual path
-            if !app.file_browser_files.is_empty() && app.file_browser_selected_index < app.file_browser_files.len() {
-                let filename = &app.file_browser_files[app.file_browser_selected_index];
-                let full_path = std::path::Path::new(&app.file_browser_directory).join(filename);
-                let path = PathBuf::from(full_path);
-                
-                if path.exists() {
-                    match parse_bms_file(path.to_str().unwrap()) {
-                        Ok(map) => {
-                            app.editor = BmsEditor::from_map(map);
-                            app.current_file = Some(path.clone());
-                            app.mode = AppMode::Edit;
-                            app.open_path.clear();
-                            app.file_browser_directory.clear();
-                            app.file_browser_files.clear();
-                            app.set_message(&format!("Opened: {}", path.display()));
-                        }
-                        Err(e) => {
-                            app.set_message(&format!("Failed to open: {}", e));
-                        }
-                    }
-                } else {
-                    app.set_message("File does not exist");
-                }
-            } else if !app.open_path.is_empty() {
-                // Try manual path entry
-                let path = PathBuf::from(&app.open_path);
-                if path.exists() {
-                    match parse_bms_file(path.to_str().unwrap()) {
-                        Ok(map) => {
-                            app.editor = BmsEditor::from_map(map);
-                            app.current_file = Some(path.clone());
-                            app.mode = AppMode::Edit;
-                            app.open_path.clear();
-                            app.file_browser_directory.clear();
-                            app.file_browser_files.clear();
-                            app.set_message(&format!("Opened: {}", path.display()));
-                        }
-                        Err(e) => {
-                            app.set_message(&format!("Failed to open: {}", e));
-                        }
-                    }
-                } else {
-                    app.set_message("File does not exist");
-                }
-            }
-        }
-        KeyCode::Tab => {
-            // Cycle through file filters
-            app.file_browser_filter = app.file_browser_filter.next();
-            app.file_browser_files = scan_directory_files_with_filter(
-                &app.file_browser_directory,
-                app.file_browser_filter
-            );
-            app.file_browser_selected_index = 0;
-            app.file_browser_scroll = 0;
-        }
-        KeyCode::Up => {
-            if !app.file_browser_files.is_empty() {
-                if app.file_browser_selected_index > 0 {
-                    app.file_browser_selected_index -= 1;
-                    if app.file_browser_selected_index < app.file_browser_scroll {
-                        app.file_browser_scroll = app.file_browser_selected_index;
-                    }
-                }
-            }
-        }
-        KeyCode::Down => {
-            if !app.file_browser_files.is_empty() {
-                if app.file_browser_selected_index + 1 < app.file_browser_files.len() {
-                    app.file_browser_selected_index += 1;
-                    // Scroll down if selected item is below visible area
-                    if app.file_browser_selected_index >= app.file_browser_scroll + 10 {
-                        app.file_browser_scroll = app.file_browser_selected_index.saturating_sub(9);
-                    }
-                }
-            }
-        }
-        KeyCode::Backspace => {
-            app.open_path.pop();
-        }
-        KeyCode::Char(c) => {
-            app.open_path.push(c);
-        }
-        _ => {}
-    }
-}
+
 
 fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
@@ -4341,86 +4195,7 @@ fn is_property_group_start(index: usize, properties: &[PropertyType]) -> bool {
 
 
 
-fn render_open_dialog(f: &mut Frame, app: &App, area: Rect) {
-    let dialog_width = area.width.min(60);
-    let dialog_height = area.height.min(16);
-    let dialog_area = Rect {
-        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
-        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
-        width: dialog_width,
-        height: dialog_height,
-    };
-    
-    let block = Block::default()
-        .title(" Open File [Enter:Select|Esc:Cancel|Tab:Filter|Arrows:Nav] ")
-        .borders(Borders::ALL);
-    f.render_widget(block, dialog_area);
-    
-    let inner = Rect {
-        x: dialog_area.x + 1,
-        y: dialog_area.y + 1,
-        width: dialog_area.width.saturating_sub(2),
-        height: dialog_area.height.saturating_sub(2),
-    };
-    
-    let mut current_y = inner.y;
-    
-    // Display current directory
-    let dir_display = if app.file_browser_directory.is_empty() {
-        ".".to_string()
-    } else {
-        app.file_browser_directory.clone()
-    };
-    let dir_para = Paragraph::new(format!("Directory: {}", dir_display))
-        .style(Style::default().fg(TuiColor::Cyan));
-    f.render_widget(dir_para, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
-    current_y += 1;
-    
-    // Display filter mode at the bottom
-    let filter_text = Paragraph::new(format!("Filter: {}", app.file_browser_filter.display_name()))
-        .style(Style::default().fg(TuiColor::Yellow));
-    let filter_height = 1;
-    let filter_y = inner.y + inner.height.saturating_sub(filter_height + 1);
-    
-    // Display file list with scroll
-    let file_list_height = (filter_y - current_y) as usize;
-    if !app.file_browser_files.is_empty() {
-        for (idx, filename) in app.file_browser_files.iter().enumerate() {
-            if idx >= app.file_browser_scroll && idx < app.file_browser_scroll + file_list_height {
-                let is_selected = idx == app.file_browser_selected_index;
-                let file_style = if is_selected {
-                    Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
-                } else {
-                    Style::default().fg(TuiColor::White)
-                };
-                
-                let file_para = Paragraph::new(format!("  {}", filename))
-                    .style(file_style);
-                f.render_widget(file_para, Rect { x: inner.x, y: current_y as u16, width: inner.width, height: 1 });
-                current_y += 1;
-            }
-        }
-    } else {
-        let no_files = Paragraph::new("  No files found")
-            .style(Style::default().fg(TuiColor::Gray));
-        f.render_widget(no_files, Rect { x: inner.x, y: current_y, width: inner.width, height: 1 });
-        current_y += 1;
-    }
-    
-    // Display filter info at bottom
-    f.render_widget(filter_text, Rect { x: inner.x, y: filter_y, width: inner.width, height: 1 });
-    
-    // Display manual path entry
-    if !app.open_path.is_empty() {
-        let path_display = format!("Path: {}", app.open_path);
-        let path_para = Paragraph::new(path_display)
-            .style(Style::default().fg(TuiColor::Green));
-        let path_y = filter_y + 1;
-        if path_y < dialog_area.y + dialog_area.height {
-            f.render_widget(path_para, Rect { x: inner.x, y: path_y, width: inner.width, height: 1 });
-        }
-    }
-}
+
 
 fn render_add_object_dialog(f: &mut Frame, app: &App, area: Rect) {
     let panel_width = 30;

@@ -4,7 +4,9 @@ This directory is intended to organize the application's UI code into separate, 
 
 ## Current State
 
-The views module is being actively extracted from `main.rs`. Currently extracted views:
+The views module is being actively extracted from `main.rs`. A new `types.rs` module was created to contain shared types like `FileFilter` that are needed by multiple view modules.
+
+Currently extracted views:
 
 ### ✅ Fully Extracted and Integrated:
 - `attribute_picker.rs` - Attribute selection dialog
@@ -13,7 +15,8 @@ The views module is being actively extracted from `main.rs`. Currently extracted
 - `confirm.rs` - Confirmation dialog
 - `help.rs` - Help view with keyboard shortcuts
 - `map_type_picker.rs` - Map type selection dialog
-- `save_dialog.rs` - Save dialog (NEW)
+- `open_dialog.rs` - Open file dialog with file browser (NEW)
+- `save_dialog.rs` - Save dialog
 - `status_bar.rs` - Status bar rendering
 - `text_input.rs` - Text input dialog
 
@@ -86,7 +89,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `render_color_picker` (EXTRACTED)
 - `render_attribute_picker` (EXTRACTED)
 - `render_save_dialog` (EXTRACTED)
-- `render_open_dialog` (TO DO - complex dependencies)
+- `render_open_dialog` (EXTRACTED)
 - `render_add_object_dialog` (TO DO - complex dependencies)
 - `render_text_input`
 - `render_help` (EXTRACTED)
@@ -108,7 +111,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `handle_color_picker_mode` (EXTRACTED)
 - `handle_attribute_picker_mode` (EXTRACTED)
 - `handle_save_dialog_mode` (EXTRACTED)
-- `handle_open_dialog_mode`
+- `handle_open_dialog_mode` (EXTRACTED)
 - `handle_add_object_dialog_mode`
 - `handle_text_input_mode`
 - `handle_help_mode` (EXTRACTED)
