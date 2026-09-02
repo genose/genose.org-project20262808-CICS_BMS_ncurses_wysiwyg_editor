@@ -9,13 +9,14 @@ The views module is being actively extracted from `main.rs`. A new `types.rs` mo
 Currently extracted views:
 
 ### ✅ Fully Extracted and Integrated:
+- `add_object_dialog.rs` - Add object dialog with object type selection (NEW)
 - `attribute_picker.rs` - Attribute selection dialog
 - `color_picker.rs` - Color selection dialog
 - `combo_key_help.rs` - Combo key bindings help view
 - `confirm.rs` - Confirmation dialog
 - `help.rs` - Help view with keyboard shortcuts
 - `map_type_picker.rs` - Map type selection dialog
-- `open_dialog.rs` - Open file dialog with file browser (NEW)
+- `open_dialog.rs` - Open file dialog with file browser
 - `save_dialog.rs` - Save dialog
 - `status_bar.rs` - Status bar rendering
 - `text_input.rs` - Text input dialog
@@ -90,7 +91,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `render_attribute_picker` (EXTRACTED)
 - `render_save_dialog` (EXTRACTED)
 - `render_open_dialog` (EXTRACTED)
-- `render_add_object_dialog` (TO DO - complex dependencies)
+- `render_add_object_dialog` (EXTRACTED)
 - `render_text_input`
 - `render_help` (EXTRACTED)
 - `render_combo_key_help`
@@ -112,7 +113,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `handle_attribute_picker_mode` (EXTRACTED)
 - `handle_save_dialog_mode` (EXTRACTED)
 - `handle_open_dialog_mode` (EXTRACTED)
-- `handle_add_object_dialog_mode`
+- `handle_add_object_dialog_mode` (EXTRACTED)
 - `handle_text_input_mode`
 - `handle_help_mode` (EXTRACTED)
 - `handle_combo_key_help_mode`

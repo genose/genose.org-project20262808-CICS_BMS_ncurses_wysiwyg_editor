@@ -15,6 +15,7 @@
 //!
 //! Future: Each view will be extracted to its own file in this directory.
 
+pub mod add_object_dialog;
 pub mod attribute_picker;
 pub mod color_picker;
 pub mod combo_key_help;

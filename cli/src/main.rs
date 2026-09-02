@@ -46,7 +46,7 @@ use cobol_bms_core::model::{Color as BmsColor, DecorationType, Justify, DataType
 
 // Types module
 mod types;
-use types::{FileFilter, scan_directory_files_with_filter, scan_directory_files};
+use types::{FileFilter, InsertableObject, scan_directory_files_with_filter};
 
 // Combo key system
 mod combo_keys;
@@ -54,6 +54,7 @@ use combo_keys::{ComboKeyManager, ComboAction, ComboContext, TerminalType};
 
 // Views module
 mod views;
+use views::add_object_dialog::{render as render_add_object_dialog, handle_mode as handle_add_object_dialog_mode};
 use views::attribute_picker::{render as render_attribute_picker, handle_mode as handle_attribute_picker_mode};
 use views::color_picker::{render as render_color_picker, handle_mode as handle_color_picker_mode};
 use views::combo_key_help::{render as render_combo_key_help, handle_mode as handle_combo_key_help_mode};
@@ -618,133 +619,6 @@ fn get_object_type_metadata() -> HashMap<InsertableObject, ObjectTypeMetadata> {
     map
 }
 
-/// Types d'objets insérables dans le Canvas
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum InsertableObject {
-    AlphanumericField,
-    NumericField,
-    DateField,
-    TimeField,
-    BooleanField,
-    Literal,
-    ProtectedLiteral,
-    Fieldset,
-    Line,
-    AsciiArt,
-    Image,
-}
-
-impl InsertableObject {
-    pub fn all() -> &'static [InsertableObject] {
-        &[
-            InsertableObject::AlphanumericField,
-            InsertableObject::NumericField,
-            InsertableObject::DateField,
-            InsertableObject::TimeField,
-            InsertableObject::BooleanField,
-            InsertableObject::Literal,
-            InsertableObject::ProtectedLiteral,
-            InsertableObject::Fieldset,
-            InsertableObject::Line,
-            InsertableObject::AsciiArt,
-            InsertableObject::Image,
-        ]
-    }
-
-    pub fn display(&self) -> &'static str {
-        match self {
-            InsertableObject::AlphanumericField => "Alphanumeric Field",
-            InsertableObject::NumericField => "Numeric Field",
-            InsertableObject::DateField => "Date Field",
-            InsertableObject::TimeField => "Time Field",
-            InsertableObject::BooleanField => "Boolean Field",
-            InsertableObject::Literal => "Literal",
-            InsertableObject::ProtectedLiteral => "Protected Literal",
-            InsertableObject::Fieldset => "Fieldset",
-            InsertableObject::Line => "Horizontal Line",
-            InsertableObject::AsciiArt => "ASCII Art",
-            InsertableObject::Image => "Import Image",
-        }
-    }
-    
-    pub fn default_length(&self) -> u16 {
-        match self {
-            InsertableObject::AlphanumericField => 20,
-            InsertableObject::NumericField => 10,
-            InsertableObject::DateField => 8,
-            InsertableObject::TimeField => 6,
-            InsertableObject::BooleanField => 1,
-            InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
-            InsertableObject::Fieldset => 10,
-            InsertableObject::Line | InsertableObject::AsciiArt | InsertableObject::Image => 40,
-        }
-    }
-
-    pub fn create_field(&self, pos: (u16, u16)) -> BmsField {
-        let mut field = BmsField::default();
-        field.pos = pos;
-        field.length = match self {
-            InsertableObject::AlphanumericField => 20,
-            InsertableObject::NumericField => 10,
-            InsertableObject::DateField => 8,
-            InsertableObject::TimeField => 6,
-            InsertableObject::BooleanField => 1,
-            InsertableObject::Literal | InsertableObject::ProtectedLiteral => 20,
-            InsertableObject::Fieldset => 10,  // Default length for fieldset
-            InsertableObject::Line | InsertableObject::AsciiArt | InsertableObject::Image => 40,
-        };
-        field.name = match self {
-            InsertableObject::AlphanumericField => "ALNUM_FIELD".to_string(),
-            InsertableObject::NumericField => "NUM_FIELD".to_string(),
-            InsertableObject::DateField => "DATE_FIELD".to_string(),
-            InsertableObject::TimeField => "TIME_FIELD".to_string(),
-            InsertableObject::BooleanField => "BOOL_FIELD".to_string(),
-            InsertableObject::Literal => "LITERAL".to_string(),
-            InsertableObject::ProtectedLiteral => "PROT_LITERAL".to_string(),
-            InsertableObject::Fieldset => "FIELDSET".to_string(),
-            InsertableObject::Line => "HLINE".to_string(),
-            InsertableObject::AsciiArt => "ASCII_ART".to_string(),
-            InsertableObject::Image => "IMAGE_ART".to_string(),
-        };
-        field.field_type = match self {
-            InsertableObject::Fieldset => FieldType::Group,
-            InsertableObject::AsciiArt | InsertableObject::Image => FieldType::Literal, // Treat as literal for ASCII art
-            _ => FieldType::Field,
-        };
-        field.attrb = match self {
-            InsertableObject::ProtectedLiteral => vec![FieldAttribute::Prot],
-            InsertableObject::NumericField => vec![FieldAttribute::Num],
-            InsertableObject::DateField => vec![FieldAttribute::Date],
-            InsertableObject::TimeField => vec![FieldAttribute::Time],
-            InsertableObject::BooleanField => vec![FieldAttribute::Bool],
-            _ => vec![FieldAttribute::Norm],
-        };
-        field.pic = match self {
-            InsertableObject::NumericField => Some("9(10)".to_string()),
-            InsertableObject::DateField => Some("X(8)".to_string()),
-            InsertableObject::TimeField => Some("X(6)".to_string()),
-            InsertableObject::BooleanField => Some("X(1)".to_string()),
-            _ => None,
-        };
-        
-        // Set AsciiArt-specific properties
-        if matches!(self, InsertableObject::AsciiArt | InsertableObject::Image) {
-            field.height = Some(5);  // Default height for ASCII art
-        }
-        
-        // Set Fieldset-specific properties (minimum 3 rows)
-        if matches!(self, InsertableObject::Fieldset) {
-            field.height = Some(3);  // Use standard height property, minimum 3 for Fieldset
-            field.fieldset_decoration = Some(DecorationType::Brackets);  // Default decoration for title
-            field.fieldset_border = Some(DecorationType::Dashes);  // Default border for bottom line
-            field.fieldset_title_align = Some(Justify::Left);  // Default title alignment: Left
-            field.fieldset_title_fill_decoration = None;  // Default: space fill (no decoration)
-        }
-        
-        field
-    }
-}
-
 /// Section de la sidebar active
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SidebarSection {
@@ -813,7 +687,7 @@ pub struct App {
     file_browser_filter: types::FileFilter,
     file_browser_scroll: usize,
     // Pour le mode add object
-    selected_object_for_add: Option<InsertableObject>,
+    selected_object_for_add: Option<types::InsertableObject>,
     // Pour le mode text input
     text_input_prompt: String,
     text_input_value: String,
@@ -2634,85 +2508,7 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
 
 
 
-fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Esc => {
-            app.mode = AppMode::Edit;
-            app.selected_object_for_add = None;
-        }
-        KeyCode::Enter => {
-            if let Some(obj) = app.selected_object_for_add {
-                if obj == InsertableObject::AsciiArt || obj == InsertableObject::Image {
-                    // For AsciiArt and Image, go directly to image import
-                    let field = obj.create_field(app.editor.cursor_pos);
-                    app.edit_properties_field = Some(field);
-                    
-                    // Initialize image import with current directory
-                    let current_dir = std::env::current_dir()
-                        .ok()
-                        .map(|p| p.to_string_lossy().to_string())
-                        .unwrap_or_else(|| ".".to_string());
-                    
-                    app.mode = AppMode::ImageImport;
-                    app.image_import_path.clear();
-                    app.image_import_directory = current_dir;
-                    app.image_import_files = scan_directory_files(&app.image_import_directory, true); // Show image files by default
-                    app.image_import_selected_index = 0;
-                    // Ensure index is valid if no files found
-                    if app.image_import_files.is_empty() {
-                        app.image_import_selected_index = 0;
-                    } else {
-                        app.image_import_selected_index = app.image_import_selected_index.min(app.image_import_files.len() - 1);
-                    }
-                    app.image_import_error = None;
-                    app.image_import_show_all_files = false;
-                    app.selected_object_for_add = None;
-                    app.set_message(&format!("Import image for {} - Use arrows to select, Tab to show all files", obj.display()));
-                } else {
-                    // Create a field from the selected object
-                    let mut field = obj.create_field(app.editor.cursor_pos);
-                    
-                    // Instead of inserting immediately, go to EditProperties mode
-                    // to allow configuring the field properties
-                    app.edit_properties_field = Some(field);
-                    app.edit_properties_index = 0;
-                    app.mode = AppMode::EditProperties;
-                    app.selected_object_for_add = None;
-                    app.set_message(&format!("Configure {}", obj.display()));
-                }
-            }
-        }
-        KeyCode::Up => {
-            let objects = InsertableObject::all();
-            if let Some(current_idx) = app.selected_object_for_add.and_then(|obj| {
-                objects.iter().position(|&o| o == obj)
-            }) {
-                if current_idx > 0 {
-                    app.selected_object_for_add = Some(objects[current_idx - 1]);
-                } else {
-                    app.selected_object_for_add = Some(objects[objects.len() - 1]);
-                }
-            } else if !objects.is_empty() {
-                app.selected_object_for_add = Some(objects[objects.len() - 1]);
-            }
-        }
-        KeyCode::Down => {
-            let objects = InsertableObject::all();
-            if let Some(current_idx) = app.selected_object_for_add.and_then(|obj| {
-                objects.iter().position(|&o| o == obj)
-            }) {
-                if current_idx + 1 < objects.len() {
-                    app.selected_object_for_add = Some(objects[current_idx + 1]);
-                } else {
-                    app.selected_object_for_add = Some(objects[0]);
-                }
-            } else if !objects.is_empty() {
-                app.selected_object_for_add = Some(objects[0]);
-            }
-        }
-        _ => {}
-    }
-}
+
 
 fn handle_normal_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
@@ -4197,51 +3993,7 @@ fn is_property_group_start(index: usize, properties: &[PropertyType]) -> bool {
 
 
 
-fn render_add_object_dialog(f: &mut Frame, app: &App, area: Rect) {
-    let panel_width = 30;
-    let panel_area = Rect {
-        x: area.x + area.width - panel_width,
-        y: area.y,
-        width: panel_width,
-        height: area.height.min(15),
-    };
-    
-    let block = Block::default()
-        .title(" Add Object [Up/Down:Nav|Enter:Select|Esc:Cancel] ")
-        .borders(Borders::ALL);
-    f.render_widget(block, panel_area);
-    
-    let inner = Rect {
-        x: panel_area.x + 1,
-        y: panel_area.y + 1,
-        width: panel_area.width.saturating_sub(2),
-        height: panel_area.height.saturating_sub(2),
-    };
-    
-    let objects = InsertableObject::all();
-    let mut lines = vec![Line::from(" Select Object Type ".yellow())];
-    
-    for (_i, obj) in objects.iter().enumerate() {
-        let display_text = obj.display();
-        let is_selected = app.selected_object_for_add == Some(*obj);
-        let prefix = if is_selected { "> " } else { "  " };
-        let style = if is_selected {
-            Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
-        } else {
-            Style::default().fg(TuiColor::White)
-        };
-        lines.push(Line::from(Span::styled(format!("{} {}", prefix, display_text), style)));
-    }
-    
-    lines.push(Line::from(""));
-    lines.push(Line::from("Enter: Select".dim()));
-    lines.push(Line::from("Esc: Cancel".dim()));
-    
-    let text = Text::from(lines);
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(paragraph, inner);
-}
+
 
 /// Render image import dialog with file browser
 fn render_image_import_dialog(f: &mut Frame, app: &App, area: Rect) {
