@@ -641,6 +641,219 @@ impl ObjectDefinitions {
             }
         );
         
+        // Individual field attribute properties (boolean)
+        self.add_property("field_enabled",
+            PropertyDefinition {
+                name: "field_enabled".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Enabled".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is enabled".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_visible",
+            PropertyDefinition {
+                name: "field_visible".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Visible".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is visible".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_required",
+            PropertyDefinition {
+                name: "field_required".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Required".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is required".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_readonly",
+            PropertyDefinition {
+                name: "field_readonly".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Readonly".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is read-only".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_protected",
+            PropertyDefinition {
+                name: "field_protected".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Protected".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is protected".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_numeric",
+            PropertyDefinition {
+                name: "field_numeric".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Numeric".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is numeric".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_has_error",
+            PropertyDefinition {
+                name: "field_has_error".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Has Error".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field has an error".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_selected",
+            PropertyDefinition {
+                name: "field_selected".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Selected".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is selected".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_focused",
+            PropertyDefinition {
+                name: "field_focused".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Focused".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field has focus".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_highlighted",
+            PropertyDefinition {
+                name: "field_highlighted".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Highlighted".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is highlighted".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_hidden",
+            PropertyDefinition {
+                name: "field_hidden".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("Hidden".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is hidden".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_in_edit_mode",
+            PropertyDefinition {
+                name: "field_in_edit_mode".to_string(),
+                gui_field_type: Some(GuiFieldType::CheckboxWithLabelField),
+                gui_field_name: Some("In Edit Mode".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Whether the field is in edit mode".to_string()),
+                category: PropertyCategory::Attributes,
+                property_type: PropertyType::Boolean,
+                defaults: HashMap::new(),
+                available_values: Some(vec![PropertyValue::Boolean(true), PropertyValue::Boolean(false)]),
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_size",
+            PropertyDefinition {
+                name: "field_size".to_string(),
+                gui_field_type: Some(GuiFieldType::SelectWithLabelString),
+                gui_field_name: Some("Size".to_string()),
+                collapsed: false,
+                collapsable: true,
+                description: Some("Size category of the field (small, medium, large)".to_string()),
+                category: PropertyCategory::Dimensions,
+                property_type: PropertyType::Enum,
+                defaults: HashMap::new(),
+                available_values: Some(vec![
+                    PropertyValue::String("small".to_string()),
+                    PropertyValue::String("medium".to_string()),
+                    PropertyValue::String("large".to_string()),
+                ]),
+                constraints: None,
+            }
+        );
+        
         // Initial value
         self.add_property("field_initial",
             PropertyDefinition {
@@ -975,7 +1188,7 @@ impl ObjectDefinitions {
         // Categorize properties by their purpose (mirrors Lua property_categories)
         match prop_name {
             "field_height" | "field_width" | "field_min_height" | "field_max_height" | 
-            "field_width_min" | "field_width_max" => PropertyCategory::Dimensions,
+            "field_width_min" | "field_width_max" | "field_size" => PropertyCategory::Dimensions,
             
             "field_border_color" | "field_title_color" | "field_text_color" | 
             "field_footer_color" | "field_avail_color" | "field_avail_footer_color" => PropertyCategory::Colors,
@@ -1001,7 +1214,10 @@ impl ObjectDefinitions {
             "field_title_prefix" | "field_title_suffix" | "field_footer_title" | 
             "field_footer" => PropertyCategory::Other, // Could also be a new category like PrefixSuffix
             
-            "field_attrb" => PropertyCategory::Attributes,
+            "field_attrb" | "field_enabled" | "field_visible" | "field_required" | 
+            "field_readonly" | "field_protected" | "field_numeric" | "field_has_error" | 
+            "field_selected" | "field_focused" | "field_highlighted" | "field_hidden" | 
+            "field_in_edit_mode" => PropertyCategory::Attributes,
             
             "field_initial" | "field_name" | "field_type" => PropertyCategory::Values,
             
