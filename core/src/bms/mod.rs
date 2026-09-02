@@ -14,3 +14,4 @@ pub mod defaults;
 pub mod field;
 pub mod render;
 pub mod objects;
+pub mod ascii_art;
