@@ -1085,6 +1085,11 @@ impl BmsDefaults {
             BmsFieldType::Group,
         ]
     }
+
+    /// Get FieldObjectDefaults for a specific field type
+    pub fn get_object_defaults(&self, field_type: BmsFieldType) -> FieldObjectDefaults {
+        FieldObjectDefaults::new(field_type)
+    }
 }
 
 #[cfg(test)]
@@ -1132,5 +1137,65 @@ mod tests {
         let defaults = BmsDefaults::new();
         assert!(defaults.field_types().contains(&BmsFieldType::FieldTextORNumeric));
         assert!(defaults.field_types().contains(&BmsFieldType::Fieldset));
+    }
+}
+
+// ============================================================================
+// FIELD OBJECT DEFAULTS
+// ============================================================================
+
+/// Default values for a field object - mirrors Lua OBJECTS_DEFINITIONS default values
+/// This provides the default values that a field object should have based on its type
+#[derive(Debug, Clone)]
+pub struct FieldObjectDefaults {
+    pub width: u16,
+    pub height: u16,
+    pub min_width: u16,
+    pub max_width: u16,
+    pub min_height: u16,
+    pub max_height: u16,
+    pub border_style: BorderStyle,
+    pub text_color: Color,
+    pub border_color: Color,
+    pub title_color: Color,
+    pub text_align: TextAlign,
+    pub title_align: TextAlign,
+    pub text_style: TextStyle,
+    pub fill_char: FillChar,
+    pub field_type: BmsFieldType,
+}
+
+impl FieldObjectDefaults {
+    /// Create new FieldObjectDefaults for a specific field type
+    pub fn new(field_type: BmsFieldType) -> Self {
+        let size_defaults = FieldSizeDefaults::new();
+        let color_defaults = FieldColorDefaults::new();
+        let align_defaults = TextAlignDefaults::new();
+        let style_defaults = FieldStyleDefaults::new();
+        let border_defaults = BorderDefaults::new();
+        
+        Self {
+            width: size_defaults.get_width(field_type),
+            height: size_defaults.get_height(field_type),
+            min_width: size_defaults.get_min_width(field_type),
+            max_width: size_defaults.get_max_width(field_type),
+            min_height: size_defaults.get_min_height(field_type),
+            max_height: size_defaults.get_max_height(field_type),
+            border_style: border_defaults.get_default_border_style(field_type),
+            text_color: color_defaults.get_text_color(field_type),
+            border_color: color_defaults.get_border_color(field_type),
+            title_color: color_defaults.get_title_color(field_type),
+            text_align: align_defaults.get_default_text_align(field_type),
+            title_align: align_defaults.get_default_title_align(field_type),
+            text_style: style_defaults.get_default_style(field_type),
+            fill_char: FillChar::Space, // Default fill character
+            field_type: field_type.clone(),
+        }
+    }
+}
+
+impl Default for FieldObjectDefaults {
+    fn default() -> Self {
+        Self::new(BmsFieldType::default())
     }
 }

@@ -12,3 +12,4 @@ pub mod field_types;
 pub mod types;
 pub mod defaults;
 pub mod field;
+pub mod render;
