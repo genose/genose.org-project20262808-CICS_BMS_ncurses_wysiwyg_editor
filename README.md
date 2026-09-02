@@ -22,7 +22,7 @@
 - **Boite de proprietes avancee**: Toutes les proprietes par type d'objet (Field, Group/Fieldset, ASCII Art, Image)
   - Proprietes communes: Nom, Type, Position, Longueur, Attributs, Couleurs
   - Fieldset: Titre, Hauteur, Decoration, Alignement titre, Couleurs (titre, bordure, contenu)
-  - ASCII Art: Import et conversion d'images
+  - ASCII Art: Import et conversion d'images (PNG, JPEG, TIFF, GIF, BMP)
 - **Undo/Redo** illimite
 - **Clipboard**: Copier/Couper/Coller
 - **100% Lua OBJECTS-DEFINITIONS Parity**: Toutes les 65+ proprietes implementees

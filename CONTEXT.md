@@ -451,6 +451,7 @@ pub enum Color {
 | Pas de drag & drop | Navigation au clavier | Ajouter la souris |
 | Clipboard limite a un champ | `Option<BmsField>` | `Vec<BmsField>` |
 | Pas de validation en temps reel | Validation au sauvegarde | LSP pour VSCode |
+| Conversion SVG vers ASCII Art directe | Conversion externe requise (SVG→PNG) | Integration native de SVG |
 
 ---
 

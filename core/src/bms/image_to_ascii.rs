@@ -1,7 +1,10 @@
 //! Image to ASCII Art conversion module
 //!
-//! This module provides functionality to convert image files (PNG, JPEG, TIFF, etc.)
+//! This module provides functionality to convert image files (PNG, JPEG, TIFF, GIF, BMP, etc.)
 //! to ASCII art with color information for use in BMS fields.
+//! 
+//! Note: For SVG files, use external tools to convert to PNG/JPEG first, as the image crate
+//! doesn't have built-in SVG support in this version.
 
 use std::path::Path;
 use image::ImageReader;
@@ -39,7 +42,9 @@ pub fn image_to_ascii_simple<P: AsRef<Path>>(
     image_to_ascii(image_path, target_width, target_height)
 }
 
-/// Load an image file using the image crate
+/// Load an image file using the image crate (supports PNG, JPEG, TIFF, GIF, BMP, etc.)
+/// Note: SVG support is available through the CLI file browser but requires conversion to raster first
+/// For full SVG support, use external tools to convert SVG to PNG before importing
 fn load_image<P: AsRef<Path>>(path: P) -> Result<DynamicImage, anyhow::Error> {
     let img = ImageReader::open(path)?.decode()?;
     Ok(img)
