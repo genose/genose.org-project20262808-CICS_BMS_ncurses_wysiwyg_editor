@@ -74,6 +74,7 @@ use views::properties_mode::handle_mode as handle_properties_mode;
 use views::edit_mode::handle_mode as handle_edit_mode;
 use views::ui::render as render_ui;
 use views::utils::*;
+use views::object_definitions_properties::{ObjectDefinitionsPropertyState, handle_object_definitions_properties_mode, render_object_definitions_properties_panel};
 
 
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
@@ -337,6 +338,8 @@ pub struct App {
     edit_properties_field: Option<BmsField>,
     edit_properties_index: usize,
     edit_properties_scroll_offset: usize,
+    // Pour le mode object definitions properties
+    object_definitions_property_state: Option<ObjectDefinitionsPropertyState>,
     // Pour le mode color picker
     pub selected_color: Option<BmsColor>,
     // Pour le mode attribute picker
@@ -384,6 +387,8 @@ pub enum TextInputAction {
     SetFieldPic,
     /// Set the name of the selected field
     SetFieldName,
+    /// Set the length of the selected field
+    SetFieldLength,
     /// No action (generic text input)
     Custom(String),
 }
@@ -420,6 +425,7 @@ impl App {
             edit_properties_field: None,
             edit_properties_index: 0,
             edit_properties_scroll_offset: 0,
+            object_definitions_property_state: None,
             selected_color: None,
             selected_attribute: None,
             save_path: String::new(),
@@ -630,6 +636,14 @@ impl App {
                     TextInputAction::SetFieldName => {
                         self.editor.map.fields[idx].name = value;
                         self.set_message(&format!("Name set to: {}", self.editor.map.fields[idx].name));
+                    }
+                    TextInputAction::SetFieldLength => {
+                        if let Ok(length) = value.parse::<u16>() {
+                            self.editor.map.fields[idx].length = length;
+                            self.set_message(&format!("Length set to: {}", length));
+                        } else {
+                            self.set_message("Invalid length - must be a number");
+                        }
                     }
                     TextInputAction::Custom(_) => {
                         self.set_message(&format!("Text entered: {}", value));
@@ -864,6 +878,9 @@ fn handle_combo_action(app: &mut App, action: ComboAction, key: &event::KeyEvent
                 if let Some(idx) = app.editor.selected_field {
                     app.edit_properties_field = Some(app.editor.map.fields[idx].clone());
                     app.edit_properties_index = 0;
+                    // Initialize OBJECTS_DEFINITIONS property state
+                    use crate::views::object_definitions_properties::ObjectDefinitionsPropertyState;
+                    app.object_definitions_property_state = Some(ObjectDefinitionsPropertyState::new(&app.edit_properties_field.as_ref().unwrap()));
                     app.mode = AppMode::EditProperties;
                     app.set_message("Edit Field Properties");
                 }

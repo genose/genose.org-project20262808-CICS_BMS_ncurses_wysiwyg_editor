@@ -1060,3 +1060,99 @@ pub fn is_property_group_start(index: usize, properties: &[PropertyType]) -> boo
     
     current_group != prev_group
 }
+
+// ============================================================================
+// OBJECTS_DEFINITIONS INTEGRATION
+// ============================================================================
+
+use cobol_bms_core::bms::{
+    objects::{ObjectDefinitions, GuiPropertyInfo, PropertyValue},
+    field_types::BmsFieldType,
+    types::{Color, BorderStyle, TextAlign, VerticalAlign, FillChar, TextStyle, Marker, PrefixSuffix, Footer, FieldAttributes, BorderCharSet, BorderChars, Position, VerticalMargin},
+};
+
+/// Convert CLI InsertableObject to OBJECTS_DEFINITIONS BmsFieldType
+pub fn to_bms_field_type(obj_type: &InsertableObject) -> BmsFieldType {
+    match obj_type {
+        InsertableObject::AlphanumericField => BmsFieldType::FieldTextORNumeric,
+        InsertableObject::NumericField => BmsFieldType::FieldTextORNumeric, // Numeric fields are also text-based
+        InsertableObject::DateField => BmsFieldType::FieldTextORNumeric,    // Date fields are text-based
+        InsertableObject::TimeField => BmsFieldType::FieldTextORNumeric,    // Time fields are text-based
+        InsertableObject::BooleanField => BmsFieldType::BooleanField,
+        InsertableObject::Literal => BmsFieldType::Literal,
+        InsertableObject::ProtectedLiteral => BmsFieldType::ProtectedLiteral,
+        InsertableObject::Fieldset => BmsFieldType::Fieldset,
+        InsertableObject::Line => BmsFieldType::Line,
+        InsertableObject::AsciiArt => BmsFieldType::ImageAsciiArt,
+        InsertableObject::Image => BmsFieldType::ImageAsciiArt, // Import image as ASCII art
+    }
+}
+
+/// Convert OBJECTS_DEFINITIONS BmsFieldType to CLI InsertableObject
+pub fn from_bms_field_type(field_type: &BmsFieldType) -> InsertableObject {
+    match field_type {
+        BmsFieldType::FieldTextORNumeric => InsertableObject::AlphanumericField,
+        BmsFieldType::BooleanField => InsertableObject::BooleanField,
+        BmsFieldType::Literal => InsertableObject::Literal,
+        BmsFieldType::ProtectedLiteral => InsertableObject::ProtectedLiteral,
+        BmsFieldType::ImageAsciiArt => InsertableObject::AsciiArt,
+        BmsFieldType::Line => InsertableObject::Line,
+        BmsFieldType::Fieldset => InsertableObject::Fieldset,
+        BmsFieldType::Group => InsertableObject::Fieldset, // Map Group to Fieldset for CLI
+    }
+}
+
+/// Get OBJECTS_DEFINITIONS global instance
+pub fn get_object_definitions() -> &'static ObjectDefinitions {
+    &cobol_bms_core::bms::objects::OBJECTS_DEFINITIONS
+}
+
+/// Get GUI properties for an InsertableObject using OBJECTS_DEFINITIONS
+pub fn get_gui_properties_for_insertable_object(obj_type: &InsertableObject) -> Vec<GuiPropertyInfo> {
+    let bms_field_type = to_bms_field_type(obj_type);
+    get_object_definitions().get_gui_properties(bms_field_type)
+}
+
+/// Get ncurses menu items for an InsertableObject using OBJECTS_DEFINITIONS
+pub fn get_ncurses_menu_items_for_insertable_object(obj_type: &InsertableObject) -> Vec<cobol_bms_core::bms::objects::NcursesMenuItem> {
+    let bms_field_type = to_bms_field_type(obj_type);
+    get_object_definitions().get_ncurses_menu_items(bms_field_type)
+}
+
+/// Create a field object using OBJECTS_DEFINITIONS for an InsertableObject
+pub fn create_field_object_with_definitions(obj_type: &InsertableObject) -> cobol_bms_core::bms::render::FieldObject {
+    let bms_field_type = to_bms_field_type(obj_type);
+    get_object_definitions().create_field_object(bms_field_type)
+}
+
+/// Get all InsertableObjects that map to OBJECTS_DEFINITIONS field types
+pub fn get_objects_with_definitions() -> Vec<InsertableObject> {
+    vec![
+        InsertableObject::AlphanumericField,
+        InsertableObject::BooleanField,
+        InsertableObject::Literal,
+        InsertableObject::ProtectedLiteral,
+        InsertableObject::Fieldset,
+        InsertableObject::Line,
+        InsertableObject::AsciiArt,
+        // Note: DateField, TimeField, NumericField, Image map to the above types
+    ]
+}
+
+/// Get OBJECTS_DEFINITIONS GUI properties for a field, using the new system
+pub fn get_object_definitions_properties_for_field(field: &BmsField) -> Vec<GuiPropertyInfo> {
+    let obj_type = get_insertable_object_from_field(field)
+        .map(|insertable| to_bms_field_type(&insertable))
+        .unwrap_or(BmsFieldType::FieldTextORNumeric);
+    
+    get_object_definitions().get_gui_properties(obj_type)
+}
+
+/// Get OBJECTS_DEFINITIONS ncurses menu items for a field
+pub fn get_object_definitions_menu_items_for_field(field: &BmsField) -> Vec<cobol_bms_core::bms::objects::NcursesMenuItem> {
+    let obj_type = get_insertable_object_from_field(field)
+        .map(|insertable| to_bms_field_type(&insertable))
+        .unwrap_or(BmsFieldType::FieldTextORNumeric);
+    
+    get_object_definitions().get_ncurses_menu_items(obj_type)
+}

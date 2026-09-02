@@ -29,6 +29,7 @@ use super::combo_key_help::render as render_combo_key_help;
 use super::confirm::render as render_confirm;
 use super::image_import_dialog::render as render_image_import_dialog;
 use super::status_bar::render as render_status_bar;
+use super::object_definitions_properties::render_object_definitions_properties_panel;
 
 /// Main UI rendering function
 /// 
@@ -96,7 +97,12 @@ pub fn render(f: &mut Frame, app: &App) {
         }
         AppMode::EditProperties => {
             render_canvas(f, app, content_area);
-            render_edit_properties_panel(f, app, content_area);
+            // Use OBJECTS_DEFINITIONS panel if available, otherwise fall back to old system
+            if app.object_definitions_property_state.is_some() && app.edit_properties_field.is_some() {
+                render_object_definitions_properties_panel(f, app, content_area);
+            } else {
+                render_edit_properties_panel(f, app, content_area);
+            }
         }
         AppMode::MapTypePicker => {
             render_canvas(f, app, content_area);

@@ -38,6 +38,7 @@ pub mod properties;
 pub mod sidebar;
 pub mod status_bar;
 pub mod text_input;
+pub mod object_definitions_properties;
 // pub mod sidebar;
 // pub mod properties;
 // pub mod dialogs;

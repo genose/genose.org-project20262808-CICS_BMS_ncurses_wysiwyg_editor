@@ -10,8 +10,10 @@ use ratatui::{
 use ratatui::style::Color as TuiColor;
 use ratatui::text::{Line, Span, Text};
 
-use crate::types::InsertableObject;
-use crate::{App, AppMode, ActivePanel, SidebarSection, SidebarAction};
+use crate::types::{InsertableObject, get_objects_with_definitions, to_bms_field_type};
+use crate::App;
+use crate::{ActivePanel, SidebarSection, SidebarAction};
+use cobol_bms_core::bms::objects::OBJECTS_DEFINITIONS;
 
 /// Render the sidebar area
 /// 
@@ -109,16 +111,32 @@ pub fn render(f: &mut Frame, app: &App, area: Rect) {
             }
         }
         SidebarSection::Objects => {
-            // Render insertable objects with selection highlight
-            let objects = InsertableObject::all();
-            for (i, obj) in objects.iter().enumerate() {
+            // Render insertable objects with selection highlight using OBJECTS_DEFINITIONS
+            // Add all object types including those that map to OBJECTS_DEFINITIONS
+            let all_objects = InsertableObject::all();
+            for (i, obj) in all_objects.iter().enumerate() {
                 let display_text = obj.display();
+                
+                // Check if this object has OBJECTS_DEFINITIONS support
+                let has_definitions = get_objects_with_definitions().contains(obj);
                 let style = if app.active_panel == ActivePanel::Sidebar && app.sidebar_objects_selected == Some(i) {
                     Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
+                } else if has_definitions {
+                    Style::default().fg(TuiColor::Green) // Highlight objects with full definitions
                 } else {
                     Style::default().fg(TuiColor::White)
                 };
-                lines.push(Line::from(Span::styled(display_text, style)));
+                
+                // Add marker for objects with comprehensive definitions
+                let marker = if has_definitions { "✓ " } else { "  " };
+                lines.push(Line::from(Span::styled(format!("{}{}", marker, display_text), style)));
+            }
+            
+            // Add a separator and info about OBJECTS_DEFINITIONS
+            if app.sidebar_objects_selected.is_none() {
+                lines.push(Line::from(""));
+                lines.push(Line::from("✓ = Full OBJECTS_DEFINITIONS support".dim()));
+                lines.push(Line::from("F1: Help | F2: Properties".dim()));
             }
         }
     }

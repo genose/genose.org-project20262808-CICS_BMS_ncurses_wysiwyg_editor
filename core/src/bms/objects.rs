@@ -12,6 +12,43 @@ use super::{
     render::FieldObject,
 };
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::fmt;
+use serde_json;
+
+/// Visual representation template type - can be a function or static template
+pub enum VisualRepresentationTemplate {
+    /// Function-based template (like Lua functions)
+    Function(Arc<dyn Fn(&crate::bms::render::FieldObject) -> String + Send + Sync>),
+    /// Static template with lines
+    Static(Vec<String>),
+    /// Table-based template (for compatibility with Lua)
+    Table(HashMap<usize, String>),
+}
+
+impl fmt::Debug for VisualRepresentationTemplate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VisualRepresentationTemplate::Function(_) => write!(f, "Function"),
+            VisualRepresentationTemplate::Static(lines) => write!(f, "Static({:?})", lines),
+            VisualRepresentationTemplate::Table(table) => write!(f, "Table({:?})", table),
+        }
+    }
+}
+
+impl Clone for VisualRepresentationTemplate {
+    fn clone(&self) -> Self {
+        match self {
+            VisualRepresentationTemplate::Function(func) => {
+                // For cloning function templates, we create a new reference
+                // Note: This assumes the function is stateless or the state is shared via Arc
+                VisualRepresentationTemplate::Function(Arc::clone(func))
+            }
+            VisualRepresentationTemplate::Static(lines) => VisualRepresentationTemplate::Static(lines.clone()),
+            VisualRepresentationTemplate::Table(table) => VisualRepresentationTemplate::Table(table.clone()),
+        }
+    }
+}
 
 /// Main OBJECTS_DEFINITIONS structure that contains all property definitions
 /// Mirrors the Lua OBJECTS_DEFINITIONS table
@@ -28,6 +65,50 @@ pub struct ObjectDefinitions {
     
     // Available options for various properties
     pub available_options: AvailableOptions,
+    
+    // Visual representation templates
+    pub visual_representation_templates: HashMap<BmsFieldType, VisualRepresentationTemplate>,
+}
+
+/// GUI property information for property editing
+#[derive(Debug, Clone)]
+pub struct GuiPropertyInfo {
+    pub name: String,
+    pub gui_name: String,
+    pub category: PropertyCategory,
+    pub gui_type: GuiFieldType,
+    pub control_type: ControlType,
+    pub default: Option<PropertyValue>,
+    pub min_max: Option<(Option<i32>, Option<i32>)>,
+    pub available_values: Option<Vec<PropertyValue>>,
+    pub read_only: bool,
+    pub hint: String,
+}
+
+/// Ncurses menu item for property editing
+#[derive(Debug, Clone)]
+pub struct NcursesMenuItem {
+    pub label: String,
+    pub name: String,
+    pub property_type: GuiFieldType,
+    pub control_type: ControlType,
+    pub read_only: bool,
+    pub default: Option<PropertyValue>,
+    pub min: Option<i32>,
+    pub max: Option<i32>,
+    pub choices: Option<Vec<PropertyValue>>,
+    pub category: PropertyCategory,
+    pub hint: String,
+}
+
+/// Control type for GUI rendering
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ControlType {
+    Select,
+    Text,
+    Checkbox,
+    List,
+    Other,
 }
 
 /// Property definition structure
@@ -273,12 +354,15 @@ impl AvailableOptions {
 #[derive(Debug, Clone)]
 pub struct FieldTypeDefaults {
     pub properties: HashMap<String, PropertyValue>,
+    /// Visual representation function for this field type
+    pub visual_representation: Option<VisualRepresentationTemplate>,
 }
 
 impl FieldTypeDefaults {
     pub fn new() -> Self {
         Self {
             properties: HashMap::new(),
+            visual_representation: None,
         }
     }
     
@@ -297,12 +381,14 @@ impl ObjectDefinitions {
             defaults: HashMap::new(),
             gui_field_types: HashMap::new(),
             available_options: AvailableOptions::new(),
+            visual_representation_templates: HashMap::new(),
         };
         
         // Initialize all property definitions
         definitions.initialize_property_definitions();
         definitions.initialize_gui_field_types();
         definitions.initialize_field_type_defaults();
+        definitions.initialize_visual_representation_templates();
         
         definitions
     }
@@ -417,6 +503,40 @@ impl ObjectDefinitions {
                 collapsed: true,
                 collapsable: true,
                 description: Some("Available border characters".to_string()),
+                category: PropertyCategory::Borders,
+                property_type: PropertyType::BorderCharSet,
+                defaults: HashMap::new(),
+                available_values: None,
+                constraints: None,
+            }
+        );
+        
+        // field_border cross-reference property (combines style and chars)
+        self.add_property("field_border",
+            PropertyDefinition {
+                name: "field_border".to_string(),
+                gui_field_type: None,
+                gui_field_name: None,
+                collapsed: true,
+                collapsable: false,
+                description: Some("Border configuration (style + chars)".to_string()),
+                category: PropertyCategory::Borders,
+                property_type: PropertyType::BorderCharSet, // Simplified for now
+                defaults: HashMap::new(),
+                available_values: None,
+                constraints: None,
+            }
+        );
+        
+        // field_border_chars property
+        self.add_property("field_border_chars",
+            PropertyDefinition {
+                name: "field_border_chars".to_string(),
+                gui_field_type: None,
+                gui_field_name: None,
+                collapsed: true,
+                collapsable: false,
+                description: Some("Border characters for the field".to_string()),
                 category: PropertyCategory::Borders,
                 property_type: PropertyType::BorderCharSet,
                 defaults: HashMap::new(),
@@ -728,6 +848,42 @@ impl ObjectDefinitions {
         }
     }
     
+    /// Initialize visual representation templates for each field type
+    fn initialize_visual_representation_templates(&mut self) {
+        // Create templates for each field type that mirror Lua's visual_representation.default
+        let field_types = self.get_all_field_types();
+        
+        for field_type in field_types {
+            let template = match field_type {
+                BmsFieldType::FieldTextORNumeric | BmsFieldType::Literal | 
+                BmsFieldType::ProtectedLiteral | BmsFieldType::BooleanField => {
+                    // These field types can be rendered with or without borders
+                    VisualRepresentationTemplate::Function(Arc::new(move |obj: &crate::bms::render::FieldObject| {
+                        crate::bms::render::render_object(obj)
+                    }))
+                }
+                BmsFieldType::ImageAsciiArt => {
+                    // ImageAsciiArt can also use bordered rendering
+                    VisualRepresentationTemplate::Function(Arc::new(move |obj: &crate::bms::render::FieldObject| {
+                        crate::bms::render::render_object(obj)
+                    }))
+                }
+                BmsFieldType::Line => {
+                    VisualRepresentationTemplate::Function(Arc::new(move |obj: &crate::bms::render::FieldObject| {
+                        crate::bms::render::render_line(obj)
+                    }))
+                }
+                BmsFieldType::Fieldset | BmsFieldType::Group => {
+                    VisualRepresentationTemplate::Function(Arc::new(move |obj: &crate::bms::render::FieldObject| {
+                        crate::bms::render::render_fieldset(obj)
+                    }))
+                }
+            };
+            
+            self.visual_representation_templates.insert(field_type, template);
+        }
+    }
+    
     /// Get all BMS field types
     fn get_all_field_types(&self) -> Vec<BmsFieldType> {
         vec![
@@ -814,6 +970,82 @@ impl ObjectDefinitions {
         defaults
     }
     
+    /// Helper to get property category
+    fn get_property_category(&self, prop_name: &str) -> PropertyCategory {
+        // Categorize properties by their purpose (mirrors Lua property_categories)
+        match prop_name {
+            "field_height" | "field_width" | "field_min_height" | "field_max_height" | 
+            "field_width_min" | "field_width_max" => PropertyCategory::Dimensions,
+            
+            "field_border_color" | "field_title_color" | "field_text_color" | 
+            "field_footer_color" | "field_avail_color" | "field_avail_footer_color" => PropertyCategory::Colors,
+            
+            "field_avail_font_family" | "field_font_family" => PropertyCategory::Font,
+            
+            "field_avail_style" | "field_style" => PropertyCategory::Style,
+            
+            "field_avail_text_align" | "field_text_align" | "field_title_align" | 
+            "field_vertical_align" | "field_footer_align" => PropertyCategory::Alignment,
+            
+            "field_avail_pos" | "field_pos" => PropertyCategory::Position,
+            
+            "field_avail_border_chars" | "field_avail_border_style" | "field_border" | 
+            "field_border_style" | "field_border_chars" => PropertyCategory::Borders,
+            
+            "field_title_fill_char" | "field_fill_char" | "field_footer_fill_char" => PropertyCategory::Fill,
+            
+            "field_avail_required_marker" | "field_required_marker" | 
+            "field_avail_error_marker" | "field_error_marker" | 
+            "field_footer_required_marker" | "field_footer_error_marker" => PropertyCategory::Markers,
+            
+            "field_title_prefix" | "field_title_suffix" | "field_footer_title" | 
+            "field_footer" => PropertyCategory::Other, // Could also be a new category like PrefixSuffix
+            
+            "field_attrb" => PropertyCategory::Attributes,
+            
+            "field_initial" | "field_name" | "field_type" => PropertyCategory::Values,
+            
+            "field_children" => PropertyCategory::Children,
+            
+            "visual_representation" => PropertyCategory::Visual,
+            
+            _ => PropertyCategory::Other,
+        }
+    }
+    
+    /// Helper to get control type from GUI field type
+    fn get_control_type(&self, gui_type: GuiFieldType) -> ControlType {
+        match gui_type {
+            GuiFieldType::SelectWithLabelString | 
+            GuiFieldType::SelectWithLabelNumeric => ControlType::Select,
+            GuiFieldType::ListTextOrNumWithLabelField => ControlType::List,
+            GuiFieldType::CheckboxWithLabelField => ControlType::Checkbox,
+            GuiFieldType::TextWithLabelField | 
+            GuiFieldType::TextField | 
+            GuiFieldType::LiteralField | 
+            GuiFieldType::ProtectedLiteralField | 
+            GuiFieldType::BooleanField | 
+            GuiFieldType::ImageField | 
+            GuiFieldType::LineField | 
+            GuiFieldType::FieldsetField => ControlType::Text,
+        }
+    }
+    
+    /// Helper to check if a property is read-only
+    fn is_property_readonly(&self, prop_name: &str, _prop_def: &PropertyDefinition) -> bool {
+        // Properties that are typically read-only in Lua
+        let readonly_properties = [
+            "field_type", "field_name", "visual_representation", 
+            "field_avail_color", "field_avail_font_family", "field_avail_style",
+            "field_avail_text_align", "field_avail_border_chars", "field_avail_border_style",
+            "field_avail_pos", "field_avail_vertical_align", 
+            "field_avail_required_marker", "field_avail_error_marker",
+            "field_avail_footer_color"
+        ];
+        
+        readonly_properties.contains(&prop_name)
+    }
+    
     /// Get a property definition by name
     pub fn get_property(&self, name: &str) -> Option<&PropertyDefinition> {
         self.properties.get(name)
@@ -855,6 +1087,123 @@ impl ObjectDefinitions {
         }
         
         obj
+    }
+    
+    /// Get GUI properties for a specific field type
+    /// Mirrors Lua: OBJECTS_DEFINITIONS.get_gui_properties(obj_type)
+    pub fn get_gui_properties(&self, obj_type: BmsFieldType) -> Vec<GuiPropertyInfo> {
+        let mut properties = Vec::new();
+        
+        for (prop_name, prop_def) in &self.properties {
+            // Skip properties that don't have GUI representation
+            if prop_def.gui_field_type.is_none() && !prop_def.collapsable {
+                continue;
+            }
+            
+            let gui_name = prop_def.gui_field_name.clone().unwrap_or_else(|| {
+                // Convert property name to GUI-friendly name
+                prop_name.to_uppercase()
+            });
+            
+            let category = self.get_property_category(prop_name);
+            let gui_type = prop_def.gui_field_type.unwrap_or(GuiFieldType::TextField);
+            let control_type = self.get_control_type(gui_type);
+            let read_only = self.is_property_readonly(prop_name, prop_def);
+            
+            // Get default value for this field type if available
+            let default_value = prop_def.defaults.get(&obj_type).cloned();
+            
+            // Get constraints if available
+            let min_max = prop_def.constraints.as_ref().map(|c| (c.min, c.max));
+            
+            // Get available values for enum properties
+            let available_values = prop_def.available_values.clone();
+            
+            let hint = prop_def.description.clone().unwrap_or_else(|| {
+                format!("Configure {}", gui_name.to_lowercase())
+            });
+            
+            properties.push(GuiPropertyInfo {
+                name: prop_name.clone(),
+                gui_name,
+                category,
+                gui_type,
+                control_type,
+                default: default_value,
+                min_max,
+                available_values,
+                read_only,
+                hint,
+            });
+        }
+        
+        properties
+    }
+    
+    /// Get ncurses menu items for a specific field type
+    /// Mirrors Lua: OBJECTS_DEFINITIONS.get_ncurses_menu_items(obj_type)
+    pub fn get_ncurses_menu_items(&self, obj_type: BmsFieldType) -> Vec<NcursesMenuItem> {
+        self.get_gui_properties(obj_type)
+            .into_iter()
+            .map(|prop| NcursesMenuItem {
+                label: prop.gui_name,
+                name: prop.name,
+                property_type: prop.gui_type,
+                control_type: prop.control_type,
+                read_only: prop.read_only,
+                default: prop.default,
+                min: prop.min_max.and_then(|(min, _)| min),
+                max: prop.min_max.and_then(|(_, max)| max),
+                choices: prop.available_values,
+                category: prop.category,
+                hint: prop.hint,
+            })
+            .collect()
+    }
+    
+    /// Export object definitions to JSON for a specific field type
+    /// Mirrors Lua: OBJECTS_DEFINITIONS.export_to_json(obj_type)
+    pub fn export_to_json(&self, obj_type: BmsFieldType) -> serde_json::Value {
+        use serde_json::json;
+        
+        let mut result = json!({});
+        
+        // Add default property values for this field type
+        for (prop_name, prop_def) in &self.properties {
+            if let Some(default_value) = prop_def.defaults.get(&obj_type) {
+                result[prop_name] = self.property_value_to_json(default_value);
+            }
+        }
+        
+        result
+    }
+    
+    /// Convert a PropertyValue to JSON
+    fn property_value_to_json(&self, value: &PropertyValue) -> serde_json::Value {
+        use serde_json::json;
+        
+        match value {
+            PropertyValue::String(s) => json!(s),
+            PropertyValue::Number(n) => json!(n),
+            PropertyValue::Float(f) => json!(f),
+            PropertyValue::Boolean(b) => json!(b),
+            PropertyValue::Color(c) => json!(c.as_str()),
+            PropertyValue::BorderStyle(bs) => json!(bs.as_str()),
+            PropertyValue::TextAlign(ta) => json!(ta.as_str()),
+            PropertyValue::VerticalAlign(va) => json!(va.as_str()),
+            PropertyValue::FillChar(fc) => json!(fc.char().to_string()),
+            PropertyValue::TextStyle(ts) => json!(ts.as_str()),
+            PropertyValue::BorderCharSet(bcs) => json!({
+                "top_left": bcs.top_left,
+                "top": bcs.top,
+                "top_right": bcs.top_right,
+                "left": bcs.left,
+                "right": bcs.right,
+                "bottom_left": bcs.bottom_left,
+                "bottom": bcs.bottom,
+                "bottom_right": bcs.bottom_right
+            }),
+        }
     }
     
     /// Get FieldObjectDefaults for a field type

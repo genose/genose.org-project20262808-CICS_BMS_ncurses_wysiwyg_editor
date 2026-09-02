@@ -830,6 +830,43 @@ impl Default for DecorationType {
     }
 }
 
+// ============================================================================
+// FIELD ATTRIBUTES
+// ============================================================================
+
+/// Field attributes structure for required/error states
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct FieldAttributes {
+    pub field_required: bool,
+    pub field_has_error: bool,
+    // Other attributes as needed
+}
+
+impl Default for FieldAttributes {
+    fn default() -> Self {
+        Self {
+            field_required: false,
+            field_has_error: false,
+        }
+    }
+}
+
+impl FieldAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    
+    pub fn required(mut self) -> Self {
+        self.field_required = true;
+        self
+    }
+    
+    pub fn with_error(mut self) -> Self {
+        self.field_has_error = true;
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

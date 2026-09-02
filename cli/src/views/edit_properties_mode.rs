@@ -6,6 +6,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::App;
 use crate::AppMode;
+use crate::types::get_object_definitions_properties_for_field;
 
 /// Handle input for edit properties mode
 /// 
@@ -40,8 +41,26 @@ pub fn handle_mode(app: &mut App, key: KeyEvent) {
     }
     
     if let Some(field) = app.edit_properties_field.as_mut() {
-        // Get the list of properties for this field
+        // Get properties from OBJECTS_DEFINITIONS
+        let object_defs_properties = get_object_definitions_properties_for_field(field);
+        
+        // For compatibility with existing code, also get the old properties
         let properties = crate::get_properties_for_field(field);
+        
+        // Use OBJECTS_DEFINITIONS properties if available, otherwise fall back to old system
+        let properties_to_use = if !object_defs_properties.is_empty() {
+            // For now, we'll use the old system but the OBJECTS_DEFINITIONS properties are available
+            // TODO: Complete refactor to use only OBJECTS_DEFINITIONS
+            properties.clone()
+        } else {
+            properties
+        };
+        
+        // Initialize OBJECTS_DEFINITIONS property state if not exists
+        if app.object_definitions_property_state.is_none() {
+            use crate::views::object_definitions_properties::ObjectDefinitionsPropertyState;
+            app.object_definitions_property_state = Some(ObjectDefinitionsPropertyState::new(field));
+        }
         
         match key.code {
             KeyCode::Esc => {
@@ -58,7 +77,7 @@ pub fn handle_mode(app: &mut App, key: KeyEvent) {
                 }
             }
             KeyCode::Down => {
-                if app.edit_properties_index + 1 < properties.len() {
+                if app.edit_properties_index + 1 < properties_to_use.len() {
                     app.edit_properties_index += 1;
                     // Scroll down if index is near bottom
                     if app.edit_properties_index >= app.edit_properties_scroll_offset + 18 {
@@ -74,33 +93,33 @@ pub fn handle_mode(app: &mut App, key: KeyEvent) {
                     if app.edit_properties_index < app.edit_properties_scroll_offset {
                         app.edit_properties_index = app.edit_properties_scroll_offset;
                     } else if app.edit_properties_index > app.edit_properties_scroll_offset + 14 {
-                        app.edit_properties_index = (app.edit_properties_scroll_offset + 14).min(properties.len().saturating_sub(1));
+                        app.edit_properties_index = (app.edit_properties_scroll_offset + 14).min(properties_to_use.len().saturating_sub(1));
                     }
                 }
             }
             KeyCode::PageDown => {
-                let max_scroll = properties.len().saturating_sub(15);
+                let max_scroll = properties_to_use.len().saturating_sub(15);
                 if app.edit_properties_scroll_offset < max_scroll {
                     let step = 10.min(max_scroll - app.edit_properties_scroll_offset);
                     app.edit_properties_scroll_offset = (app.edit_properties_scroll_offset + step).min(max_scroll);
                     // Keep index visible
                     if app.edit_properties_index < app.edit_properties_scroll_offset {
                         app.edit_properties_index = app.edit_properties_scroll_offset;
-                    } else if app.edit_properties_index < app.edit_properties_scroll_offset + 14 && app.edit_properties_index + 10 < properties.len() {
-                        app.edit_properties_index = (app.edit_properties_scroll_offset + 14).min(properties.len().saturating_sub(1));
+                    } else if app.edit_properties_index < app.edit_properties_scroll_offset + 14 && app.edit_properties_index + 10 < properties_to_use.len() {
+                        app.edit_properties_index = (app.edit_properties_scroll_offset + 14).min(properties_to_use.len().saturating_sub(1));
                     }
                 }
             }
             KeyCode::Char('+') | KeyCode::Right => {
-                if app.edit_properties_index < properties.len() {
-                    if let Some(prop) = properties.get(app.edit_properties_index) {
+                if app.edit_properties_index < properties_to_use.len() {
+                    if let Some(prop) = properties_to_use.get(app.edit_properties_index) {
                         prop.modify_value(field, true);
                     }
                 }
             }
             KeyCode::Char('-') | KeyCode::Left => {
-                if app.edit_properties_index < properties.len() {
-                    if let Some(prop) = properties.get(app.edit_properties_index) {
+                if app.edit_properties_index < properties_to_use.len() {
+                    if let Some(prop) = properties_to_use.get(app.edit_properties_index) {
                         prop.modify_value(field, false);
                     }
                 }

@@ -7,6 +7,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use crate::App;
 use crate::AppMode;
 use crate::TextInputAction;
+use crate::types::get_object_definitions_properties_for_field;
 
 /// Handle input for properties mode
 /// 

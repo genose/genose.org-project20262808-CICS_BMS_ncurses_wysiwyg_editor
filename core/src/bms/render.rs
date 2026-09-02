@@ -6,9 +6,10 @@
 
 use super::{
     field_types::BmsFieldType,
-    types::{BorderStyle, BorderCharSet, FillChar, TextAlign, Marker, PrefixSuffix, Footer},
+    types::{BorderStyle, BorderCharSet, FillChar, TextAlign, VerticalAlign, Marker, PrefixSuffix, Footer, FieldAttributes, BorderChars, Color, TextStyle, Position, VerticalMargin},
     properties::Property,
     defaults::FieldObjectDefaults,
+    field::FieldInitialValue,
 };
 use std::collections::HashMap;
 use serde_json;
@@ -36,7 +37,7 @@ pub fn get_border_chars(obj: &FieldObject) -> BorderCharSet {
     let border_chars = get_property::<BorderChars>(obj, "field_border_chars");
     
     if let Some(border_chars) = border_chars {
-        return border_chars.get(border_style.clone());
+        return border_chars.get(border_style.clone()).clone();
     }
     
     // Use default border chars for the style
@@ -616,45 +617,6 @@ pub struct FieldObject {
     pub properties: HashMap<String, Box<dyn std::any::Any>>,  // Using Any for heterogeneous property types
 }
 
-/// Field attributes structure
-#[derive(Debug, Clone)]
-pub struct FieldAttributes {
-    pub field_required: bool,
-    pub field_has_error: bool,
-    // Other attributes as needed
-}
-
-/// Border characters for different styles
-#[derive(Debug, Clone)]
-pub struct BorderChars {
-    pub single: BorderCharSet,
-    pub double: BorderCharSet,
-    pub dashed: BorderCharSet,
-    pub none: BorderCharSet,
-}
-
-impl BorderChars {
-    pub fn get(&self, style: BorderStyle) -> BorderCharSet {
-        match style {
-            BorderStyle::Single => self.single.clone(),
-            BorderStyle::Double => self.double.clone(),
-            BorderStyle::Dashed => self.dashed.clone(),
-            _ => self.none.clone(),
-        }
-    }
-}
-
-impl Default for BorderChars {
-    fn default() -> Self {
-        Self {
-            single: BorderCharSet::single(),
-            double: BorderCharSet::double(),
-            dashed: BorderCharSet::dashed(),
-            none: BorderCharSet::none(),
-        }
-    }
-}
-
 // ============================================================================
 // GUI PROPERTY EXTRACTION (mirroring Lua functionality)
 // ============================================================================
@@ -801,19 +763,167 @@ pub fn export_to_json(obj: &FieldObject) -> serde_json::Value {
     let mut result = json!({
         "field_type": obj.field_type.map(|t| t.short_name()),
         "field_name": obj.field_name,
-        "properties": {}
+        "properties": {},
+        "defaults": {
+            "width": obj.defaults.width,
+            "height": obj.defaults.height,
+            "min_width": obj.defaults.min_width,
+            "max_width": obj.defaults.max_width,
+            "min_height": obj.defaults.min_height,
+            "max_height": obj.defaults.max_height,
+            "border_style": obj.defaults.border_style.as_str(),
+            "text_color": obj.defaults.text_color.as_str(),
+            "border_color": obj.defaults.border_color.as_str(),
+            "title_color": obj.defaults.title_color.as_str(),
+            "text_align": obj.defaults.text_align.as_str(),
+            "title_align": obj.defaults.title_align.as_str(),
+            "text_style": obj.defaults.text_style.as_str(),
+            "fill_char": obj.defaults.fill_char.char().to_string(),
+            "field_type": obj.defaults.field_type.short_name()
+        }
     });
     
     // Add properties to the JSON
     for (name, prop) in &obj.properties {
-        // For now, just add string representations
-        // In a full implementation, we'd handle each property type specifically
         if let Some(prop_typed) = prop.downcast_ref::<Property<String>>() {
             result["properties"][name] = json!(prop_typed.get());
         } else if let Some(prop_typed) = prop.downcast_ref::<Property<u16>>() {
             result["properties"][name] = json!(prop_typed.get());
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<i32>>() {
+            result["properties"][name] = json!(prop_typed.get());
         } else if let Some(prop_typed) = prop.downcast_ref::<Property<bool>>() {
             result["properties"][name] = json!(prop_typed.get());
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<Color>>() {
+            result["properties"][name] = json!(prop_typed.get().as_str());
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<BorderStyle>>() {
+            result["properties"][name] = json!(prop_typed.get().as_str());
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<TextAlign>>() {
+            result["properties"][name] = json!(prop_typed.get().as_str());
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<VerticalAlign>>() {
+            result["properties"][name] = json!(prop_typed.get().as_str());
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<FillChar>>() {
+            result["properties"][name] = json!(prop_typed.get().char().to_string());
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<TextStyle>>() {
+            result["properties"][name] = json!(prop_typed.get().as_str());
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<BorderCharSet>>() {
+            // Export border char set as a structured object
+            let chars = prop_typed.get();
+            result["properties"][name] = json!({
+                "top_left": chars.top_left,
+                "top": chars.top,
+                "top_right": chars.top_right,
+                "left": chars.left,
+                "right": chars.right,
+                "bottom_left": chars.bottom_left,
+                "bottom": chars.bottom,
+                "bottom_right": chars.bottom_right
+            });
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<BorderChars>>() {
+            // Export border chars as a structured object
+            let border_chars = prop_typed.get();
+            result["properties"][name] = json!({
+                "single": {
+                    "top_left": border_chars.single.top_left,
+                    "top": border_chars.single.top,
+                    "top_right": border_chars.single.top_right,
+                    "left": border_chars.single.left,
+                    "right": border_chars.single.right,
+                    "bottom_left": border_chars.single.bottom_left,
+                    "bottom": border_chars.single.bottom,
+                    "bottom_right": border_chars.single.bottom_right
+                },
+                "double": {
+                    "top_left": border_chars.double.top_left,
+                    "top": border_chars.double.top,
+                    "top_right": border_chars.double.top_right,
+                    "left": border_chars.double.left,
+                    "right": border_chars.double.right,
+                    "bottom_left": border_chars.double.bottom_left,
+                    "bottom": border_chars.double.bottom,
+                    "bottom_right": border_chars.double.bottom_right
+                },
+                "dashed": {
+                    "top_left": border_chars.dashed.top_left,
+                    "top": border_chars.dashed.top,
+                    "top_right": border_chars.dashed.top_right,
+                    "left": border_chars.dashed.left,
+                    "right": border_chars.dashed.right,
+                    "bottom_left": border_chars.dashed.bottom_left,
+                    "bottom": border_chars.dashed.bottom,
+                    "bottom_right": border_chars.dashed.bottom_right
+                },
+                "none": {
+                    "top_left": border_chars.none.top_left,
+                    "top": border_chars.none.top,
+                    "top_right": border_chars.none.top_right,
+                    "left": border_chars.none.left,
+                    "right": border_chars.none.right,
+                    "bottom_left": border_chars.none.bottom_left,
+                    "bottom": border_chars.none.bottom,
+                    "bottom_right": border_chars.none.bottom_right
+                }
+            });
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<Marker>>() {
+            let marker = prop_typed.get();
+            result["properties"][name] = json!({
+                "enabled": marker.enabled,
+                "marker": marker.marker
+            });
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<PrefixSuffix>>() {
+            let prefix_suffix = prop_typed.get();
+            result["properties"][name] = json!({
+                "enabled": prefix_suffix.enabled,
+                "color": prefix_suffix.color.as_str(),
+                "prefix_char": prefix_suffix.prefix_char.map(|fc| fc.char().to_string()),
+                "required": prefix_suffix.required.map(|m| {
+                    json!({
+                        "enabled": m.enabled,
+                        "marker": m.marker
+                    })
+                }),
+                "errors": prefix_suffix.errors.map(|m| {
+                    json!({
+                        "enabled": m.enabled,
+                        "marker": m.marker
+                    })
+                })
+            });
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<Footer>>() {
+            let footer = prop_typed.get();
+            result["properties"][name] = json!({
+                "color": footer.color.as_str(),
+                "align": footer.align.as_str(),
+                "fill_marker": footer.fill_marker.char().to_string(),
+                "title": footer.title,
+                "required_marker": footer.required_marker.as_ref().map(|m| {
+                    json!({
+                        "enabled": m.enabled,
+                        "marker": m.marker
+                    })
+                }),
+                "error_marker": footer.error_marker.as_ref().map(|m| {
+                    json!({
+                        "enabled": m.enabled,
+                        "marker": m.marker
+                    })
+                })
+            });
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<FieldAttributes>>() {
+            let attrs = prop_typed.get();
+            result["properties"][name] = json!({
+                "field_required": attrs.field_required,
+                "field_has_error": attrs.field_has_error
+            });
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<Position>>() {
+            let pos = prop_typed.get();
+            result["properties"][name] = json!({
+                "row": pos.row,
+                "col": pos.col,
+                "rowend": pos.rowend,
+                "colend": pos.colend
+            });
+        } else if let Some(prop_typed) = prop.downcast_ref::<Property<VerticalMargin>>() {
+            result["properties"][name] = json!(prop_typed.get().value());
         }
         // Add other types as needed...
     }
@@ -856,7 +966,90 @@ fn initialize_default_properties(obj: &mut FieldObject) {
             "field_border_style".to_string(),
             Box::new(Property::new(obj.defaults.border_style.clone())),
         );
-        // Add more default properties as needed...
+        obj.properties.insert(
+            "field_text_color".to_string(),
+            Box::new(Property::new(obj.defaults.text_color.clone())),
+        );
+        obj.properties.insert(
+            "field_border_color".to_string(),
+            Box::new(Property::new(obj.defaults.border_color.clone())),
+        );
+        obj.properties.insert(
+            "field_title_color".to_string(),
+            Box::new(Property::new(obj.defaults.title_color.clone())),
+        );
+        obj.properties.insert(
+            "field_text_align".to_string(),
+            Box::new(Property::new(obj.defaults.text_align.clone())),
+        );
+        obj.properties.insert(
+            "field_title_align".to_string(),
+            Box::new(Property::new(obj.defaults.title_align.clone())),
+        );
+        obj.properties.insert(
+            "field_text_style".to_string(),
+            Box::new(Property::new(obj.defaults.text_style.clone())),
+        );
+        obj.properties.insert(
+            "field_fill_char".to_string(),
+            Box::new(Property::new(obj.defaults.fill_char.clone())),
+        );
+        obj.properties.insert(
+            "field_avail_border_chars".to_string(),
+            Box::new(Property::new(BorderChars::new())),
+        );
+        obj.properties.insert(
+            "field_required_marker".to_string(),
+            Box::new(Property::new(Marker::none())),
+        );
+        obj.properties.insert(
+            "field_error_marker".to_string(),
+            Box::new(Property::new(Marker::none())),
+        );
+        obj.properties.insert(
+            "field_title_prefix".to_string(),
+            Box::new(Property::new(PrefixSuffix::none())),
+        );
+        obj.properties.insert(
+            "field_title_suffix".to_string(),
+            Box::new(Property::new(PrefixSuffix::none())),
+        );
+        obj.properties.insert(
+            "field_footer".to_string(),
+            Box::new(Property::new(Footer::none())),
+        );
+        obj.properties.insert(
+            "field_attrb".to_string(),
+            Box::new(Property::new(FieldAttributes::new())),
+        );
+        obj.properties.insert(
+            "field_initial".to_string(),
+            Box::new(Property::new(FieldInitialValue::default_for(obj.defaults.field_type.clone()))),
+        );
+        obj.properties.insert(
+            "field_name".to_string(),
+            Box::new(Property::new("".to_string())),
+        );
+        obj.properties.insert(
+            "field_pos".to_string(),
+            Box::new(Property::new(Position::new(0, 0))),
+        );
+        
+        // Add cross-reference properties
+        // field_border references field_avail_border_style and field_avail_border_chars
+        // For now, we'll set up a basic border configuration
+        let border_defaults = crate::bms::defaults::BorderDefaults::new();
+        let border_style = border_defaults.get_default_border_style(obj.defaults.field_type.clone());
+        let border_chars = border_defaults.get_default_border_chars(obj.defaults.field_type.clone());
+        
+        // Create a border property that combines style and chars
+        obj.properties.insert(
+            "field_border".to_string(),
+            Box::new(Property::new((border_style, border_chars))),
+        );
+        
+        // Add other cross-reference properties as needed...
+        // These will be expanded based on the Lua OBJECTS_DEFINITIONS structure
     }
 }
 
