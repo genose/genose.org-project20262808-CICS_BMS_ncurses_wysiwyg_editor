@@ -72,6 +72,7 @@ use views::mouse_input::handle_mode as handle_mouse_input;
 use views::normal_mode::handle_mode as handle_normal_mode;
 use views::properties_mode::handle_mode as handle_properties_mode;
 use views::utils::*;
+use crate::FieldType;
 
 
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
@@ -2692,26 +2693,6 @@ fn render_properties_panel(f: &mut Frame, app: &App, area: Rect) {
 /// Minimum height per field type
 /// Fieldset/Group requires minimum 3 rows (first line = title, last line = border, middle = content)
 /// ASCII Art requires minimum 1 row
-fn get_min_height(field_type: &FieldType) -> u16 {
-    match field_type {
-        FieldType::Group => 3,  // Fieldset requires 3 minimum
-        FieldType::Map => 1,
-        FieldType::Field => 1,
-        FieldType::Literal => 1,
-        FieldType::Attribute => 1,
-        FieldType::Symbolic => 1,
-        // BMS statement types - most don't need height
-        FieldType::DFHMSD | FieldType::DFHMDF | FieldType::DFHMDI | 
-        FieldType::DFHMDA | FieldType::DFHMND | FieldType::DFHMNT | 
-        FieldType::DFHMDC | FieldType::DFHMDL => 1,
-        // Physical vs Symbolic
-        FieldType::PhysicalMap | FieldType::SymbolicMap | FieldType::MapSet => 1,
-        // Special field types
-        FieldType::InputOnly | FieldType::OutputOnly | FieldType::InputOutput => 1,
-        FieldType::SymbolicMap | FieldType::PhysicalMap => 1,
-        _ => 1,  // Default minimum height
-    }
-}
 
 /// Property types for edit properties panel
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
