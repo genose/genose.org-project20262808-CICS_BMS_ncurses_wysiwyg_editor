@@ -20,17 +20,8 @@ use crossterm::{
 use ratatui::{
     backend::CrosstermBackend,
     Terminal,
-    widgets::{Block, Borders, Paragraph, Scrollbar},
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Style, Stylize},
-    text::{Line, Span, Text},
-    Frame,
 };
-use ratatui::widgets::ScrollbarState;
-use ratatui::widgets::ScrollbarOrientation;
-use ratatui::style::Color as TuiColor;
 use std::{
-    collections::HashMap,
     fs,
     io::stdout,
     path::PathBuf,
@@ -39,14 +30,14 @@ use std::{
 
 use cobol_bms_core::{
     parse_bms_file, generate_cobol, render_bms_text, FieldType, FieldAttribute,
-    BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection, create_default_map,
+    BmsEditor, BmsField, EditorMode, CursorDirection, ResizeDirection,
     image_to_ascii_simple,
 };
-use cobol_bms_core::model::{Color as BmsColor, DecorationType, Justify, DataType};
+use cobol_bms_core::model::Color as BmsColor;
 
 // Types module
 mod types;
-use types::{FileFilter, InsertableObject, scan_directory_files_with_filter, get_properties_for_field};
+use types::{InsertableObject, scan_directory_files_with_filter, get_properties_for_field};
 
 // Combo key system
 mod combo_keys;
@@ -54,19 +45,18 @@ use combo_keys::{ComboKeyManager, ComboAction, ComboContext, TerminalType};
 
 // Views module
 mod views;
-use views::add_object_dialog::{render as render_add_object_dialog, handle_mode as handle_add_object_dialog_mode};
-use views::attribute_picker::{render as render_attribute_picker, handle_mode as handle_attribute_picker_mode};
-use views::insert_position_dialog::{render as render_insert_position_dialog, handle_mode as handle_insert_position_mode};
-use views::color_picker::{render as render_color_picker, handle_mode as handle_color_picker_mode};
-use views::combo_key_help::{render as render_combo_key_help, handle_mode as handle_combo_key_help_mode};
-use views::confirm::{render as render_confirm, handle_mode as handle_confirm_mode};
-use views::help::{render as render_help, handle_mode as handle_help_mode};
-use views::image_import_dialog::{render as render_image_import_dialog, handle_mode as handle_image_import_mode};
-use views::map_type_picker::{render as render_map_type_picker, handle_mode as handle_map_type_picker_mode};
-use views::open_dialog::{render as render_open_dialog, handle_mode as handle_open_dialog_mode};
-use views::save_dialog::{render as render_save_dialog, handle_mode as handle_save_dialog_mode};
-use views::status_bar::render as render_status_bar;
-use views::text_input::{render as render_text_input, handle_mode as handle_text_input_mode};
+use views::add_object_dialog::handle_mode as handle_add_object_dialog_mode;
+use views::attribute_picker::handle_mode as handle_attribute_picker_mode;
+use views::insert_position_dialog::handle_mode as handle_insert_position_mode;
+use views::color_picker::handle_mode as handle_color_picker_mode;
+use views::combo_key_help::handle_mode as handle_combo_key_help_mode;
+use views::confirm::handle_mode as handle_confirm_mode;
+use views::help::handle_mode as handle_help_mode;
+use views::image_import_dialog::handle_mode as handle_image_import_mode;
+use views::map_type_picker::handle_mode as handle_map_type_picker_mode;
+use views::open_dialog::handle_mode as handle_open_dialog_mode;
+use views::save_dialog::handle_mode as handle_save_dialog_mode;
+use views::text_input::handle_mode as handle_text_input_mode;
 use views::edit_properties_mode::handle_mode as handle_edit_properties_mode;
 use views::mouse_input::handle_mode as handle_mouse_input;
 use views::normal_mode::handle_mode as handle_normal_mode;
@@ -74,7 +64,7 @@ use views::properties_mode::handle_mode as handle_properties_mode;
 use views::edit_mode::handle_mode as handle_edit_mode;
 use views::ui::render as render_ui;
 use views::utils::*;
-use views::object_definitions_properties::{ObjectDefinitionsPropertyState, handle_object_definitions_properties_mode, render_object_definitions_properties_panel};
+use views::object_definitions_properties::ObjectDefinitionsPropertyState;
 
 
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
