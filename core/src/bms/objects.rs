@@ -566,6 +566,53 @@ impl ObjectDefinitions {
             ]
         );
         
+        // Available options properties
+        self.add_enum_property("field_avail_color", "Available Colors", PropertyCategory::Colors,
+            self.available_options.colors.clone().into_iter().map(PropertyValue::from).collect()
+        );
+        
+        self.add_enum_property("field_avail_font_family", "Available Font Families", PropertyCategory::Font,
+            vec![PropertyValue::String("default".to_string())]
+        );
+        
+        self.add_property("field_avail_pos",
+            PropertyDefinition {
+                name: "field_avail_pos".to_string(),
+                gui_field_type: None,
+                gui_field_name: None,
+                collapsed: true,
+                collapsable: true,
+                description: Some("Available positions for the field".to_string()),
+                category: PropertyCategory::Position,
+                property_type: PropertyType::Position,
+                defaults: HashMap::new(),
+                available_values: None,
+                constraints: None,
+            }
+        );
+        
+        self.add_enum_property("field_avail_text_align", "Available Text Align", PropertyCategory::Alignment,
+            self.available_options.text_aligns.clone().into_iter().map(PropertyValue::from).collect()
+        );
+        
+        self.add_enum_property("field_avail_vertical_align", "Available Vertical Align", PropertyCategory::Alignment,
+            self.available_options.vertical_aligns.clone().into_iter().map(PropertyValue::from).collect()
+        );
+        
+        self.add_enum_property("field_avail_border_style", "Available Border Styles", PropertyCategory::Borders,
+            self.available_options.border_styles.clone().into_iter().map(PropertyValue::from).collect()
+        );
+        
+        // Font family
+        self.add_enum_property("field_font_family", "Font Family", PropertyCategory::Font,
+            vec![PropertyValue::String("default".to_string())]
+        );
+        
+        // Footer align
+        self.add_enum_property("field_footer_align", "Footer Align", PropertyCategory::Alignment,
+            self.available_options.text_aligns.clone().into_iter().map(PropertyValue::from).collect()
+        );
+        
         // Markers
         self.add_marker_property("field_required_marker", "Required Marker", PropertyCategory::Markers);
         self.add_marker_property("field_error_marker", "Error Marker", PropertyCategory::Markers);
@@ -616,6 +663,22 @@ impl ObjectDefinitions {
                 collapsed: true,
                 collapsable: true,
                 description: Some("Footer configuration".to_string()),
+                category: PropertyCategory::Other,
+                property_type: PropertyType::String,
+                defaults: HashMap::new(),
+                available_values: None,
+                constraints: None,
+            }
+        );
+        
+        self.add_property("field_footer_title",
+            PropertyDefinition {
+                name: "field_footer_title".to_string(),
+                gui_field_type: None,
+                gui_field_name: None,
+                collapsed: true,
+                collapsable: true,
+                description: Some("Footer title".to_string()),
                 category: PropertyCategory::Other,
                 property_type: PropertyType::String,
                 defaults: HashMap::new(),
