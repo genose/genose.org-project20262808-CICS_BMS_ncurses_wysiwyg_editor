@@ -407,6 +407,11 @@ impl ComboKeyManager {
         }
     }
     
+    /// Clear all registered bindings
+    pub fn clear_bindings(&mut self) {
+        self.bindings.clear();
+    }
+    
     /// Push a context onto the stack (enables bindings for that context)
     pub fn push_context(&mut self, context: ComboContext) {
         self.context_stack.push(context);
@@ -869,7 +874,8 @@ impl ComboKeyManager {
     }
     
     /// Get default bindings for the BMS editor
-        let mut bindings = vec![
+    pub fn default_bindings() -> Vec<ComboKeyBinding> {
+        vec![
             // Panel switching
             ComboKeyBinding::new(
                 ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char('p')),
@@ -1128,8 +1134,7 @@ impl ComboKeyManager {
                 "Fast Scroll Right (VSCode)",
                 ComboContext::EditMode,
             ),
-        ];
-        bindings
+        ]
     }
     
     /// Get leader key sequences for VSCode compatibility

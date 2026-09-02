@@ -48,6 +48,16 @@ use cobol_bms_core::model::{Color as BmsColor, DecorationType, Justify, DataType
 mod combo_keys;
 use combo_keys::{ComboKeyManager, ComboAction, ComboContext, TerminalType};
 
+// Views module
+mod views;
+use views::attribute_picker::{render as render_attribute_picker, handle_mode as handle_attribute_picker_mode};
+use views::color_picker::{render as render_color_picker, handle_mode as handle_color_picker_mode};
+use views::combo_key_help::{render as render_combo_key_help, handle_mode as handle_combo_key_help_mode};
+use views::confirm::{render as render_confirm, handle_mode as handle_confirm_mode};
+use views::map_type_picker::{render as render_map_type_picker, handle_mode as handle_map_type_picker_mode};
+use views::status_bar::render as render_status_bar;
+use views::text_input::{render as render_text_input, handle_mode as handle_text_input_mode};
+
 // ==================== UTILITIES ====================
 
 /// Detect if running inside VS Code integrated terminal
@@ -335,7 +345,7 @@ fn main() -> Result<()> {
 
 /// Mode global de l'application
 #[derive(Debug, Clone, PartialEq)]
-enum AppMode {
+pub enum AppMode {
     /// Mode normal (navigation)
     Normal,
     /// Mode edition (WYSIWYG)
@@ -760,7 +770,7 @@ impl SidebarSection {
 
 /// Etat de l'application
 #[derive(Debug)]
-struct App {
+pub struct App {
     editor: BmsEditor,
     mode: AppMode,
     current_file: Option<PathBuf>,
@@ -777,7 +787,7 @@ struct App {
     // Affichage canvas: grid ou text BMS
     show_bms_text: bool,
     // Pour le mode map type picker
-    selected_map_type: Option<FieldType>,
+    pub selected_map_type: Option<FieldType>,
     // Pour le mode properties
     property_index: usize,
     // Pour le mode insert position
@@ -788,9 +798,9 @@ struct App {
     edit_properties_index: usize,
     edit_properties_scroll_offset: usize,
     // Pour le mode color picker
-    selected_color: Option<BmsColor>,
+    pub selected_color: Option<BmsColor>,
     // Pour le mode attribute picker
-    selected_attribute: Option<FieldAttribute>,
+    pub selected_attribute: Option<FieldAttribute>,
     // Pour le mode save
     save_path: String,
     // Pour le mode open
@@ -827,7 +837,7 @@ struct App {
 
 /// Action to perform after text input is submitted
 #[derive(Debug, Clone)]
-enum TextInputAction {
+pub enum TextInputAction {
     /// Set the initial value of the selected field
     SetFieldInitial,
     /// Set the PIC value of the selected field
@@ -840,7 +850,7 @@ enum TextInputAction {
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
-enum ConfirmAction {
+pub enum ConfirmAction {
     QuitWithoutSave,
     DeleteField,
     ClearMap,
@@ -968,7 +978,7 @@ impl App {
     
     /// Reload bindings for current terminal type
     fn reload_combo_key_bindings(&mut self) {
-        self.combo_key_manager.bindings.clear();
+        self.combo_key_manager.clear_bindings();
         
         let terminal_type = self.combo_key_manager.terminal_type();
         if terminal_type == TerminalType::VSCode {
@@ -2665,140 +2675,9 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
     }
 }
 
-fn handle_map_type_picker_mode(app: &mut App, key: event::KeyEvent) {
-    use cobol_bms_core::FieldType;
-    
-    match key.code {
-        KeyCode::Esc => {
-            app.mode = AppMode::Edit;
-            app.selected_map_type = None;
-        }
-        KeyCode::Enter => {
-            if let Some(map_type) = app.selected_map_type.clone() {
-                app.editor.map.map_type = map_type.clone();
-                app.mode = AppMode::Edit;
-                app.selected_map_type = None;
-                app.set_message(&format!("Map type set to: {:?}", map_type));
-            }
-        }
-        KeyCode::Up => {
-            let all_types = get_scrollable_map_types();
-            if !all_types.is_empty() {
-                let new_selection = if let Some(current) = &app.selected_map_type {
-                    if let Some(pos) = all_types.iter().position(|t| t == current) {
-                        if pos > 0 {
-                            Some(all_types[pos - 1].clone())
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                } else {
-                    Some(all_types[all_types.len() - 1].clone())
-                };
-                if let Some(new_type) = new_selection {
-                    app.selected_map_type = Some(new_type);
-                }
-            }
-        }
-        KeyCode::Down => {
-            let all_types = get_scrollable_map_types();
-            if !all_types.is_empty() {
-                let new_selection = if let Some(current) = &app.selected_map_type {
-                    if let Some(pos) = all_types.iter().position(|t| t == current) {
-                        if pos + 1 < all_types.len() {
-                            Some(all_types[pos + 1].clone())
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                } else {
-                    Some(all_types[0].clone())
-                };
-                if let Some(new_type) = new_selection {
-                    app.selected_map_type = Some(new_type);
-                }
-            }
-        }
-        KeyCode::Char('M') => app.selected_map_type = Some(FieldType::Map),
-        KeyCode::Char('S') => app.selected_map_type = Some(FieldType::DFHMSD),
-        KeyCode::Char('D') => app.selected_map_type = Some(FieldType::DFHMDF),
-        KeyCode::Char('I') => app.selected_map_type = Some(FieldType::DFHMDI),
-        _ => {}
-    }
-}
 
-/// Return scrollable map types
-fn get_scrollable_map_types() -> &'static [FieldType] {
-    use cobol_bms_core::FieldType;
-    &[
-        FieldType::Map,
-        FieldType::DFHMSD,
-        FieldType::DFHMDF,
-        FieldType::DFHMDI,
-    ]
-}
 
-fn handle_color_picker_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Esc => {
-            app.mode = AppMode::Edit;
-            app.selected_color = None;
-        }
-        KeyCode::Enter => {
-            if let Some(color) = app.selected_color.clone() {
-                if app.editor.selected_field.is_some() {
-                    app.editor.set_selected_field_color(Some(color));
-                }
-            }
-            app.mode = AppMode::Edit;
-            app.selected_color = None;
-        }
-        KeyCode::Char('b') => app.selected_color = Some(BmsColor::Blue),
-        KeyCode::Char('g') => app.selected_color = Some(BmsColor::Green),
-        KeyCode::Char('r') => app.selected_color = Some(BmsColor::Red),
-        KeyCode::Char('y') => app.selected_color = Some(BmsColor::Yellow),
-        KeyCode::Char('w') => app.selected_color = Some(BmsColor::White),
-        KeyCode::Char('c') => app.selected_color = Some(BmsColor::Cyan),
-        KeyCode::Char('m') => app.selected_color = Some(BmsColor::Magenta),
-        KeyCode::Char('k') => app.selected_color = Some(BmsColor::Black),
-        KeyCode::Char('o') => app.selected_color = Some(BmsColor::Orange),
-        KeyCode::Char('p') => app.selected_color = Some(BmsColor::Pink),
-        KeyCode::Char(' ') => app.selected_color = None,
-        _ => {}
-    }
-}
 
-fn handle_attribute_picker_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Esc => {
-            app.mode = AppMode::Edit;
-            app.selected_attribute = None;
-        }
-        KeyCode::Enter => {
-            if let Some(attr) = app.selected_attribute.clone() {
-                if app.editor.selected_field.is_some() {
-                    app.editor.add_selected_field_attribute(attr);
-                }
-            }
-            app.mode = AppMode::Edit;
-            app.selected_attribute = None;
-        }
-        KeyCode::Char('p') => app.selected_attribute = Some(FieldAttribute::Prot),
-        KeyCode::Char('n') => app.selected_attribute = Some(FieldAttribute::Norm),
-        KeyCode::Char('u') => app.selected_attribute = Some(FieldAttribute::Num),
-        KeyCode::Char('a') => app.selected_attribute = Some(FieldAttribute::Alph),
-        KeyCode::Char('l') => app.selected_attribute = Some(FieldAttribute::AlphaNum),
-        KeyCode::Char('i') => app.selected_attribute = Some(FieldAttribute::Intens),
-        KeyCode::Char('b') => app.selected_attribute = Some(FieldAttribute::Blink),
-        KeyCode::Char('v') => app.selected_attribute = Some(FieldAttribute::Reverse),
-        KeyCode::Char('d') => app.selected_attribute = Some(FieldAttribute::Dark),
-        _ => {}
-    }
-}
 
 fn handle_save_dialog_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
@@ -3011,109 +2890,6 @@ fn handle_add_object_dialog_mode(app: &mut App, key: event::KeyEvent) {
                 app.selected_object_for_add = Some(objects[0]);
             }
         }
-        _ => {}
-    }
-}
-
-fn handle_text_input_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Esc => {
-            app.mode = AppMode::Edit;
-            app.text_input_prompt.clear();
-            app.text_input_value.clear();
-            app.text_input_action = None;
-        }
-        KeyCode::Enter => {
-            let value = std::mem::take(&mut app.text_input_value);
-            app.apply_text_input(value);
-            app.mode = AppMode::Edit;
-            app.text_input_prompt.clear();
-        }
-        KeyCode::Backspace => {
-            app.text_input_value.pop();
-        }
-        KeyCode::Char(c) => {
-            app.text_input_value.push(c);
-        }
-        _ => {}
-    }
-}
-
-fn handle_help_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
-        KeyCode::Up | KeyCode::Char('k') => {
-            if app.help_scroll > 0 {
-                app.help_scroll -= 1;
-            }
-        }
-        KeyCode::Down | KeyCode::Char('j') => {
-            app.help_scroll += 1;
-        }
-        KeyCode::PageUp => {
-            if app.help_scroll >= 10 {
-                app.help_scroll -= 10;
-            } else {
-                app.help_scroll = 0;
-            }
-        }
-        KeyCode::PageDown => {
-            app.help_scroll += 10;
-        }
-        KeyCode::Home => app.help_scroll = 0,
-        KeyCode::End => app.help_scroll = usize::MAX,
-        _ => {}
-    }
-}
-
-fn handle_combo_key_help_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
-        KeyCode::Up | KeyCode::Char('k') => {
-            if app.help_scroll > 0 {
-                app.help_scroll -= 1;
-            }
-        }
-        KeyCode::Down | KeyCode::Char('j') => {
-            app.help_scroll += 1;
-        }
-        KeyCode::PageUp => {
-            if app.help_scroll >= 10 {
-                app.help_scroll -= 10;
-            } else {
-                app.help_scroll = 0;
-            }
-        }
-        KeyCode::PageDown => {
-            app.help_scroll += 10;
-        }
-        KeyCode::Home => app.help_scroll = 0,
-        KeyCode::End => app.help_scroll = usize::MAX,
-        _ => {}
-    }
-}
-
-fn handle_confirm_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Char('y') | KeyCode::Enter => {
-            match app.confirm_action {
-                ConfirmAction::QuitWithoutSave => app.exit = true,
-                ConfirmAction::DeleteField => {
-                    if app.editor.remove_selected_field().is_some() {
-                        app.set_message("Field deleted");
-                        app.show_validation_status();
-                    }
-                    app.mode = AppMode::Edit;
-                }
-                ConfirmAction::ClearMap => {
-                    app.editor.map.fields.clear();
-                    app.editor.selected_field = None;
-                    app.set_message("Map cleared");
-                    app.mode = AppMode::Edit;
-                }
-            }
-        }
-        KeyCode::Char('n') | KeyCode::Esc => app.mode = AppMode::Edit,
         _ => {}
     }
 }
@@ -4593,153 +4369,9 @@ fn is_property_group_start(index: usize, properties: &[PropertyType]) -> bool {
     current_group != prev_group
 }
 
-fn render_map_type_picker(f: &mut Frame, app: &App, area: Rect) {
-    use cobol_bms_core::FieldType;
-    
-    let panel_width = 25;
-    let panel_area = Rect {
-        x: area.x + area.width - panel_width,
-        y: area.y,
-        width: panel_width,
-        height: 12,
-    };
-    
-    let block = Block::default()
-        .title(" Map Type [Up/Down:Nav|M/S/D/I:Select|Enter:Ok|Esc:Cancel]")
-        .borders(Borders::ALL);
-    f.render_widget(block, panel_area);
-    
-    let inner = Rect {
-        x: panel_area.x + 1,
-        y: panel_area.y + 1,
-        width: panel_area.width.saturating_sub(2),
-        height: panel_area.height.saturating_sub(2),
-    };
-    
-    let map_types = [
-        (FieldType::Map, "Standard MAP", "M"),
-        (FieldType::DFHMSD, "Scrollable Data (DFHMSD)", "S"),
-        (FieldType::DFHMDF, "Scrollable Formatted (DFHMDF)", "D"),
-        (FieldType::DFHMDI, "Scrollable Input (DFHMDI)", "I"),
-    ];
-    
-    let mut lines = vec![Line::from(" Select Map Type ".yellow())];
-    for (map_type, name, key) in &map_types {
-        let selected_type = app.selected_map_type.as_ref();
-        let is_selected = selected_type == Some(map_type);
-        let prefix = if is_selected { "> " } else { "  " };
-        let style = if is_selected {
-            Style::default().fg(TuiColor::Black).bg(TuiColor::Yellow)
-        } else {
-            Style::default().fg(TuiColor::White)
-        };
-        lines.push(Line::from(Span::styled(format!("{} {} [{}]", prefix, name, key), style)));
-    }
-    lines.push(Line::from(""));
-    lines.push(Line::from("Enter: Select".dim()));
-    lines.push(Line::from("Esc: Cancel".dim()));
-    
-    // Show current map type
-    lines.push(Line::from(""));
-    lines.push(Line::from(format!("Current: {:?}", app.editor.map.map_type)).dim());
-    
-    let text = Text::from(lines);
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(paragraph, inner);
-}
 
-fn render_color_picker(f: &mut Frame, app: &App, area: Rect) {
-    let panel_width = 28;
-    let panel_area = Rect {
-        x: area.x + area.width - panel_width,
-        y: area.y,
-        width: panel_width,
-        height: 13,
-    };
-    
-    let block = Block::default()
-        .title(" Colors [B/G/R/Y/C/M/W/K/O/P:Select|Space:None|Enter:Apply|Esc:Cancel] ")
-        .borders(Borders::ALL);
-    f.render_widget(block, panel_area);
-    
-    let colors = vec![
-        (BmsColor::Black, "Black", "K"),
-        (BmsColor::Blue, "Blue", "B"),
-        (BmsColor::Green, "Green", "G"),
-        (BmsColor::Cyan, "Cyan", "C"),
-        (BmsColor::Red, "Red", "R"),
-        (BmsColor::Magenta, "Magenta", "M"),
-        (BmsColor::Yellow, "Yellow", "Y"),
-        (BmsColor::White, "White", "W"),
-        (BmsColor::Orange, "Orange", "O"),
-        (BmsColor::Pink, "Pink", "P"),
-    ];
-    
-    let mut lines = vec![Line::from(" Select: ".yellow())];
-    for (color, name, key) in &colors {
-        let prefix = if Some(color) == app.selected_color.as_ref() { "> " } else { "  " };
-        lines.push(Line::from(format!("{} {} [{}]", prefix, name, key)));
-    }
-    lines.push(Line::from(""));
-    lines.push(Line::from("Space: None".to_string()));
-    lines.push(Line::from("Enter: Apply".to_string()));
-    
-    let text = Text::from(lines);
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(paragraph, Rect {
-        x: panel_area.x + 1,
-        y: panel_area.y + 1,
-        width: panel_area.width.saturating_sub(2),
-        height: panel_area.height.saturating_sub(2),
-    });
-}
 
-fn render_attribute_picker(f: &mut Frame, app: &App, area: Rect) {
-    let panel_width = 30;
-    let panel_area = Rect {
-        x: area.x + area.width - panel_width,
-        y: area.y,
-        width: panel_width,
-        height: 14,
-    };
-    
-    let block = Block::default()
-        .title(" Attributes ")
-        .borders(Borders::ALL);
-    f.render_widget(block, panel_area);
-    
-    let attrs = vec![
-        (FieldAttribute::Prot, "PROT", "P"),
-        (FieldAttribute::Norm, "NORM", "N"),
-        (FieldAttribute::Num, "NUM", "U"),
-        (FieldAttribute::Alph, "ALPH", "A"),
-        (FieldAttribute::AlphaNum, "ALNUM", "L"),
-        (FieldAttribute::Intens, "INTENS", "I"),
-        (FieldAttribute::Blink, "BLINK", "B"),
-        (FieldAttribute::Reverse, "REVERSE", "V"),
-        (FieldAttribute::Dark, "DARK", "D"),
-    ];
-    
-    let mut lines = vec![Line::from(" Select: ".yellow())];
-    for (attr, name, key) in &attrs {
-        let prefix = if Some(attr) == app.selected_attribute.as_ref() { "> " } else { "  " };
-        lines.push(Line::from(format!("{} {} [{}]", prefix, name, key)));
-    }
-    lines.push(Line::from(""));
-    lines.push(Line::from("Enter: Add attribute".to_string()));
-    
-    let text = Text::from(lines);
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(paragraph, Rect {
-        x: panel_area.x + 1,
-        y: panel_area.y + 1,
-        width: panel_area.width.saturating_sub(2),
-        height: panel_area.height.saturating_sub(2),
-    });
-}
+
 
 fn render_save_dialog(f: &mut Frame, app: &App, area: Rect) {
     let dialog_width = 40;
@@ -4903,255 +4535,6 @@ fn render_add_object_dialog(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(paragraph, inner);
 }
 
-fn render_text_input(f: &mut Frame, app: &App, area: Rect) {
-    let dialog_width = 50;
-    let dialog_height = 5;
-    let dialog_area = Rect {
-        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
-        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
-        width: dialog_width,
-        height: dialog_height,
-    };
-    
-    let block = Block::default()
-        .title(" Text Input ")
-        .borders(Borders::ALL);
-    f.render_widget(block, dialog_area);
-    
-    let inner = Rect {
-        x: dialog_area.x + 1,
-        y: dialog_area.y + 1,
-        width: dialog_area.width.saturating_sub(2),
-        height: dialog_area.height.saturating_sub(2),
-    };
-    
-    let prompt = Paragraph::new(app.text_input_prompt.as_str())
-        .style(Style::default().fg(TuiColor::Yellow));
-    f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
-    
-    let value_text = Paragraph::new(app.text_input_value.as_str())
-        .style(Style::default().fg(TuiColor::White));
-    f.render_widget(value_text, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
-    
-    let help = Paragraph::new("Enter: OK | Esc: Cancel | Backspace: Delete")
-        .style(Style::default().fg(TuiColor::Cyan));
-    f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
-}
-
-fn render_help(f: &mut Frame, app: &App, area: Rect) {
-    let help_area = area;
-    let block = Block::default()
-        .title(" Help (Scroll: Up/Down/PgUp/PgDn/Home/End) ")
-        .borders(Borders::ALL);
-    f.render_widget(block, help_area);
-    
-    let inner = Rect {
-        x: help_area.x + 1,
-        y: help_area.y + 1,
-        width: help_area.width.saturating_sub(2),
-        height: help_area.height.saturating_sub(2),
-    };
-    
-    let all_help_lines: Vec<Line> = vec![
-        Line::from(" WYSIWYG Editor - Help ".bold()),
-        Line::from(""),
-        Line::from(" Navigation: ".yellow()),
-        Line::from("  j/k/Down/Up: Move cursor (1 line)"),
-        Line::from("  h/l/Left/Right: Move cursor"),
-        Line::from("  Alt/Ctrl+Up/Down: Move cursor (5 lines)"),
-        Line::from("  Alt/Ctrl+Left/Right: Prev/Next field"),
-        Line::from("  Tab/Shift+Tab: Next/Prev field"),
-        Line::from("  Shift+Arrow: Extend selection"),
-        Line::from("  Ctrl+P: Toggle Canvas/Sidebar"),
-        Line::from("  Ctrl+Space: Toggle preview (canvas/code)"),
-        Line::from("  Key triggers displayed in message bar"),
-        Line::from(""),
-        Line::from(" Mouse: ".yellow()),
-        Line::from("  Left-click: Select field"),
-        Line::from("  Left-click + drag: Multi-select fields"),
-        Line::from("  Right-click: Select and show info"),
-        Line::from("  Scroll: Scroll canvas"),
-        Line::from(""),
-        Line::from(" Selection: ".yellow()),
-        Line::from("  Ctrl+Shift+A: Select all fields"),
-        Line::from("  Shift+Arrow: Multi-select fields"),
-        Line::from(""),
-        Line::from(" Grid: ".yellow()),
-        Line::from("  Ctrl+Shift+G: Toggle grid snap"),
-        Line::from("  Ctrl+Shift+L: Align selected to grid"),
-        Line::from(""),
-        Line::from(" Field Ops: ".yellow()),
-        Line::from("  a/A: Add field (10/20 chars) - legacy"),
-        Line::from("  Ctrl+A: Add object (select type, then configure properties)"),
-        Line::from("  d: Delete field (or Ctrl+D)"),
-        Line::from("  m: Move field (or Ctrl+M)"),
-        Line::from("  r: Resize field (or Ctrl+R)"),
-        Line::from(""),
-        Line::from(" Properties: ".yellow()),
-        Line::from("  e: Edit properties"),
-        Line::from("  C: Change color"),
-        Line::from("  t: Change attributes"),
-        Line::from(""),
-        Line::from(" Clipboard: ".yellow()),
-        Line::from("  c: Copy (or Ctrl+C)"),
-        Line::from("  x: Cut"),
-        Line::from("  v: Paste"),
-        Line::from(""),
-        Line::from(" File: ".yellow()),
-        Line::from("  n: New map"),
-        Line::from("  N: Template"),
-        Line::from("  Ctrl+S: Save"),
-        Line::from("  Ctrl+O: Open file"),
-        Line::from("  g: Generate COBOL (or Ctrl+G)"),
-        Line::from(""),
-        Line::from(" Undo/Redo: ".yellow()),
-        Line::from("  Ctrl+Z: Undo"),
-        Line::from("  Ctrl+Y: Redo"),
-        Line::from(""),
-        Line::from(" Validation: ".yellow()),
-        Line::from("  Ctrl+Shift+V: Validate map"),
-        Line::from(""),
-        Line::from(" Exit: ".yellow()),
-        Line::from("  Esc: Quit with confirm"),
-        Line::from("  Ctrl+Q: Quit with confirm"),
-        Line::from("  Ctrl+Shift+Esc: Quit with confirm"),
-        Line::from(""),
-        Line::from(" Other: ".yellow()),
-        Line::from("  ? or Ctrl+H: Toggle help"),
-        Line::from("  Ctrl+Shift+H: Show combo key bindings"),
-        Line::from(""),
-        Line::from(" Combo Key Bindings:".yellow()),
-        Line::from("  (See combo key help with Ctrl+Shift+H)"),
-        Line::from(""),
-        Line::from(" Note: Both legacy (letter) and new (Ctrl+letter) shortcuts work".dim()),
-    ];
-    
-    let total_lines = all_help_lines.len();
-    let visible_height = inner.height as usize;
-    
-    if visible_height == 0 {
-        return;
-    }
-    
-    let start_line = app.help_scroll.min(total_lines.saturating_sub(visible_height));
-    let end_line = (start_line + visible_height).min(total_lines);
-    
-    let visible_lines: Vec<Line> = all_help_lines.into_iter()
-        .skip(start_line)
-        .take(end_line - start_line)
-        .collect();
-    
-    let help_text = Text::from(visible_lines);
-    
-    let paragraph = Paragraph::new(help_text)
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(paragraph, inner);
-    
-    if total_lines > visible_height {
-        let mut scrollbar_state = ScrollbarState::new(total_lines)
-            .position(app.help_scroll)
-            .viewport_content_length(visible_height);
-        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-            .thumb_symbol("\u{2588}")
-            .track_symbol(Some(" "))
-            .begin_symbol(None)
-            .end_symbol(None);
-        f.render_stateful_widget(scrollbar, inner, &mut scrollbar_state);
-    }
-}
-
-fn render_combo_key_help(f: &mut Frame, app: &App, area: Rect) {
-    let help_area = area;
-    let block = Block::default()
-        .title(" Combo Key Help (Scroll: Up/Down/PgUp/PgDn/Home/End/Q to quit) ")
-        .borders(Borders::ALL);
-    f.render_widget(block, help_area);
-    
-    let inner = Rect {
-        x: help_area.x + 1,
-        y: help_area.y + 1,
-        width: help_area.width.saturating_sub(2),
-        height: help_area.height.saturating_sub(2),
-    };
-    
-    // Get combo key help lines
-    let combo_help_lines = app.get_combo_key_help();
-    let all_help_lines: Vec<Line> = combo_help_lines
-        .into_iter()
-        .map(|s| Line::from(s).style(Style::default().fg(TuiColor::White)))
-        .collect();
-    
-    let total_lines = all_help_lines.len();
-    let visible_height = inner.height as usize;
-    
-    if visible_height == 0 {
-        return;
-    }
-    
-    let start_line = app.help_scroll.min(total_lines.saturating_sub(visible_height));
-    let end_line = (start_line + visible_height).min(total_lines);
-    
-    let visible_lines: Vec<Line> = all_help_lines.into_iter()
-        .skip(start_line)
-        .take(end_line - start_line)
-        .collect();
-    
-    let help_text = Text::from(visible_lines);
-    
-    let paragraph = Paragraph::new(help_text)
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(paragraph, inner);
-    
-    if total_lines > visible_height {
-        let mut scrollbar_state = ScrollbarState::new(total_lines)
-            .position(app.help_scroll)
-            .viewport_content_length(visible_height);
-        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-            .thumb_symbol("█")
-            .track_symbol(Some(" "))
-            .begin_symbol(None)
-            .end_symbol(None);
-        f.render_stateful_widget(scrollbar, inner, &mut scrollbar_state);
-    }
-}
-
-fn render_confirm(f: &mut Frame, app: &App, area: Rect) {
-    let dialog_width = 40;
-    let dialog_height = 5;
-    let dialog_area = Rect {
-        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
-        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
-        width: dialog_width,
-        height: dialog_height,
-    };
-    
-    let block = Block::default()
-        .title(" Confirm ")
-        .borders(Borders::ALL);
-    f.render_widget(block, dialog_area);
-    
-    let inner = Rect {
-        x: dialog_area.x + 1,
-        y: dialog_area.y + 1,
-        width: dialog_area.width.saturating_sub(2),
-        height: dialog_area.height.saturating_sub(2),
-    };
-    
-    let message = match app.confirm_action {
-        ConfirmAction::QuitWithoutSave => "Quit without saving?",
-        ConfirmAction::DeleteField => "Delete selected field?",
-        ConfirmAction::ClearMap => "Clear all fields?",
-    };
-    
-    let prompt = Paragraph::new(message)
-        .style(Style::default().fg(TuiColor::Yellow));
-    f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
-    
-    let help = Paragraph::new("Y/Enter: Yes | N/Esc: No")
-        .style(Style::default().fg(TuiColor::Cyan));
-    f.render_widget(help, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
-}
-
 /// Render image import dialog with file browser
 fn render_image_import_dialog(f: &mut Frame, app: &App, area: Rect) {
     let dialog_width = area.width.min(60);
@@ -5260,77 +4643,6 @@ fn render_image_import_dialog(f: &mut Frame, app: &App, area: Rect) {
         }
         current_y += 1;
     }
-}
-
-fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
-    let status_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(40),
-            Constraint::Percentage(35),
-        ])
-        .split(area);
-    
-    // Mode
-    let mode_text = match app.mode {
-        AppMode::Edit => "EDIT",
-        AppMode::Properties => "PROPERTIES",
-        AppMode::InsertPosition => "INSERT_POS",
-        AppMode::EditProperties => "EDIT_PROPS",
-        AppMode::MapTypePicker => "MAP_TYPE",
-        AppMode::ColorPicker => "COLOR",
-        AppMode::AttributePicker => "ATTRS",
-        AppMode::SaveDialog => "SAVE",
-        AppMode::OpenDialog => "OPEN",
-        AppMode::AddObjectDialog => "ADD_OBJ",
-        AppMode::TextInput => "TEXT_IN",
-        AppMode::Help => "HELP",
-        AppMode::ComboKeyHelp => "COMBO_HELP",
-        AppMode::Confirm => "CONFIRM",
-        AppMode::ImageImport => "IMG_IMPORT",
-        AppMode::Normal => "PREVIEW",
-    };
-    
-    let mode = Paragraph::new(format!(" MODE: {}", mode_text))
-        .style(Style::default().fg(TuiColor::Green).bold())
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(mode, status_layout[0]);
-    
-    // Message and cursor position
-    let message_text = app.message.as_deref().unwrap_or("");
-    let cursor_info = format!(" Row:{} Col:{} ", app.editor.cursor_pos.0, app.editor.cursor_pos.1);
-    let status_text = if message_text.is_empty() {
-        cursor_info
-    } else {
-        format!("{}{}", cursor_info, message_text)
-    };
-    let message = Paragraph::new(status_text)
-        .style(Style::default().fg(TuiColor::Red))
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(message, status_layout[1]);
-    
-    // Selection count and file info
-    let selection_count = app.editor.selected_count();
-    let selection_text = if selection_count > 0 {
-        format!(" [{}] ", selection_count)
-    } else {
-        String::new()
-    };
-    
-    let file_info = if let Some(ref path) = app.current_file {
-        format!(" {} ", path.file_name().unwrap_or_default().to_string_lossy())
-    } else {
-        " NEW MAP ".to_string()
-    };
-    
-    let modified = if app.is_modified() { "[MODIFIED]" } else { "" };
-    let vscode_indicator = if is_vscode_terminal() { "[VSCode]" } else { "" };
-    let file = Paragraph::new(format!("{}{}{}{}", selection_text, file_info, modified, vscode_indicator))
-        .style(Style::default().fg(TuiColor::Cyan))
-        .alignment(ratatui::layout::Alignment::Right)
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(file, status_layout[2]);
 }
 
 #[allow(dead_code)]
@@ -5450,6 +4762,163 @@ fn handle_image_import_mode(app: &mut App, key: event::KeyEvent) {
             app.image_import_path.pop();
             app.image_import_error = None;
         }
+        _ => {}
+    }
+}
+
+// ==================== HELP VIEW ====================
+
+fn get_help_lines() -> Vec<Line<'static>> {
+    vec![
+        Line::from(" WYSIWYG Editor - Help ".bold()),
+        Line::from(""),
+        Line::from(" Navigation: ".yellow()),
+        Line::from("  j/k/Down/Up: Move cursor (1 line)"),
+        Line::from("  h/l/Left/Right: Move cursor"),
+        Line::from("  Alt/Ctrl+Up/Down: Move cursor (5 lines)"),
+        Line::from("  Alt/Ctrl+Left/Right: Prev/Next field"),
+        Line::from("  Tab/Shift+Tab: Next/Prev field"),
+        Line::from("  Shift+Arrow: Extend selection"),
+        Line::from("  Ctrl+P: Toggle Canvas/Sidebar"),
+        Line::from("  Ctrl+Space: Toggle preview (canvas/code)"),
+        Line::from("  Key triggers displayed in message bar"),
+        Line::from(""),
+        Line::from(" Mouse: ".yellow()),
+        Line::from("  Left-click: Select field"),
+        Line::from("  Left-click + drag: Multi-select fields"),
+        Line::from("  Right-click: Select and show info"),
+        Line::from("  Scroll: Scroll canvas"),
+        Line::from(""),
+        Line::from(" Selection: ".yellow()),
+        Line::from("  Ctrl+Shift+A: Select all fields"),
+        Line::from("  Shift+Arrow: Multi-select fields"),
+        Line::from(""),
+        Line::from(" Grid: ".yellow()),
+        Line::from("  Ctrl+Shift+G: Toggle grid snap"),
+        Line::from("  Ctrl+Shift+L: Align selected to grid"),
+        Line::from(""),
+        Line::from(" Field Ops: ".yellow()),
+        Line::from("  a/A: Add field (10/20 chars) - legacy"),
+        Line::from("  Ctrl+A: Add object (select type, then configure properties)"),
+        Line::from("  d: Delete field (or Ctrl+D)"),
+        Line::from("  m: Move field (or Ctrl+M)"),
+        Line::from("  r: Resize field (or Ctrl+R)"),
+        Line::from(""),
+        Line::from(" Properties: ".yellow()),
+        Line::from("  e: Edit properties"),
+        Line::from("  C: Change color"),
+        Line::from("  t: Change attributes"),
+        Line::from(""),
+        Line::from(" Clipboard: ".yellow()),
+        Line::from("  c: Copy (or Ctrl+C)"),
+        Line::from("  x: Cut"),
+        Line::from("  v: Paste"),
+        Line::from(""),
+        Line::from(" File: ".yellow()),
+        Line::from("  n: New map"),
+        Line::from("  N: Template"),
+        Line::from("  Ctrl+S: Save"),
+        Line::from("  Ctrl+O: Open file"),
+        Line::from("  g: Generate COBOL (or Ctrl+G)"),
+        Line::from(""),
+        Line::from(" Undo/Redo: ".yellow()),
+        Line::from("  Ctrl+Z: Undo"),
+        Line::from("  Ctrl+Y: Redo"),
+        Line::from(""),
+        Line::from(" Validation: ".yellow()),
+        Line::from("  Ctrl+Shift+V: Validate map"),
+        Line::from(""),
+        Line::from(" Exit: ".yellow()),
+        Line::from("  Esc: Quit with confirm"),
+        Line::from("  Ctrl+Q: Quit with confirm"),
+        Line::from("  Ctrl+Shift+Esc: Quit with confirm"),
+        Line::from(""),
+        Line::from(" Other: ".yellow()),
+        Line::from("  ? or Ctrl+H: Toggle help"),
+        Line::from("  Ctrl+Shift+H: Show combo key bindings"),
+        Line::from(""),
+        Line::from(" Combo Key Bindings:".yellow()),
+        Line::from("  (See combo key help with Ctrl+Shift+H)"),
+        Line::from(""),
+        Line::from(" Note: Both legacy (letter) and new (Ctrl+letter) shortcuts work".dim()),
+    ]
+}
+
+fn render_help(f: &mut Frame, app: &App, area: Rect) {
+    let help_area = area;
+    let block = Block::default()
+        .title(" Help (Scroll: Up/Down/PgUp/PgDn/Home/End) ")
+        .borders(Borders::ALL);
+    f.render_widget(block, help_area);
+    
+    let inner = Rect {
+        x: help_area.x + 1,
+        y: help_area.y + 1,
+        width: help_area.width.saturating_sub(2),
+        height: help_area.height.saturating_sub(2),
+    };
+    
+    let all_help_lines = get_help_lines();
+    let total_lines = all_help_lines.len();
+    let visible_height = inner.height as usize;
+    
+    if visible_height == 0 {
+        return;
+    }
+    
+    let start_line = app.help_scroll.min(total_lines.saturating_sub(visible_height));
+    let end_line = (start_line + visible_height).min(total_lines);
+    
+    let visible_lines: Vec<Line> = all_help_lines.into_iter()
+        .skip(start_line)
+        .take(end_line - start_line)
+        .collect();
+    
+    let help_text = Text::from(visible_lines);
+    
+    let paragraph = Paragraph::new(help_text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, inner);
+    
+    if total_lines > visible_height {
+        let mut scrollbar_state = ScrollbarState::new(total_lines)
+            .position(app.help_scroll)
+            .viewport_content_length(visible_height);
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .thumb_symbol("\u{2588}")
+            .track_symbol(Some(" "))
+            .begin_symbol(None)
+            .end_symbol(None);
+        f.render_stateful_widget(scrollbar, inner, &mut scrollbar_state);
+    }
+}
+
+fn handle_help_mode(app: &mut App, key: event::KeyEvent) {
+    let total_lines = get_help_lines().len();
+    let max_scroll = total_lines.saturating_sub(1);
+    
+    match key.code {
+        KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
+        KeyCode::Up | KeyCode::Char('k') => {
+            if app.help_scroll > 0 {
+                app.help_scroll -= 1;
+            }
+        }
+        KeyCode::Down | KeyCode::Char('j') => {
+            if app.help_scroll < max_scroll {
+                app.help_scroll += 1;
+            }
+        }
+        KeyCode::PageUp => {
+            let page_amount = 10.min(app.help_scroll);
+            app.help_scroll = app.help_scroll.saturating_sub(page_amount);
+        }
+        KeyCode::PageDown => {
+            let page_amount = 10;
+            app.help_scroll = (app.help_scroll + page_amount).min(max_scroll);
+        }
+        KeyCode::Home => app.help_scroll = 0,
+        KeyCode::End => app.help_scroll = max_scroll,
         _ => {}
     }
 }
