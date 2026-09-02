@@ -13,7 +13,7 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use crossterm::{
-    event::{self, Event, KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEventKind, EnableMouseCapture, DisableMouseCapture},
+    event::{self, Event, KeyCode, KeyModifiers, EnableMouseCapture, DisableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -73,7 +73,6 @@ use views::normal_mode::handle_mode as handle_normal_mode;
 use views::properties_mode::handle_mode as handle_properties_mode;
 use views::ui::render as render_ui;
 use views::utils::*;
-use crate::FieldType;
 
 
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
