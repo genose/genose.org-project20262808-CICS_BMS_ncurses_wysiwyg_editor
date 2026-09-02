@@ -563,9 +563,14 @@ impl ComboKeyManager {
     
     /// VSCode-specific fallback bindings
     fn try_vscode_fallbacks(&self, event: &KeyEvent) -> Option<ComboAction> {
-        // In VSCode, Alt combinations often don't work, so we use Ctrl+Alt or just Ctrl
+        // In VSCode, many key combinations are intercepted or don't work properly
+        // So we need to use combinations that VSCode doesn't capture
+        
+        // VSCode captures: Ctrl+C, Ctrl+V, Ctrl+S, Ctrl+O, Ctrl+Q, Ctrl+Z, Ctrl+Y, Ctrl+A, etc.
+        // So we need to use alternatives that VSCode doesn't intercept
+        
         match (event.modifiers, event.code) {
-            // VSCode: Ctrl+Alt+P instead of Ctrl+P for panel toggle
+            // VSCode alternative for panel toggle (Ctrl+P is safe)
             (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Char('p')) => {
                 self.find_action_for(ComboAction::TogglePanel)
             }
@@ -585,6 +590,30 @@ impl ComboKeyManager {
             }
             (KeyModifiers::CONTROL | KeyModifiers::ALT, KeyCode::Right) => {
                 self.find_action_for(ComboAction::FastScrollRight)
+            }
+            // VSCode intercepts Ctrl+C, so use Ctrl+Shift+C for copy
+            (KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('c')) => {
+                self.find_action_for(ComboAction::CopyField)
+            }
+            // VSCode intercepts Ctrl+V, so use Ctrl+Shift+V for paste
+            (KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('v')) => {
+                self.find_action_for(ComboAction::PasteField)
+            }
+            // VSCode intercepts Ctrl+S, so use Ctrl+Shift+S for save
+            (KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('s')) => {
+                self.find_action_for(ComboAction::SaveMap)
+            }
+            // VSCode intercepts Ctrl+O, so use Ctrl+Shift+O for open
+            (KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('o')) => {
+                self.find_action_for(ComboAction::OpenMap)
+            }
+            // VSCode intercepts Ctrl+Z, so use Ctrl+Shift+Z for undo
+            (KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('z')) => {
+                self.find_action_for(ComboAction::Undo)
+            }
+            // VSCode intercepts Ctrl+Y, so use Ctrl+Shift+Y for redo
+            (KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('y')) => {
+                self.find_action_for(ComboAction::Redo)
             }
             _ => None,
         }
@@ -629,8 +658,217 @@ impl ComboKeyManager {
         !self.pending_sequence.is_empty()
     }
 
+    /// Get VSCode-specific bindings that avoid keys captured by VSCode
+    pub fn vscode_bindings() -> Vec<ComboKeyBinding> {
+        // VSCode intercepts: Ctrl+C, Ctrl+V, Ctrl+S, Ctrl+O, Ctrl+Q, Ctrl+Z, Ctrl+Y, Ctrl+A, Ctrl+N, Ctrl+G, Ctrl+F
+        // Safe keys: Ctrl+P, Ctrl+Space, Ctrl+H, Ctrl+M, Ctrl+R, Ctrl+D, Ctrl+L, Ctrl+K, Ctrl+J, etc.
+        // Also safe: Alt+Shift combinations, Ctrl+Alt combinations (for non-intercepted keys)
+        vec![
+            // Panel switching - Ctrl+P is safe
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char('p')),
+                ComboAction::TogglePanel,
+                "Toggle Canvas/Sidebar",
+                ComboContext::Global,
+            ),
+            
+            // Preview toggle - Ctrl+Space is safe
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char(' ')),
+                ComboAction::TogglePreview,
+                "Toggle BMS/Grid Preview",
+                ComboContext::EditMode,
+            ),
+            
+            // Help - Ctrl+H is safe
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char('h')),
+                ComboAction::ToggleHelp,
+                "Toggle Help",
+                ComboContext::Global,
+            ),
+            
+            // Combo key help - Ctrl+Shift+H
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('h')),
+                ComboAction::ShowComboKeyHelp,
+                "Show Combo Key Help",
+                ComboContext::Global,
+            ),
+            
+            // Navigation - use keys VSCode doesn't intercept
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::NONE, KeyCode::Tab),
+                ComboAction::NextField,
+                "Next Field",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::SHIFT, KeyCode::BackTab),
+                ComboAction::PreviousField,
+                "Previous Field",
+                ComboContext::EditMode,
+            ),
+            
+            // Fast scrolling - use Ctrl+Shift+Arrows (Ctrl+Arrows might be safe in VSCode)
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Up),
+                ComboAction::FastScrollUp,
+                "Fast Scroll Up",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Down),
+                ComboAction::FastScrollDown,
+                "Fast Scroll Down",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Left),
+                ComboAction::FastScrollLeft,
+                "Fast Scroll Left",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Right),
+                ComboAction::FastScrollRight,
+                "Fast Scroll Right",
+                ComboContext::EditMode,
+            ),
+            
+            // Editing operations - use Ctrl+Shift for VSCode
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('c')),
+                ComboAction::CopyField,
+                "Copy Field(s)",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('v')),
+                ComboAction::PasteField,
+                "Paste Field(s)",
+                ComboContext::EditMode,
+            ),
+            
+            // Undo/Redo - use Ctrl+Shift
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('z')),
+                ComboAction::Undo,
+                "Undo",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('y')),
+                ComboAction::Redo,
+                "Redo",
+                ComboContext::EditMode,
+            ),
+            
+            // File operations - use Ctrl+Shift
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('s')),
+                ComboAction::SaveMap,
+                "Save Map",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('o')),
+                ComboAction::OpenMap,
+                "Open Map",
+                ComboContext::EditMode,
+            ),
+            
+            // Grid operations
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('g')),
+                ComboAction::ToggleGridSnap,
+                "Toggle Grid Snap",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('l')),
+                ComboAction::AlignToGrid,
+                "Align to Grid",
+                ComboContext::EditMode,
+            ),
+            
+            // Validation - use Ctrl+Shift+V (VSCode uses Ctrl+Shift+V for paste, but we already have that for paste)
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('k')),
+                ComboAction::ValidateMap,
+                "Validate Map",
+                ComboContext::EditMode,
+            ),
+            
+            // Field operations
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::NONE, KeyCode::Char('e')),
+                ComboAction::ShowFieldProperties,
+                "Show Field Properties",
+                ComboContext::FieldSelected,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::NONE, KeyCode::Char('d')),
+                ComboAction::DeleteObject,
+                "Delete Field",
+                ComboContext::FieldSelected,
+            ),
+            
+            // Object operations
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::NONE, KeyCode::Char('a')),
+                ComboAction::AddObject,
+                "Add Object",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char('m')),
+                ComboAction::MoveObject,
+                "Move Field",
+                ComboContext::EditMode,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char('r')),
+                ComboAction::ResizeObject,
+                "Resize Field",
+                ComboContext::EditMode,
+            ),
+            
+            // Generate COBOL
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('j')),
+                ComboAction::GenerateCobol,
+                "Generate COBOL",
+                ComboContext::EditMode,
+            ),
+            
+            // Exit
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char('q')),
+                ComboAction::ExitApplication,
+                "Exit Application",
+                ComboContext::Global,
+            ),
+            
+            // Sidebar navigation
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::NONE, KeyCode::Char('a')),
+                ComboAction::SwitchToActions,
+                "Switch to Actions section",
+                ComboContext::SidebarPanel,
+            ),
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::NONE, KeyCode::Char('o')),
+                ComboAction::SwitchToObjects,
+                "Switch to Objects section",
+                ComboContext::SidebarPanel,
+            ),
+            
+            // Leader key sequences (Space + key) - these are handled separately
+        ]
+    }
+    
     /// Get default bindings for the BMS editor
-    pub fn default_bindings() -> Vec<ComboKeyBinding> {
         let mut bindings = vec![
             // Panel switching
             ComboKeyBinding::new(

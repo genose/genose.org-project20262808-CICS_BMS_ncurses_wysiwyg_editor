@@ -948,17 +948,34 @@ impl App {
         }
     }
 
-    /// Create the combo key manager with default bindings
+    /// Create the combo key manager with appropriate bindings
     fn create_combo_key_manager() -> ComboKeyManager {
         let mut manager = ComboKeyManager::new();
         
-        // Register default bindings
-        manager.register_bindings(ComboKeyManager::default_bindings());
+        // Register appropriate bindings based on terminal type
+        let terminal_type = manager.terminal_type();
+        if terminal_type == TerminalType::VSCode {
+            manager.register_bindings(ComboKeyManager::vscode_bindings());
+        } else {
+            manager.register_bindings(ComboKeyManager::default_bindings());
+        }
         
         // Set leader key for sequences
         manager.set_leader_key(KeyCode::Char(' '));
         
         manager
+    }
+    
+    /// Reload bindings for current terminal type
+    fn reload_combo_key_bindings(&mut self) {
+        self.combo_key_manager.bindings.clear();
+        
+        let terminal_type = self.combo_key_manager.terminal_type();
+        if terminal_type == TerminalType::VSCode {
+            self.combo_key_manager.register_bindings(ComboKeyManager::vscode_bindings());
+        } else {
+            self.combo_key_manager.register_bindings(ComboKeyManager::default_bindings());
+        }
     }
 
     /// Update combo key contexts based on current app state
@@ -1031,12 +1048,13 @@ impl App {
         // Add terminal compatibility info
         let terminal_type = self.combo_key_manager.terminal_type();
         if terminal_type.has_limitations() {
-            help_lines.push(format!("Terminal: {} (some key combos may not work)", terminal_type.as_str()));
+            help_lines.push(format!("Terminal: {} (using VSCode-compatible bindings)", terminal_type.as_str()));
             if terminal_type == TerminalType::VSCode {
-                help_lines.push("VSCode Note: Use Ctrl+Alt for Alt combinations".to_string());
+                help_lines.push("VSCode Note: Many Ctrl+letter combos are intercepted by VSCode".to_string());
+                help_lines.push("Using Ctrl+Shift+letter and Ctrl+Alt+letter combinations instead".to_string());
             }
         } else {
-            help_lines.push(format!("Terminal: {}", terminal_type.as_str()));
+            help_lines.push(format!("Terminal: {} (using standard bindings)", terminal_type.as_str()));
         }
         help_lines.push(String::new());
         
