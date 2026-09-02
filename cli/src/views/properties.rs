@@ -111,7 +111,8 @@ pub fn render_properties_panel(f: &mut Frame, app: &App, area: Rect) {
         
         let text = Text::from(lines);
         let paragraph = Paragraph::new(text)
-            .block(Block::default().borders(Borders::NONE));
+            .block(Block::default().borders(Borders::NONE))
+            .scroll((0, 0)); // No scrolling for read-only properties panel
         f.render_widget(paragraph, Rect {
             x: panel_area.x + 1,
             y: panel_area.y + 1,
@@ -164,50 +165,66 @@ pub fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
             categorized_properties.entry(prop.category).or_default().push(prop);
         }
         
-        // Render properties by category
+        // Only show essential properties by default to avoid excessive scrolling
+        let essential_categories = [
+            PropertyCategory::Values,
+            PropertyCategory::Dimensions,
+            PropertyCategory::Position,
+            PropertyCategory::Colors,
+            PropertyCategory::Attributes,
+        ];
+        
+        let mut has_essential_properties = false;
+        
+        // Render essential properties by category
         for (category, props) in categorized_properties.iter() {
-            if !props.is_empty() {
+            if essential_categories.contains(category) && !props.is_empty() {
+                has_essential_properties = true;
                 let category_name = match category {
                     PropertyCategory::Dimensions => "> Dimensions ",
                     PropertyCategory::Colors => "> Colors ",
-                    PropertyCategory::Font => "> Font ",
-                    PropertyCategory::Style => "> Style ",
-                    PropertyCategory::Alignment => "> Alignment ",
                     PropertyCategory::Position => "> Position ",
-                    PropertyCategory::Borders => "> Borders ",
-                    PropertyCategory::Fill => "> Fill ",
-                    PropertyCategory::Markers => "> Markers ",
                     PropertyCategory::Attributes => "> Attributes ",
                     PropertyCategory::Values => "> Values ",
-                    PropertyCategory::Children => "> Children ",
-                    PropertyCategory::Visual => "> Visual ",
-                    PropertyCategory::Other => "> Other ",
+                    _ => continue, // Skip non-essential categories
                 };
                 
                 lines.push(Line::from(category_name.yellow()));
                 
                 for prop in props {
-                    // Try to get the current value from the field
-                    let value = match prop.name.as_str() {
-                        "field_name" => field.name.clone(),
-                        "field_pos" => format!("({}, {})", field.pos.0, field.pos.1),
-                        "field_width" => field.length.to_string(),
-                        "field_text_color" => format!("{:?}", field.text_color),
-                        "field_attrb" => format!("{:?}", field.attrb),
-                        "field_type" => format!("{:?}", field.field_type),
-                        "field_initial" => field.initial.clone().unwrap_or_default(),
-                        _ => "N/A".to_string(),
+                    // Only show editable/important properties
+                    let should_show = match prop.name.as_str() {
+                        "field_name" | "field_type" | "field_width" | "field_length" | 
+                        "field_pos" | "field_text_color" | "field_attrb" | "field_initial" => true,
+                        _ => false, // Skip less important properties
                     };
                     
-                    lines.push(Line::from(format!("  {}: {} ", prop.gui_name, value)));
+                    if should_show {
+                        // Try to get the current value from the field
+                        let value = match prop.name.as_str() {
+                            "field_name" => field.name.clone(),
+                            "field_pos" => format!("({}, {})", field.pos.0, field.pos.1),
+                            "field_width" | "field_length" => field.length.to_string(),
+                            "field_text_color" => format!("{:?}", field.text_color),
+                            "field_attrb" => format!("{:?}", field.attrb),
+                            "field_type" => format!("{:?}", field.field_type),
+                            "field_initial" => field.initial.clone().unwrap_or_default(),
+                            _ => "N/A".to_string(),
+                        };
+                        
+                        lines.push(Line::from(format!("  {}: {} ", prop.gui_name, value)));
+                    }
                 }
                 
-                lines.push(Line::from(""));
+                // Only add empty line between categories, not after last one
+                if lines.last() != Some(&Line::from("")) {
+                    lines.push(Line::from(""));
+                }
             }
         }
         
         // Fallback to basic properties if no OBJECTS_DEFINITIONS properties found
-        if lines.is_empty() {
+        if lines.is_empty() || !has_essential_properties {
             lines.extend(vec![
                 Line::from("> Position ".yellow()),
                 Line::from(format!("  Row: {} ", field.pos.0)),
@@ -225,18 +242,12 @@ pub fn render_edit_properties_panel(f: &mut Frame, app: &App, area: Rect) {
                 Line::from(""),
                 Line::from(" Name ".yellow()),
                 Line::from(format!("  {}", field.name)),
-                Line::from(""),
-                if let Some(ref initial) = field.initial {
-                    Line::from(" Initial Value ".yellow())
-                } else {
-                    Line::from("")
-                },
-                if let Some(ref initial) = field.initial {
-                    Line::from(format!("  {}", initial))
-                } else {
-                    Line::from("")
-                },
             ]);
+            
+            if let Some(ref initial) = field.initial {
+                lines.push(Line::from(" Initial Value ".yellow()));
+                lines.push(Line::from(format!("  {}", initial)));
+            }
         }
         
         let text = Text::from(lines);

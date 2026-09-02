@@ -12,6 +12,7 @@ use ratatui::{
 };
 use ratatui::text::{Line, Span, Text};
 use ratatui::style::{Style, Color as TuiColor};
+use ratatui::widgets::{Scrollbar, ScrollbarOrientation};
 
 use crate::App;
 use crate::types::{get_object_definitions_properties_for_field, to_bms_field_type, InsertableObject};
@@ -26,6 +27,7 @@ pub struct ObjectDefinitionsPropertyState {
     pub scroll_offset: usize,
     pub properties_by_category: std::collections::HashMap<PropertyCategory, Vec<GuiPropertyInfo>>,
     pub flat_properties: Vec<GuiPropertyInfo>,
+    pub show_all_categories: bool, // When false, only show essential categories
 }
 
 impl ObjectDefinitionsPropertyState {
@@ -51,6 +53,7 @@ impl ObjectDefinitionsPropertyState {
             scroll_offset: 0,
             properties_by_category,
             flat_properties,
+            show_all_categories: false, // Default to showing only essential categories
         }
     }
     
@@ -201,6 +204,19 @@ pub fn handle_object_definitions_properties_mode(app: &mut App, key: KeyEvent) {
                     }
                 }
             }
+            KeyCode::Char('a') | KeyCode::Char('A') => {
+                // Toggle show all categories
+                if let Some(state) = &mut app.object_definitions_property_state {
+                    let new_value = !state.show_all_categories;
+                    let message = if new_value {
+                        "Showing all property categories"
+                    } else {
+                        "Showing essential categories only"
+                    };
+                    state.show_all_categories = new_value;
+                    app.set_message(message);
+                }
+            }
             _ => {}
         }
     }
@@ -280,6 +296,20 @@ pub fn render_object_definitions_properties_panel(f: &mut Frame, app: &App, area
         
         // Show categories
         for category in state.categories() {
+            // Only show essential categories by default unless show_all_categories is true
+            if !state.show_all_categories {
+                let essential_categories = [
+                    PropertyCategory::Values,
+                    PropertyCategory::Dimensions,
+                    PropertyCategory::Position,
+                    PropertyCategory::Colors,
+                    PropertyCategory::Attributes,
+                ];
+                if !essential_categories.contains(&category) {
+                    continue;
+                }
+            }
+            
             let category_name = format_category_name(&category);
             let is_selected = Some(category) == state.selected_category;
             let style = if is_selected {
@@ -293,6 +323,19 @@ pub fn render_object_definitions_properties_panel(f: &mut Frame, app: &App, area
             // Show properties in this category
             if let Some(props) = state.properties_by_category.get(&category) {
                 for (i, prop) in props.iter().enumerate() {
+                    // Only show editable/important properties
+                    let should_show = match prop.name.as_str() {
+                        "field_name" | "field_type" | "field_width" | "field_length" | "field_height" | 
+                        "field_pos" | "field_text_color" | "field_attrb" | "field_initial" | 
+                        "field_border_color" | "field_title_color" | "field_fill_char" | 
+                        "field_border_style" => true,
+                        _ => false, // Skip less important properties
+                    };
+                    
+                    if !should_show {
+                        continue;
+                    }
+                    
                     // Find global index of this property
                     let global_index = state.flat_properties.iter()
                         .position(|p| p.name == prop.name)
@@ -310,17 +353,45 @@ pub fn render_object_definitions_properties_panel(f: &mut Frame, app: &App, area
                     lines.push(Line::from(Span::styled(format!("    {}: {}", prop.gui_name, value), style)));
                 }
             }
-            lines.push(Line::from(""));
+            // Only add empty line between categories, not after last one
+            if lines.last() != Some(&Line::from("")) {
+                lines.push(Line::from(""));
+            }
         }
         
         let has_lines = !lines.is_empty();
+        let line_count = lines.len();
+        let has_scrollbar = line_count > inner.height as usize;
         let text = Text::from(lines);
-        let paragraph = Paragraph::new(text).block(Block::default().borders(Borders::NONE));
+        let paragraph = Paragraph::new(text)
+            .block(Block::default().borders(Borders::NONE))
+            .scroll((state.scroll_offset as u16, 0));
         f.render_widget(paragraph, inner);
+        
+        // Add scrollbar if content is scrollable
+        if has_scrollbar {
+            let mut scrollbar_state = ratatui::widgets::ScrollbarState::new(line_count.saturating_sub(inner.height as usize))
+                .position(state.scroll_offset);
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(None)
+                .end_symbol(None)
+                .track_symbol(None)
+                .thumb_symbol("█");
+            f.render_stateful_widget(
+                scrollbar,
+                Rect {
+                    x: inner.x + inner.width - 1,
+                    y: inner.y,
+                    width: 1,
+                    height: inner.height,
+                },
+                &mut scrollbar_state,
+            );
+        }
         
         // Show navigation help
         if has_lines {
-            let help_line = Line::from("[↑↓:Navigate | Enter:Edit | Esc:Close]".dim());
+            let help_line = Line::from("[↑↓:Navigate | Enter:Edit | A:Toggle All Categories | Esc:Close]".dim());
             let help_text = Text::from(vec![help_line]);
             let help_paragraph = Paragraph::new(help_text).block(Block::default().borders(Borders::NONE));
             let help_area = Rect {
