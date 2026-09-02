@@ -411,9 +411,26 @@ fn get_property_value(field: &BmsField, property_name: &str) -> String {
         "field_name" => field.name.clone(),
         "field_pos" => format!("({}, {})", field.pos.0, field.pos.1),
         "field_width" | "field_length" => field.length.to_string(),
-        "field_text_color" => format!("{:?}", field.text_color),
-        "field_attrb" => format!("{:?}", field.attrb),
-        "field_type" => format!("{:?}", field.field_type),
+        "field_text_color" => format!("{}", field.text_color),
+        "field_attrb" => {
+            // Format FieldAttributes in a compact single-line format
+            let attrs = &field.attrb;
+            let mut parts = Vec::new();
+            if attrs.field_in_edit_mode { parts.push("EDIT"); }
+            if attrs.field_visible { parts.push("VISIBLE"); }
+            if attrs.field_required { parts.push("REQUIRED"); }
+            if attrs.field_has_error { parts.push("ERROR"); }
+            if attrs.field_selected { parts.push("SELECTED"); }
+            if attrs.field_focused { parts.push("FOCUSED"); }
+            if attrs.field_highlighted { parts.push("HIGHLIGHTED"); }
+            if attrs.field_hidden { parts.push("HIDDEN"); }
+            if attrs.field_enabled { parts.push("ENABLED"); }
+            if attrs.field_readonly { parts.push("READONLY"); }
+            if attrs.field_protected { parts.push("PROTECTED"); }
+            if attrs.field_numeric { parts.push("NUMERIC"); }
+            if parts.is_empty() { "NONE".to_string() } else { parts.join(",") }
+        }
+        "field_type" => format!("{}", field.field_type),
         "field_initial" => field.initial.clone().unwrap_or_else(|| "".to_string()),
         _ => "N/A".to_string(),
     }
