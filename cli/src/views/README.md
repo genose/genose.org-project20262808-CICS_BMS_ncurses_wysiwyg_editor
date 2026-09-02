@@ -7,14 +7,15 @@ This directory is intended to organize the application's UI code into separate, 
 The views module is being actively extracted from `main.rs`. Currently extracted views:
 
 ### ✅ Fully Extracted and Integrated:
+- `attribute_picker.rs` - Attribute selection dialog
+- `color_picker.rs` - Color selection dialog
 - `combo_key_help.rs` - Combo key bindings help view
 - `confirm.rs` - Confirmation dialog
-- `help.rs` - Help view with keyboard shortcuts (NEW)
+- `help.rs` - Help view with keyboard shortcuts
 - `map_type_picker.rs` - Map type selection dialog
+- `save_dialog.rs` - Save dialog (NEW)
 - `status_bar.rs` - Status bar rendering
 - `text_input.rs` - Text input dialog
-- `color_picker.rs` - Color selection dialog
-- `attribute_picker.rs` - Attribute selection dialog
 
 ### 📋 Template/Reference:
 - `help.rs` - Template file with improved paging (not yet activated)
@@ -84,7 +85,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `render_map_type_picker`
 - `render_color_picker` (EXTRACTED)
 - `render_attribute_picker` (EXTRACTED)
-- `render_save_dialog`
+- `render_save_dialog` (EXTRACTED)
 - `render_open_dialog`
 - `render_add_object_dialog`
 - `render_text_input`
@@ -106,7 +107,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `handle_map_type_picker_mode`
 - `handle_color_picker_mode` (EXTRACTED)
 - `handle_attribute_picker_mode` (EXTRACTED)
-- `handle_save_dialog_mode`
+- `handle_save_dialog_mode` (EXTRACTED)
 - `handle_open_dialog_mode`
 - `handle_add_object_dialog_mode`
 - `handle_text_input_mode`

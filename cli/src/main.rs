@@ -56,6 +56,7 @@ use views::combo_key_help::{render as render_combo_key_help, handle_mode as hand
 use views::confirm::{render as render_confirm, handle_mode as handle_confirm_mode};
 use views::help::{render as render_help, handle_mode as handle_help_mode};
 use views::map_type_picker::{render as render_map_type_picker, handle_mode as handle_map_type_picker_mode};
+use views::save_dialog::{render as render_save_dialog, handle_mode as handle_save_dialog_mode};
 use views::status_bar::render as render_status_bar;
 use views::text_input::{render as render_text_input, handle_mode as handle_text_input_mode};
 
@@ -2680,43 +2681,7 @@ fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
 
 
 
-fn handle_save_dialog_mode(app: &mut App, key: event::KeyEvent) {
-    match key.code {
-        KeyCode::Esc => app.mode = AppMode::Edit,
-        KeyCode::Enter => {
-            // Validate before saving
-            let errors = app.editor.map.validate();
-            if !errors.is_empty() {
-                app.set_message(&format!("Cannot save: {}", errors.join("; ")));
-                return;
-            }
-            
-            // Prevent saving empty BMS maps (no fields)
-            if app.editor.map.fields.is_empty() {
-                app.set_message("Cannot save: Empty BMS map has no fields");
-                return;
-            }
-            let path = PathBuf::from(&app.save_path);
-            match fs::write(&path, app.editor.export_to_bms()) {
-                Ok(_) => {
-                    app.current_file = Some(path.clone());
-                    app.mode = AppMode::Edit;
-                    app.set_message(&format!("Saved: {}", path.display()));
-                }
-                Err(e) => {
-                    app.set_message(&format!("Failed: {}", e));
-                }
-            }
-        }
-        KeyCode::Backspace => {
-            app.save_path.pop();
-        }
-        KeyCode::Char(c) => {
-            app.save_path.push(c);
-        }
-        _ => {}
-    }
-}
+
 
 fn handle_open_dialog_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
@@ -4374,40 +4339,7 @@ fn is_property_group_start(index: usize, properties: &[PropertyType]) -> bool {
 
 
 
-fn render_save_dialog(f: &mut Frame, app: &App, area: Rect) {
-    let dialog_width = 40;
-    let dialog_height = 5;
-    let dialog_area = Rect {
-        x: area.x + (area.width.saturating_sub(dialog_width)) / 2,
-        y: area.y + (area.height.saturating_sub(dialog_height)) / 2,
-        width: dialog_width,
-        height: dialog_height,
-    };
-    
-    let block = Block::default()
-        .title(" Save File ")
-        .borders(Borders::ALL);
-    f.render_widget(block, dialog_area);
-    
-    let inner = Rect {
-        x: dialog_area.x + 1,
-        y: dialog_area.y + 1,
-        width: dialog_area.width.saturating_sub(2),
-        height: dialog_area.height.saturating_sub(2),
-    };
-    
-    let prompt = Paragraph::new("File path: ")
-        .style(Style::default().fg(TuiColor::Yellow));
-    f.render_widget(prompt, Rect { x: inner.x, y: inner.y, width: inner.width, height: 1 });
-    
-    let path_text = Paragraph::new(app.save_path.as_str())
-        .style(Style::default().fg(TuiColor::White));
-    f.render_widget(path_text, Rect { x: inner.x, y: inner.y + 1, width: inner.width, height: 1 });
-    
-    let help = Paragraph::new("Enter: Save | Esc: Cancel")
-        .style(Style::default().fg(TuiColor::Cyan));
-    f.render_widget(help, Rect { x: inner.x, y: inner.y + 2, width: inner.width, height: 1 });
-}
+
 
 fn render_open_dialog(f: &mut Frame, app: &App, area: Rect) {
     let dialog_width = area.width.min(60);
