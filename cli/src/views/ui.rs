@@ -14,6 +14,8 @@ use crate::AppMode;
 use crate::ActivePanel;
 use super::canvas::render as render_canvas;
 use super::sidebar::render as render_sidebar;
+use super::properties::render_properties_panel as render_properties_panel;
+use super::properties::render_edit_properties_panel as render_edit_properties_panel;
 
 /// Main UI rendering function
 /// 
@@ -73,7 +75,7 @@ pub fn render(f: &mut Frame, app: &App) {
         }
         AppMode::Properties => {
             render_canvas(f, app, content_area);
-            crate::render_properties_panel(f, app, content_area);
+            render_properties_panel(f, app, content_area);
         }
         AppMode::InsertPosition => {
             render_canvas(f, app, content_area);
@@ -81,7 +83,7 @@ pub fn render(f: &mut Frame, app: &App) {
         }
         AppMode::EditProperties => {
             render_canvas(f, app, content_area);
-            crate::render_edit_properties_panel(f, app, content_area);
+            render_edit_properties_panel(f, app, content_area);
         }
         AppMode::MapTypePicker => {
             render_canvas(f, app, content_area);

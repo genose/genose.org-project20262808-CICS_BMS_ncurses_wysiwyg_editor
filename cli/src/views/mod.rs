@@ -33,6 +33,7 @@ pub mod map_type_picker;
 pub mod open_dialog;
 pub mod save_dialog;
 pub mod canvas;
+pub mod properties;
 pub mod sidebar;
 pub mod status_bar;
 pub mod text_input;
