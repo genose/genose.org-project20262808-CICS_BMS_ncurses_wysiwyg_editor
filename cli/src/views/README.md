@@ -80,19 +80,19 @@ The following render and handle functions exist in main.rs and should be extract
 - `render_bms_text_preview`
 - `render_sidebar`
 - `render_properties_panel`
-- `render_insert_position_dialog`
-- `render_edit_properties_panel`
+- `render_insert_position_dialog` (TO DO - complex dependencies)
+- `render_edit_properties_panel` (TO DO - complex dependencies)
 - `render_map_type_picker`
 - `render_color_picker` (EXTRACTED)
 - `render_attribute_picker` (EXTRACTED)
 - `render_save_dialog` (EXTRACTED)
-- `render_open_dialog`
-- `render_add_object_dialog`
+- `render_open_dialog` (TO DO - complex dependencies)
+- `render_add_object_dialog` (TO DO - complex dependencies)
 - `render_text_input`
 - `render_help` (EXTRACTED)
 - `render_combo_key_help`
 - `render_confirm`
-- `render_image_import_dialog`
+- `render_image_import_dialog` (TO DO - complex dependencies)
 - `render_status_bar`
 
 ### Handle Functions (30+ found):
