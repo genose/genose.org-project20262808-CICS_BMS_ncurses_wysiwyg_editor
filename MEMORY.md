@@ -1,5 +1,9 @@
 # 🧠 MEMORY - Technical Memory and Decision Log
 
+**Project Name**: COBOL BMS WYSIWYG Editor
+**GitHub Name**: genose.org
+**Concept**: Genose.org (Cotillard Sebastien)
+
 > **COBOL BMS WYSIWYG Editor** - Technical Memory, Decisions, and Lessons Learned
 
 This document serves as the **technical memory** of the project, documenting key decisions, architectural choices, problems solved, and lessons learned during development.
@@ -368,4 +372,6 @@ fn add_color_property(&mut self, name: &str, gui_name: &str, category: PropertyC
 > **Status**: 100% Lua OBJECTS-DEFINITIONS Parity Achieved ✅
 > **Author**: Genose.org (Cotillard Sebastien)
 > **Concept**: Genose.org (Cotillard Sebastien)
+> **Project Name**: COBOL BMS WYSIWYG Editor
+> **GitHub Name**: genose.org
 > **Contributors**: Mistral Vibe

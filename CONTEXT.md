@@ -1,5 +1,9 @@
 # 📚 Contexte et Memoire du Projet
 
+> **Project Name**: COBOL BMS WYSIWYG Editor
+> **GitHub Name**: genose.org
+> **Concept**: Genose.org (Cotillard Sebastien)
+> 
 > **COBOL BMS WYSIWYG Editor** - Documentation du contexte, decisions et memoire technique
 
 Ce document sert de **reference centrale** pour comprendre:
@@ -472,7 +476,7 @@ pub enum Color {
 
 ---
 
-## 🔗 **Ressources Externes**
+## 🔗 **References & External Resources**
 
 ### Documentation IBM
 - [BMS Programming Guide](https://www.ibm.com/docs/en/cics-ts/6.1?topic=reference-bms-programming)
@@ -545,3 +549,5 @@ Pour les questions, suggestions ou rapports de bugs:
 > **Version**: 0.3.0
 > **Auteur**: Genose.org (Cotillard Sebastien)
 > **Concept**: Genose.org (Cotillard Sebastien)
+> **Project Name**: COBOL BMS WYSIWYG Editor
+> **GitHub Name**: genose.org

@@ -389,8 +389,19 @@ MIT License - voir [LICENSE](LICENSE)
 
 ---
 
+## 📚 References
+
+- **IBM CICS Documentation**: [IBM CICS TS Documentation](https://www.ibm.com/docs/en/cics-ts)
+- **BMS Programming Guide**: [IBM BMS Programming Guide](https://www.ibm.com/docs/en/cics-ts/6.1?topic=reference-bms-programming)
+- **Rust Language**: [https://www.rust-lang.org](https://www.rust-lang.org)
+- **Ratatui TUI Framework**: [https://github.com/ratatui-org/ratatui](https://github.com/ratatui-org/ratatui)
+
+---
+
 ## 📞 Contact
 
+- **Project Name**: COBOL BMS WYSIWYG Editor
 - **Auteur**: Genose.org (Cotillard Sebastien)
 - **Concept**: Genose.org (Cotillard Sebastien)
+- **GitHub Name**: genose.org
 - **Repository**: [genose.org-project20262808-CICS_BMS_ncurses_wysiwyg_editor](https://github.com/genose.org/genose.org-project20262808-CICS_BMS_ncurses_wysiwyg_editor)
