@@ -19,10 +19,10 @@ pub mod attribute_picker;
 pub mod color_picker;
 pub mod combo_key_help;
 pub mod confirm;
+pub mod help;
 pub mod map_type_picker;
 pub mod status_bar;
 pub mod text_input;
-// pub mod help;  // Template available, not yet activated
 // pub mod canvas;
 // pub mod sidebar;
 // pub mod properties;

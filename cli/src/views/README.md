@@ -9,11 +9,12 @@ The views module is being actively extracted from `main.rs`. Currently extracted
 ### ✅ Fully Extracted and Integrated:
 - `combo_key_help.rs` - Combo key bindings help view
 - `confirm.rs` - Confirmation dialog
+- `help.rs` - Help view with keyboard shortcuts (NEW)
 - `map_type_picker.rs` - Map type selection dialog
 - `status_bar.rs` - Status bar rendering
 - `text_input.rs` - Text input dialog
-- `color_picker.rs` - Color selection dialog (NEW)
-- `attribute_picker.rs` - Attribute selection dialog (NEW)
+- `color_picker.rs` - Color selection dialog
+- `attribute_picker.rs` - Attribute selection dialog
 
 ### 📋 Template/Reference:
 - `help.rs` - Template file with improved paging (not yet activated)
@@ -87,7 +88,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `render_open_dialog`
 - `render_add_object_dialog`
 - `render_text_input`
-- `render_help` (ALREADY FIXED - paging improved)
+- `render_help` (EXTRACTED)
 - `render_combo_key_help`
 - `render_confirm`
 - `render_image_import_dialog`
@@ -109,7 +110,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `handle_open_dialog_mode`
 - `handle_add_object_dialog_mode`
 - `handle_text_input_mode`
-- `handle_help_mode` (ALREADY FIXED - paging improved)
+- `handle_help_mode` (EXTRACTED)
 - `handle_combo_key_help_mode`
 - `handle_confirm_mode`
 - `handle_image_import_mode`

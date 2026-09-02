@@ -1,15 +1,6 @@
-//! Help view module - Reference implementation
+//! Help view module
 //!
-//! This module demonstrates the intended pattern for view modules.
-//! When ready to use this pattern, the help functions should be moved from main.rs
-//! and this file should be updated to import the App struct properly.
-//!
-//! Current status: The help functions are at the end of main.rs with the paging fixes applied.
-//! This file serves as a template for future extraction.
-
-// Use this when App is moved to a separate module:
-// use crate::app::{App, AppMode};
-// use crate::combo_keys::ComboKeyManager;
+//! This module contains the help view rendering and input handling.
 
 use ratatui::{
     prelude::*,
@@ -18,6 +9,9 @@ use ratatui::{
 };
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::text::Line;
+
+use crate::App;
+use crate::AppMode;
 
 /// Get all help lines for the help view
 /// This will be used by both the render and handler functions
@@ -103,7 +97,7 @@ pub fn get_help_lines() -> Vec<Line<'static>> {
 /// * `f` - The frame to render to
 /// * `app` - The application state
 /// * `area` - The area to render in
-pub fn render(f: &mut Frame, app: &super::App, area: Rect) {
+pub fn render(f: &mut Frame, app: &App, area: Rect) {
     let help_area = area;
     let block = Block::default()
         .title(" Help (Scroll: Up/Down/PgUp/PgDn/Home/End) ")
@@ -157,12 +151,12 @@ pub fn render(f: &mut Frame, app: &super::App, area: Rect) {
 /// # Arguments
 /// * `app` - The application state (mutable)
 /// * `key` - The key event to handle
-pub fn handle_mode(app: &mut super::App, key: KeyEvent) {
+pub fn handle_mode(app: &mut App, key: KeyEvent) {
     let total_lines = get_help_lines().len();
     let max_scroll = total_lines.saturating_sub(1);
     
     match key.code {
-        KeyCode::Char('q') | KeyCode::Esc => app.mode = super::AppMode::Edit,
+        KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
         KeyCode::Up | KeyCode::Char('k') => {
             if app.help_scroll > 0 {
                 app.help_scroll -= 1;
