@@ -16,6 +16,19 @@ use super::canvas::render as render_canvas;
 use super::sidebar::render as render_sidebar;
 use super::properties::render_properties_panel as render_properties_panel;
 use super::properties::render_edit_properties_panel as render_edit_properties_panel;
+use super::insert_position_dialog::render as render_insert_position_dialog;
+use super::map_type_picker::render as render_map_type_picker;
+use super::color_picker::render as render_color_picker;
+use super::attribute_picker::render as render_attribute_picker;
+use super::save_dialog::render as render_save_dialog;
+use super::open_dialog::render as render_open_dialog;
+use super::add_object_dialog::render as render_add_object_dialog;
+use super::text_input::render as render_text_input;
+use super::help::render as render_help;
+use super::combo_key_help::render as render_combo_key_help;
+use super::confirm::render as render_confirm;
+use super::image_import_dialog::render as render_image_import_dialog;
+use super::status_bar::render as render_status_bar;
 
 /// Main UI rendering function
 /// 
@@ -79,7 +92,7 @@ pub fn render(f: &mut Frame, app: &App) {
         }
         AppMode::InsertPosition => {
             render_canvas(f, app, content_area);
-            crate::render_insert_position_dialog(f, app, content_area);
+            render_insert_position_dialog(f, app, content_area);
         }
         AppMode::EditProperties => {
             render_canvas(f, app, content_area);
@@ -87,46 +100,46 @@ pub fn render(f: &mut Frame, app: &App) {
         }
         AppMode::MapTypePicker => {
             render_canvas(f, app, content_area);
-            crate::render_map_type_picker(f, app, content_area);
+            render_map_type_picker(f, app, content_area);
         }
         AppMode::ColorPicker => {
             render_canvas(f, app, content_area);
-            crate::render_color_picker(f, app, content_area);
+            render_color_picker(f, app, content_area);
         }
         AppMode::AttributePicker => {
             render_canvas(f, app, content_area);
-            crate::render_attribute_picker(f, app, content_area);
+            render_attribute_picker(f, app, content_area);
         }
         AppMode::SaveDialog => {
-            crate::render_save_dialog(f, app, content_area);
+            render_save_dialog(f, app, content_area);
         }
         AppMode::OpenDialog => {
             render_canvas(f, app, content_area);
-            crate::render_open_dialog(f, app, content_area);
+            render_open_dialog(f, app, content_area);
         }
         AppMode::AddObjectDialog => {
             render_canvas(f, app, content_area);
-            crate::render_add_object_dialog(f, app, content_area);
+            render_add_object_dialog(f, app, content_area);
         }
         AppMode::TextInput => {
             render_canvas(f, app, content_area);
-            crate::render_text_input(f, app, content_area);
+            render_text_input(f, app, content_area);
         }
         AppMode::Help => {
-            crate::render_help(f, app, content_area);
+            render_help(f, app, content_area);
         }
         AppMode::ComboKeyHelp => {
-            crate::render_combo_key_help(f, app, content_area);
+            render_combo_key_help(f, app, content_area);
         }
         AppMode::Confirm => {
-            crate::render_confirm(f, app, content_area);
+            render_confirm(f, app, content_area);
         }
         AppMode::ImageImport => {
             render_canvas(f, app, content_area);
-            crate::render_image_import_dialog(f, app, content_area);
+            render_image_import_dialog(f, app, content_area);
         }
     }
     
     // Status bar
-    crate::render_status_bar(f, app, main_layout[2]);
+    render_status_bar(f, app, main_layout[2]);
 }
