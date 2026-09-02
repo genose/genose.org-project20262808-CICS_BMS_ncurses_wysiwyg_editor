@@ -24,6 +24,7 @@ pub mod help;
 pub mod image_import_dialog;
 pub mod insert_position_dialog;
 pub mod edit_properties_mode;
+pub mod mouse_input;
 pub mod normal_mode;
 pub mod properties_mode;
 pub mod utils;

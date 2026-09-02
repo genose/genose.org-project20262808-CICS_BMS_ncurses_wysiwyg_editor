@@ -21,6 +21,7 @@ Currently extracted views:
 - `open_dialog.rs` - Open file dialog with file browser
 - `save_dialog.rs` - Save dialog
 - `edit_properties_mode.rs` - Edit properties mode input handling
+- `mouse_input.rs` - Mouse input handling for canvas
 - `normal_mode.rs` - Normal mode input handling
 - `properties_mode.rs` - Properties mode input handling
 - `status_bar.rs` - Status bar rendering
@@ -107,7 +108,7 @@ The following render and handle functions exist in main.rs and should be extract
 
 ### Handle Functions (30+ found):
 - `handle_input`
-- `handle_mouse_input`
+- `handle_mouse_input` (EXTRACTED)
 - `handle_combo_action`
 - `handle_edit_mode`
 - `handle_normal_mode`
