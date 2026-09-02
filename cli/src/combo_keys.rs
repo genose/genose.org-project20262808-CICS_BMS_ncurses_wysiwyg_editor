@@ -137,6 +137,7 @@ pub enum ComboAction {
     ToggleDebug,
     ExitApplication,
     ShowAbout,
+    ShowComboKeyHelp,
 }
 
 impl ComboAction {
@@ -188,6 +189,7 @@ impl ComboAction {
             ComboAction::ToggleDebug => "Toggle Debug",
             ComboAction::ExitApplication => "Exit Application",
             ComboAction::ShowAbout => "Show About",
+            ComboAction::ShowComboKeyHelp => "Show Combo Key Help",
         }
     }
 }
@@ -279,6 +281,12 @@ pub enum TerminalType {
     Unknown,
 }
 
+impl Default for TerminalType {
+    fn default() -> Self {
+        TerminalType::Unknown
+    }
+}
+
 impl TerminalType {
     /// Detect the current terminal type
     pub fn detect() -> Self {
@@ -311,6 +319,17 @@ impl TerminalType {
     /// Check if Shift+modifier combinations work reliably
     pub fn supports_shift_combinations(&self) -> bool {
         !matches!(self, TerminalType::VSCode | TerminalType::Unknown)
+    }
+    
+    /// Get string representation of terminal type
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            TerminalType::Standard => "Standard",
+            TerminalType::VSCode => "VSCode",
+            TerminalType::WindowsTerminal => "Windows Terminal",
+            TerminalType::ITerm2 => "iTerm2",
+            TerminalType::Unknown => "Unknown",
+        }
     }
 }
 
@@ -408,8 +427,8 @@ impl ComboKeyManager {
         self.context_stack.clear();
     }
     
-    /// Handle a key event and return the corresponding action if any
-    pub fn handle_key(&self, event: &KeyEvent) -> Option<ComboAction> {
+    /// Handle a key event and return the corresponding action if any (internal simple version)
+    fn handle_key_simple(&self, event: &KeyEvent) -> Option<ComboAction> {
         for (combo_key, binding) in &self.bindings {
             if combo_key.matches(event) && self.is_context_active(&binding.context) {
                 return Some(binding.action.clone());
@@ -518,7 +537,7 @@ impl ComboKeyManager {
         }
         
         // Try primary bindings first
-        if let Some(action) = self.try_handle_with_context(event) {
+        if let Some(action) = self.handle_key_simple(event) {
             return Some(action);
         }
         
@@ -530,15 +549,7 @@ impl ComboKeyManager {
         None
     }
     
-    /// Handle key with context checking (original logic)
-    fn try_handle_with_context(&self, event: &KeyEvent) -> Option<ComboAction> {
-        for (combo_key, binding) in &self.bindings {
-            if combo_key.matches(event) && self.is_context_active(&binding.context) {
-                return Some(binding.action.clone());
-            }
-        }
-        None
-    }
+
     
     /// Try fallback bindings when primary doesn't match
     fn try_fallback_bindings(&self, event: &KeyEvent) -> Option<ComboAction> {
@@ -592,7 +603,7 @@ impl ComboKeyManager {
                     kind: event.kind,
                     state: event.state,
                 };
-                self.try_handle_with_context(&alt_event)
+                self.handle_key_simple(&alt_event)
             }
             _ => None,
         }
@@ -655,6 +666,13 @@ impl ComboKeyManager {
                 ComboKey::new(KeyModifiers::CONTROL, KeyCode::Char('h')),
                 ComboAction::ToggleHelp,
                 "Toggle Help",
+                ComboContext::Global,
+            ),
+            // Combo key help
+            ComboKeyBinding::new(
+                ComboKey::new(KeyModifiers::CONTROL | KeyModifiers::SHIFT, KeyCode::Char('h')),
+                ComboAction::ShowComboKeyHelp,
+                "Show Combo Key Help",
                 ComboContext::Global,
             ),
             
@@ -872,10 +890,8 @@ impl ComboKeyManager {
                 "Fast Scroll Right (VSCode)",
                 ComboContext::EditMode,
             ),
-            
-            // Leader key sequences (Space + key) - these are handled separately
-            // These are not ComboKey bindings but sequential key patterns
-        ]
+        ];
+        bindings
     }
     
     /// Get leader key sequences for VSCode compatibility

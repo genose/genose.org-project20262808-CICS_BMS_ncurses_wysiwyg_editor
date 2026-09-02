@@ -44,6 +44,10 @@ use cobol_bms_core::{
 };
 use cobol_bms_core::model::{Color as BmsColor, DecorationType, Justify, DataType};
 
+// Combo key system
+mod combo_keys;
+use combo_keys::{ComboKeyManager, ComboAction, ComboContext, TerminalType};
+
 // ==================== UTILITIES ====================
 
 /// Detect if running inside VS Code integrated terminal
@@ -358,6 +362,8 @@ enum AppMode {
     TextInput,
     /// Mode help
     Help,
+    /// Mode combo key help
+    ComboKeyHelp,
     /// Mode confirm (pour suppression, etc.)
     Confirm,
     /// Mode image import (for AsciiArt fields)
@@ -815,6 +821,8 @@ struct App {
     image_import_show_all_files: bool,
     // Pour le mode help scroll
     help_scroll: usize,
+    // Combo key system
+    combo_key_manager: ComboKeyManager,
 }
 
 /// Action to perform after text input is submitted
@@ -936,7 +944,138 @@ impl App {
             image_import_selected_index: 0,
             image_import_show_all_files: true,
             help_scroll: 0,
+            combo_key_manager: Self::create_combo_key_manager(),
         }
+    }
+
+    /// Create the combo key manager with default bindings
+    fn create_combo_key_manager() -> ComboKeyManager {
+        let mut manager = ComboKeyManager::new();
+        
+        // Register default bindings
+        manager.register_bindings(ComboKeyManager::default_bindings());
+        
+        // Set leader key for sequences
+        manager.set_leader_key(KeyCode::Char(' '));
+        
+        manager
+    }
+
+    /// Update combo key contexts based on current app state
+    fn update_combo_key_contexts(&mut self) {
+        // Clear existing contexts
+        self.combo_key_manager.clear_contexts();
+        
+        // Always add Global context
+        self.combo_key_manager.push_context(ComboContext::Global);
+        
+        // Add contexts based on mode
+        match self.mode {
+            AppMode::Edit => {
+                self.combo_key_manager.push_context(ComboContext::EditMode);
+                
+                // Add context based on panel
+                match self.active_panel {
+                    ActivePanel::Canvas => {
+                        self.combo_key_manager.push_context(ComboContext::CanvasPanel);
+                        
+                        // Add field selection contexts
+                        if self.editor.selected_count() > 1 {
+                            self.combo_key_manager.push_context(ComboContext::MultipleFieldsSelected);
+                        } else if self.editor.selected_field.is_some() {
+                            self.combo_key_manager.push_context(ComboContext::FieldSelected);
+                        }
+                    }
+                    ActivePanel::Sidebar => {
+                        self.combo_key_manager.push_context(ComboContext::SidebarPanel);
+                    }
+                }
+            }
+            AppMode::Properties => {
+                self.combo_key_manager.push_context(ComboContext::PropertiesMode);
+            }
+            AppMode::InsertPosition => {
+                self.combo_key_manager.push_context(ComboContext::InsertPositionMode);
+            }
+            AppMode::TextInput => {
+                self.combo_key_manager.push_context(ComboContext::TextInputMode);
+            }
+            AppMode::ColorPicker => {
+                self.combo_key_manager.push_context(ComboContext::ColorPickerMode);
+            }
+            AppMode::AttributePicker => {
+                self.combo_key_manager.push_context(ComboContext::AttributePickerMode);
+            }
+            // For dialog-like modes
+            AppMode::SaveDialog | AppMode::OpenDialog | AppMode::AddObjectDialog | AppMode::Confirm => {
+                self.combo_key_manager.push_context(ComboContext::DialogMode);
+            }
+            _ => {}
+        }
+    }
+
+    /// Switch to next sidebar section
+    fn next_sidebar_section(&mut self) {
+        self.sidebar_section = self.sidebar_section.next();
+    }
+    
+    /// Switch to previous sidebar section
+    fn prev_sidebar_section(&mut self) {
+        self.sidebar_section = self.sidebar_section.previous();
+    }
+
+    /// Get help text for combo keys
+    fn get_combo_key_help(&self) -> Vec<String> {
+        let mut help_lines = Vec::new();
+        
+        // Add terminal compatibility info
+        let terminal_type = self.combo_key_manager.terminal_type();
+        if terminal_type.has_limitations() {
+            help_lines.push(format!("Terminal: {} (some key combos may not work)", terminal_type.as_str()));
+            if terminal_type == TerminalType::VSCode {
+                help_lines.push("VSCode Note: Use Ctrl+Alt for Alt combinations".to_string());
+            }
+        } else {
+            help_lines.push(format!("Terminal: {}", terminal_type.as_str()));
+        }
+        help_lines.push(String::new());
+        
+        // Add active bindings help
+        let help_text = self.combo_key_manager.get_help_text();
+        for line in help_text {
+            help_lines.push(line);
+        }
+        
+        help_lines
+    }
+
+    /// Get all available combo key bindings as help text
+    fn get_all_combo_help(&self) -> Vec<String> {
+        let mut help_lines = Vec::new();
+        help_lines.push("Available Key Bindings:".to_string());
+        help_lines.push(String::new());
+        
+        // Get all bindings and organize by category
+        let mut all_bindings = self.combo_key_manager.get_active_bindings();
+        
+        // Sort bindings by description for consistent display
+        all_bindings.sort_by(|a, b| a.description.cmp(&b.description));
+        
+        for binding in all_bindings {
+            help_lines.push(format!("  {}: {}", binding.combo_key.to_string(), binding.description));
+        }
+        
+        help_lines
+    }
+
+    /// Force VSCode terminal mode (for testing)
+    fn force_vscode_mode(&mut self) {
+        self.combo_key_manager.set_terminal_type(TerminalType::VSCode);
+    }
+    
+    /// Check if we're running in VSCode terminal
+    fn is_vscode_mode(&self) -> bool {
+        self.combo_key_manager.terminal_type() == TerminalType::VSCode
     }
 
     // Initialize first object for add dialog
@@ -1049,6 +1188,374 @@ impl App {
     }
 }
 
+/// Handle combo actions
+fn handle_combo_action(app: &mut App, action: ComboAction, key: &event::KeyEvent) {
+    use ComboAction::*;
+    
+    let key_desc = format!("{} + {}", 
+        if key.modifiers.is_empty() { "".to_string() } else { 
+            format!("{:?}", key.modifiers) 
+        }, 
+        match key.code {
+            KeyCode::Char(c) => format!("{}", c),
+            _ => format!("{:?}", key.code),
+        }
+    );
+    
+    match action {
+        // View switching
+        TogglePanel => {
+            app.active_panel.toggle();
+            app.sidebar_actions_selected = None;
+            app.sidebar_objects_selected = None;
+            app.set_message(match app.active_panel {
+                ActivePanel::Canvas => "Canvas mode [Ctrl+P]",
+                ActivePanel::Sidebar => "Sidebar mode [Ctrl+P]",
+            });
+        }
+        SwitchToCanvas => {
+            app.active_panel = ActivePanel::Canvas;
+            app.set_message("Switched to Canvas");
+        }
+        SwitchToSidebar => {
+            app.active_panel = ActivePanel::Sidebar;
+            app.set_message("Switched to Sidebar");
+        }
+        TogglePreview => {
+            if app.mode == AppMode::Edit {
+                app.show_bms_text = !app.show_bms_text;
+                app.set_message(if app.show_bms_text {
+                    "BMS text preview ON [Ctrl+Space]"
+                } else {
+                    "BMS text preview OFF [Ctrl+Space]"
+                });
+            }
+        }
+        ToggleHelp => {
+            if app.mode == AppMode::Help {
+                app.mode = AppMode::Edit;
+            } else if app.mode == AppMode::ComboKeyHelp {
+                app.mode = AppMode::Edit;
+            } else {
+                app.mode = AppMode::Help;
+            }
+        }
+        
+        // Navigation
+        NextField => {
+            if app.mode == AppMode::Edit && app.active_panel == ActivePanel::Canvas {
+                app.editor.select_next_field();
+                if let Some(idx) = app.editor.selected_field {
+                    app.editor.cursor_pos = app.editor.map.fields[idx].pos;
+                    app.set_message(&format!("Next field: {}", idx));
+                }
+            }
+        }
+        PreviousField => {
+            if app.mode == AppMode::Edit && app.active_panel == ActivePanel::Canvas {
+                app.editor.select_prev_field();
+                if let Some(idx) = app.editor.selected_field {
+                    app.editor.cursor_pos = app.editor.map.fields[idx].pos;
+                    app.set_message(&format!("Previous field: {}", idx));
+                }
+            }
+        }
+        NextSection => {
+            if app.active_panel == ActivePanel::Sidebar {
+                app.next_sidebar_section();
+            }
+        }
+        PreviousSection => {
+            if app.active_panel == ActivePanel::Sidebar {
+                app.prev_sidebar_section();
+            }
+        }
+        
+        FastScrollUp => {
+            if app.mode == AppMode::Edit && app.active_panel == ActivePanel::Canvas {
+                app.editor.move_cursor(CursorDirection::Up, 5);
+                app.editor.select_field_at(app.editor.cursor_pos);
+            }
+        }
+        FastScrollDown => {
+            if app.mode == AppMode::Edit && app.active_panel == ActivePanel::Canvas {
+                app.editor.move_cursor(CursorDirection::Down, 5);
+                app.editor.select_field_at(app.editor.cursor_pos);
+            }
+        }
+        FastScrollLeft => {
+            if app.mode == AppMode::Edit && app.active_panel == ActivePanel::Canvas {
+                app.editor.move_cursor(CursorDirection::Left, 5);
+                app.editor.select_field_at(app.editor.cursor_pos);
+            }
+        }
+        FastScrollRight => {
+            if app.mode == AppMode::Edit && app.active_panel == ActivePanel::Canvas {
+                app.editor.move_cursor(CursorDirection::Right, 5);
+                app.editor.select_field_at(app.editor.cursor_pos);
+            }
+        }
+        
+        // Editing
+        EnterEditMode => {
+            app.mode = AppMode::Edit;
+            app.set_message("Edit mode");
+        }
+        ExitEditMode => {
+            app.mode = AppMode::Normal;
+            app.set_message("Normal mode");
+        }
+        
+        CopyField => {
+            if app.mode == AppMode::Edit {
+                let count = app.editor.selected_count();
+                app.editor.copy_selected_fields();
+                app.set_message(&format!("Copied {} field(s)", count));
+            }
+        }
+        PasteField => {
+            if app.mode == AppMode::Edit {
+                let count = app.editor.paste_fields_at(app.editor.cursor_pos);
+                app.set_message(&format!("Pasted {} field(s)", count));
+            }
+        }
+        
+        Undo => {
+            if app.mode == AppMode::Edit {
+                app.editor.undo();
+                app.set_message("Undo");
+            }
+        }
+        Redo => {
+            if app.mode == AppMode::Edit {
+                app.editor.redo();
+                app.set_message("Redo");
+            }
+        }
+        
+        // Field operations
+        ShowProperties => {
+            if app.mode == AppMode::Edit && app.editor.selected_field.is_some() {
+                app.mode = AppMode::Properties;
+                app.set_message("Field Properties");
+            }
+        }
+        ShowFieldProperties => {
+            if app.mode == AppMode::Edit && app.editor.selected_field.is_some() {
+                // Show field properties in edit mode
+                if let Some(idx) = app.editor.selected_field {
+                    app.edit_properties_field = Some(app.editor.map.fields[idx].clone());
+                    app.edit_properties_index = 0;
+                    app.mode = AppMode::EditProperties;
+                    app.set_message("Edit Field Properties");
+                }
+            }
+        }
+        ToggleGridSnap => {
+            if app.mode == AppMode::Edit {
+                app.editor.toggle_snap_to_grid();
+                let msg = if app.editor.is_snap_to_grid_enabled() {
+                    format!("Grid snap ON (size: {})", app.editor.get_grid_size())
+                } else {
+                    "Grid snap OFF".to_string()
+                };
+                app.set_message(&msg);
+            }
+        }
+        AlignToGrid => {
+            if app.mode == AppMode::Edit {
+                if app.editor.is_snap_to_grid_enabled() && app.editor.get_grid_size() > 0 {
+                    let count = app.editor.align_selected_to_grid();
+                    app.set_message(&format!("Aligned {} field(s) to grid", count));
+                } else {
+                    app.set_message("Enable grid snap first (Ctrl+Shift+G)");
+                }
+            }
+        }
+        
+        // File operations
+        NewMap => {
+            if app.mode == AppMode::Edit {
+                app.mode = AppMode::Confirm;
+                app.confirm_action = ConfirmAction::ClearMap;
+            }
+        }
+        SaveMap => {
+            if app.mode == AppMode::Edit {
+                app.mode = AppMode::SaveDialog;
+                app.save_path = app.current_file.as_ref()
+                    .map(|p| p.to_string_lossy().into_owned())
+                    .unwrap_or_else(|| "new_map.bms".to_string());
+            }
+        }
+        OpenMap => {
+            if app.mode == AppMode::Edit {
+                app.mode = AppMode::OpenDialog;
+                app.file_browser_directory = std::env::current_dir()
+                    .ok()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_else(|| ".".to_string());
+                app.file_browser_files = scan_directory_files_with_filter(
+                    &app.file_browser_directory,
+                    app.file_browser_filter
+                );
+                app.file_browser_selected_index = 0;
+                app.file_browser_scroll = 0;
+                app.open_path = String::new();
+            }
+        }
+        GenerateCobol => {
+            if app.mode == AppMode::Edit {
+                let cobol = generate_cobol(&app.editor.map);
+                let path = app.current_file.as_ref()
+                    .map(|p| p.with_extension("cbl"))
+                    .unwrap_or_else(|| PathBuf::from("output.cbl"));
+                if let Err(e) = fs::write(&path, cobol) {
+                    app.set_message(&format!("Failed: {}", e));
+                } else {
+                    app.set_message(&format!("Generated: {} [Ctrl+G]", path.display()));
+                }
+            }
+        }
+        ValidateMap => {
+            if app.mode == AppMode::Edit {
+                let errors = app.editor.map.validate();
+                if errors.is_empty() {
+                    app.set_message("Validation: OK");
+                } else {
+                    app.set_message(&format!("Validation errors: {}", errors.join("; ")));
+                }
+            }
+        }
+        
+        // Object operations
+        AddObject => {
+            if app.mode == AppMode::Edit {
+                app.mode = AppMode::AddObjectDialog;
+                app.init_add_object_dialog();
+                app.set_message("Select object type");
+            }
+        }
+        InsertObject => {
+            if app.mode == AppMode::Edit {
+                app.mode = AppMode::InsertPosition;
+                app.pending_object = None;
+                app.set_message("Select position for new object");
+            }
+        }
+        DeleteObject => {
+            if app.mode == AppMode::Edit && app.editor.selected_field.is_some() {
+                app.mode = AppMode::Confirm;
+                app.confirm_action = ConfirmAction::DeleteField;
+            }
+        }
+        MoveObject => {
+            if app.mode == AppMode::Edit {
+                if let Some(idx) = app.editor.selected_field {
+                    app.editor.drag_start = Some(app.editor.map.fields[idx].pos);
+                    app.editor.mode = EditorMode::MoveField;
+                    app.set_message("Move field - arrows to move, Enter to drop");
+                } else {
+                    app.set_message("Error: No field selected to move");
+                }
+            }
+        }
+        ResizeObject => {
+            if app.mode == AppMode::Edit {
+                if let Some(idx) = app.editor.selected_field {
+                    let field = &app.editor.map.fields[idx];
+                    app.editor.drag_start = Some((field.pos.0, field.pos.1 + field.length - 1));
+                    app.editor.mode = EditorMode::ResizeField { direction: ResizeDirection::Right };
+                    app.set_message("Resize field - Left/Right to resize");
+                } else {
+                    app.set_message("Error: No field selected to resize");
+                }
+            }
+        }
+        
+        // Color and attributes
+        ShowColorPicker => {
+            if app.mode == AppMode::Edit && app.editor.selected_field.is_some() {
+                app.mode = AppMode::ColorPicker;
+                app.set_message("Select color");
+            }
+        }
+        ShowAttributePicker => {
+            if app.mode == AppMode::Edit && app.editor.selected_field.is_some() {
+                app.mode = AppMode::AttributePicker;
+                app.set_message("Select attribute");
+            }
+        }
+        
+        // Text input
+        StartTextInput => {
+            app.start_text_input("Enter text", "", TextInputAction::Custom("generic".to_string()));
+        }
+        ConfirmInput => {
+            if app.mode == AppMode::TextInput {
+                // Confirm text input
+                let value = app.text_input_value.clone();
+                app.apply_text_input(value);
+                app.mode = AppMode::Edit;
+            }
+        }
+        CancelInput => {
+            if app.mode == AppMode::TextInput {
+                app.mode = AppMode::Edit;
+                app.set_message("Input cancelled");
+            }
+        }
+        
+        // Sidebar operations
+        SwitchToActions => {
+            if app.active_panel == ActivePanel::Sidebar {
+                app.sidebar_section = SidebarSection::Actions;
+                app.sidebar_actions_selected = None;
+                app.set_message("Actions section");
+            }
+        }
+        SwitchToObjects => {
+            if app.active_panel == ActivePanel::Sidebar {
+                app.sidebar_section = SidebarSection::Objects;
+                app.sidebar_objects_selected = None;
+                app.set_message("Objects section");
+            }
+        }
+        SelectObject => {
+            if app.active_panel == ActivePanel::Sidebar {
+                app.set_message("Object selected");
+            }
+        }
+        
+        // Misc
+        ToggleDebug => {
+            // Toggle debug mode - for now just show a message
+            app.set_message("Debug mode toggled");
+        }
+        ExitApplication => {
+            if app.is_modified() {
+                app.mode = AppMode::Confirm;
+                app.confirm_action = ConfirmAction::QuitWithoutSave;
+            } else {
+                app.exit = true;
+            }
+        }
+        ShowAbout => {
+            app.set_message("COBOL BMS Editor v0.1.0");
+        }
+        ShowComboKeyHelp => {
+            app.mode = AppMode::ComboKeyHelp;
+            app.help_scroll = 0;
+            app.set_message("Combo Key Help - Press Q or Esc to return");
+        }
+        
+        // Default case
+        _ => {
+            app.set_message(&format!("Action: {:?} [{}]", action, key_desc));
+        }
+    }
+}
+
 /// Execution de l'editeur
 fn run_editor(editor: BmsEditor) -> Result<()> {
     // Setup terminal
@@ -1091,6 +1598,21 @@ fn run_editor(editor: BmsEditor) -> Result<()> {
 }
 
 fn handle_input(app: &mut App, key: event::KeyEvent) {
+    // Update combo key contexts based on current app state
+    app.update_combo_key_contexts();
+    
+    // Try combo key handling first
+    if let Some(action) = app.combo_key_manager.handle_key(&key) {
+        handle_combo_action(app, action, &key);
+        return;
+    }
+    
+    // Handle leader key sequences
+    if let Some(action) = app.combo_key_manager.handle_leader_sequence(key.code) {
+        handle_combo_action(app, action, &key);
+        return;
+    }
+    
     // Display message for every key combo (debug mode always on)
     let mods = if key.modifiers.is_empty() {
         String::new()
@@ -1126,6 +1648,7 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
     }
     
     // Handle Ctrl+P for panel toggle (simplified from Ctrl+Alt+O/P)
+    // NOTE: This is now handled by combo key system, but kept as fallback
     if key.modifiers.contains(KeyModifiers::CONTROL) && !key.modifiers.contains(KeyModifiers::ALT) {
         match key.code {
             KeyCode::Char('p') | KeyCode::Char('P') => {
@@ -1367,6 +1890,7 @@ fn handle_input(app: &mut App, key: event::KeyEvent) {
         AppMode::AddObjectDialog => handle_add_object_dialog_mode(app, key),
         AppMode::TextInput => handle_text_input_mode(app, key),
         AppMode::Help => handle_help_mode(app, key),
+        AppMode::ComboKeyHelp => handle_combo_key_help_mode(app, key),
         AppMode::Confirm => handle_confirm_mode(app, key),
         AppMode::ImageImport => handle_image_import_mode(app, key),
         AppMode::Normal => handle_normal_mode(app, key),
@@ -2524,6 +3048,33 @@ fn handle_help_mode(app: &mut App, key: event::KeyEvent) {
     }
 }
 
+fn handle_combo_key_help_mode(app: &mut App, key: event::KeyEvent) {
+    match key.code {
+        KeyCode::Char('q') | KeyCode::Esc => app.mode = AppMode::Edit,
+        KeyCode::Up | KeyCode::Char('k') => {
+            if app.help_scroll > 0 {
+                app.help_scroll -= 1;
+            }
+        }
+        KeyCode::Down | KeyCode::Char('j') => {
+            app.help_scroll += 1;
+        }
+        KeyCode::PageUp => {
+            if app.help_scroll >= 10 {
+                app.help_scroll -= 10;
+            } else {
+                app.help_scroll = 0;
+            }
+        }
+        KeyCode::PageDown => {
+            app.help_scroll += 10;
+        }
+        KeyCode::Home => app.help_scroll = 0,
+        KeyCode::End => app.help_scroll = usize::MAX,
+        _ => {}
+    }
+}
+
 fn handle_confirm_mode(app: &mut App, key: event::KeyEvent) {
     match key.code {
         KeyCode::Char('y') | KeyCode::Enter => {
@@ -2593,6 +3144,7 @@ fn ui(f: &mut Frame, app: &App) {
         AppMode::AddObjectDialog => " ADD OBJECT ",
         AppMode::TextInput => " TEXT INPUT ",
         AppMode::Help => " HELP ",
+        AppMode::ComboKeyHelp => " COMBO KEY HELP ",
         AppMode::Confirm => " CONFIRM ",
         AppMode::ImageImport => " IMAGE IMPORT ",
         AppMode::Normal => " PREVIEW ",
@@ -2654,6 +3206,9 @@ fn ui(f: &mut Frame, app: &App) {
         }
         AppMode::Help => {
             render_help(f, app, content_area);
+        }
+        AppMode::ComboKeyHelp => {
+            render_combo_key_help(f, app, content_area);
         }
         AppMode::Confirm => {
             render_confirm(f, app, content_area);
@@ -3057,15 +3612,16 @@ fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
     
     // Add scrollbar if needed
     if map.size.0 > visible_rows as u16 {
-        // TODO: Fix scrollbar for current ratatui version
-        // let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-        //     .begin_symbol(Some("UP"))
-        //     .end_symbol(Some("DN"))
-        //     .track_symbol(Some("|"))
-        //     .thumb_symbol(Some("#"))
-        //     .position(app.scroll)
-        //     .range(0, map.size.0.saturating_sub(visible_rows as u16));
-        // f.render_widget(scrollbar, area);
+        let total_lines = map.size.0 as usize;
+        let mut scrollbar_state = ScrollbarState::new(total_lines)
+            .position(app.scroll as usize)
+            .viewport_content_length(visible_rows as usize);
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .thumb_symbol("█")
+            .track_symbol(Some(" "))
+            .begin_symbol(None)
+            .end_symbol(None);
+        f.render_stateful_widget(scrollbar, area, &mut scrollbar_state);
     }
 }
 
@@ -4444,6 +5000,10 @@ fn render_help(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
         Line::from(" Other: ".yellow()),
         Line::from("  ? or Ctrl+H: Toggle help"),
+        Line::from("  Ctrl+Shift+H: Show combo key bindings"),
+        Line::from(""),
+        Line::from(" Combo Key Bindings:".yellow()),
+        Line::from("  (See combo key help with Ctrl+Shift+H)"),
         Line::from(""),
         Line::from(" Note: Both legacy (letter) and new (Ctrl+letter) shortcuts work".dim()),
     ];
@@ -4475,6 +5035,61 @@ fn render_help(f: &mut Frame, app: &App, area: Rect) {
             .viewport_content_length(visible_height);
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .thumb_symbol("\u{2588}")
+            .track_symbol(Some(" "))
+            .begin_symbol(None)
+            .end_symbol(None);
+        f.render_stateful_widget(scrollbar, inner, &mut scrollbar_state);
+    }
+}
+
+fn render_combo_key_help(f: &mut Frame, app: &App, area: Rect) {
+    let help_area = area;
+    let block = Block::default()
+        .title(" Combo Key Help (Scroll: Up/Down/PgUp/PgDn/Home/End/Q to quit) ")
+        .borders(Borders::ALL);
+    f.render_widget(block, help_area);
+    
+    let inner = Rect {
+        x: help_area.x + 1,
+        y: help_area.y + 1,
+        width: help_area.width.saturating_sub(2),
+        height: help_area.height.saturating_sub(2),
+    };
+    
+    // Get combo key help lines
+    let combo_help_lines = app.get_combo_key_help();
+    let all_help_lines: Vec<Line> = combo_help_lines
+        .into_iter()
+        .map(|s| Line::from(s).style(Style::default().fg(TuiColor::White)))
+        .collect();
+    
+    let total_lines = all_help_lines.len();
+    let visible_height = inner.height as usize;
+    
+    if visible_height == 0 {
+        return;
+    }
+    
+    let start_line = app.help_scroll.min(total_lines.saturating_sub(visible_height));
+    let end_line = (start_line + visible_height).min(total_lines);
+    
+    let visible_lines: Vec<Line> = all_help_lines.into_iter()
+        .skip(start_line)
+        .take(end_line - start_line)
+        .collect();
+    
+    let help_text = Text::from(visible_lines);
+    
+    let paragraph = Paragraph::new(help_text)
+        .block(Block::default().borders(Borders::NONE));
+    f.render_widget(paragraph, inner);
+    
+    if total_lines > visible_height {
+        let mut scrollbar_state = ScrollbarState::new(total_lines)
+            .position(app.help_scroll)
+            .viewport_content_length(visible_height);
+        let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .thumb_symbol("█")
             .track_symbol(Some(" "))
             .begin_symbol(None)
             .end_symbol(None);
@@ -4653,6 +5268,7 @@ fn render_status_bar(f: &mut Frame, app: &App, area: Rect) {
         AppMode::AddObjectDialog => "ADD_OBJ",
         AppMode::TextInput => "TEXT_IN",
         AppMode::Help => "HELP",
+        AppMode::ComboKeyHelp => "COMBO_HELP",
         AppMode::Confirm => "CONFIRM",
         AppMode::ImageImport => "IMG_IMPORT",
         AppMode::Normal => "PREVIEW",
