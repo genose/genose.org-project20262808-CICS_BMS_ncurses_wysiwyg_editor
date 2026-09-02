@@ -333,3 +333,6 @@ pub fn handle_mode(app: &mut App, key: KeyEvent) {
             app.current_file = None;
             app.set_message("New map created");
         }
+        _ => {}
+    }
+}

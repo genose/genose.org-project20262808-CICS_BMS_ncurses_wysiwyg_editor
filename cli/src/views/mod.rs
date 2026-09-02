@@ -20,6 +20,7 @@ pub mod attribute_picker;
 pub mod color_picker;
 pub mod combo_key_help;
 pub mod confirm;
+pub mod edit_mode;
 pub mod help;
 pub mod image_import_dialog;
 pub mod insert_position_dialog;
