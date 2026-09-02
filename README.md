@@ -6,7 +6,10 @@
 ![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)
 ![VSCode](https://img.shields.io/badge/vscode-1.75+-blue.svg)
 
-**Fonctionnalite principale**: Creation et edition visuelle (WYSIWYG) de maps BMS pour COBOL/CICS.
+**Version**: 0.3.0
+**Statut**: 100% Lua OBJECTS-DEFINITIONS Parity Achieved ✅
+
+**Fonctionnalite principale**: Creation et edition visuelle (WYSIWYG) de maps BMS pour COBOL/CICS avec parite complete avec la version Lua.
 
 ## 🎯 Capacites
 
@@ -22,6 +25,9 @@
   - ASCII Art: Import et conversion d'images
 - **Undo/Redo** illimite
 - **Clipboard**: Copier/Couper/Coller
+- **100% Lua OBJECTS-DEFINITIONS Parity**: Toutes les 65+ proprietes implementees
+- **Attributs individuels**: field_enabled, field_visible, field_required, field_readonly, field_protected, field_numeric, field_has_error, field_selected, field_focused, field_highlighted, field_hidden, field_in_edit_mode
+- **Proprietes dynamiques**: field_avail_*, field_font_family, field_footer_align, field_footer_title
 
 ### 🎨 Previsualisation
 - Rendu visuel des champs avec leurs couleurs
@@ -33,10 +39,48 @@
 - Generation automatique de code **COBOL/CICS** (RECEIVE MAP, SEND MAP)
 - Export au format **BMS** standard
 - Import depuis fichiers BMS existants
+- Generation **JSON** pour sauvegarde/restoration de l'etat de l'editeur
+- Export/Import vers **VSCode** plugin
 
 ### 🖥️ Interface
 - **CLI** avec TUI (ncurses-like via ratatui)
 - **Plugin VSCode** avec preview webview et syntax highlighting
+- **Navigation fichier** complete avec filtres
+- **Preview en temps reel** des modifications
+- **Gestion des erreurs** avec messages clairs
+- **Coordonnees curseur** affichees en temps reel
+- **Categories de proprietes** avec toggle essential/toutes (A)
+
+---
+
+## ✅ Lua OBJECTS-DEFINITIONS Parity
+
+**Statut: 100% COMPLETE** ✅
+
+Toutes les fonctionnalites et proprietes de la version Lua originale sont maintenant disponibles dans la version Rust:
+
+### Proprietes Implementees (65+)
+- **Dimensions**: field_height, field_width, field_min_height, field_max_height, field_width_min, field_width_max, field_size
+- **Couleurs**: field_border_color, field_title_color, field_text_color, field_footer_color, field_avail_footer_color, field_avail_color
+- **Polices**: field_avail_font_family, field_font_family  
+- **Styles**: field_avail_style, field_style
+- **Alignement**: field_avail_text_align, field_text_align, field_title_align, field_vertical_align, field_footer_align
+- **Position**: field_avail_pos, field_pos
+- **Bordures**: field_avail_border_chars, field_avail_border_style, field_border, field_border_style, field_border_chars
+- **Remplissage**: field_title_fill_char, field_fill_char, field_footer_fill_char
+- **Marqueurs**: field_avail_required_marker, field_required_marker, field_avail_error_marker, field_error_marker, field_footer_required_marker, field_footer_error_marker
+- **Prefix/Suffix**: field_title_prefix, field_title_suffix, field_footer_title, field_footer
+- **Valeurs**: field_initial, field_name, field_type
+- **Enfants**: field_children
+- **Attributs**: field_attrb + **12 attributs individuels**
+- **Attributs etendu**: field_enabled, field_visible, field_required, field_readonly, field_protected, field_numeric, field_has_error, field_selected, field_focused, field_highlighted, field_hidden, field_in_edit_mode
+
+### Ameliorations par rapport a Lua
+- **Attributs individuels** accessibles directement (pas seulement via field_attrb)
+- **Categories de proprietes** pour une meilleure organisation UI
+- **Toggle essential/toutes** pour eviter le scroll excessif
+- **Type safety** avec le systeme de types Rust
+- **Performance amelioree** grace a l'optimisation Rust
 
 ---
 
@@ -315,11 +359,14 @@ DFHMND POS=(23,1),LENGTH=80,ATTRB=(PROT,REVERSE),COLOR=BLUE
 - [x] **Image to ASCII** avec file chooser et assistant
 - [x] **Gestion des erreurs** avec messages en bas de l'ecran
 - [x] **Coordonnees du curseur** affichees en bas de l'ecran
+- [x] **100% Lua OBJECTS-DEFINITIONS Parity** ✅
+- [x] **Attributs individuels** (12 nouveaux champs booleens)
+- [x] **Proprietes dynamiques** (field_avail_* etc.)
+- [x] **Import/Export JSON** ✅
 - [ ] **Selection multiple**
 - [ ] **Alignement automatique**
 - [ ] **Grille magnetique** (snap to grid)
 - [ ] **Groupement de champs**
-- [ ] **Import/Export JSON**
 - [ ] **LSP complet** (validation, autocompletion)
 - [ ] **Preview en temps reel** dans VSCode
 - [ ] **Edition collaborative**

@@ -50,6 +50,8 @@ Les developpeurs **COBOL/CICS** sur **mainframe IBM Z** font face a plusieurs de
 | **Support Fieldset/Group** | Avec titre, decoration, bordures | ✅ Implemente |
 | **Gestion des couleurs** | Texte, bordure, titre, contenu | ✅ Implemente |
 | **ASCII Art & Image to ASCII** | Import et conversion d'images | ✅ Implemente |
+| **100% Lua OBJECTS-DEFINITIONS Parity** | Toutes les 65+ proprietes implementees | ✅ COMPLETE |
+| **Attributs individuels** | 12 nouveaux champs booleens accessibles | ✅ Implemente |
 
 ### Public Cible
 
@@ -509,6 +511,14 @@ pub enum Color {
 - **Ameliorations UI**: Messages d'erreur, coordonnees curseur
 - **Fixes**: Correction des erreurs de compilation (out of bounds)
 
+### Version 0.3.0 (2026-09-02) - Lua OBJECTS-DEFINITIONS Parity Complete ✅
+- **100% Lua OBJECTS-DEFINITIONS Parity**: Toutes les 65+ proprietes implementees
+- **Attributs individuels**: field_enabled, field_visible, field_required, field_readonly, field_protected, field_numeric, field_has_error, field_selected, field_focused, field_highlighted, field_hidden, field_in_edit_mode
+- **Proprietes dynamiques**: field_avail_color, field_avail_font_family, field_avail_pos, field_avail_text_align, field_avail_vertical_align, field_avail_border_style, field_font_family, field_footer_align, field_footer_title
+- **Optimisation UI**: Toggle essential/toutes categories (A) pour eviter le scroll excessif
+- **Amelioration de la boite de proprietes**: Navigation et edition optimisees
+- **Correction du scroll**: Affichage par defaut des categories essentielles seulement
+
 ---
 
 ## 🤝 **Contributeurs**
@@ -530,6 +540,6 @@ Pour les questions, suggestions ou rapports de bugs:
 
 ---
 
-> **Derniere mise a jour**: 2026-08-29
-> **Version**: 0.2.0
+> **Derniere mise a jour**: 2026-09-02
+> **Version**: 0.3.0
 > **Auteur**: genose.org
