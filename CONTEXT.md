@@ -543,4 +543,5 @@ Pour les questions, suggestions ou rapports de bugs:
 
 > **Derniere mise a jour**: 2026-09-02
 > **Version**: 0.3.0
-> **Auteur**: genose.org
+> **Auteur**: Genose.org (Cotillard Sebastien)
+> **Concept**: Genose.org (Cotillard Sebastien)

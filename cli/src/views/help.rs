@@ -18,6 +18,7 @@ use crate::AppMode;
 pub fn get_help_lines() -> Vec<Line<'static>> {
     vec![
         Line::from(" WYSIWYG Editor - Help ".bold()),
+        Line::from(" Concept: Genose.org (Cotillard Sebastien)"),
         Line::from(""),
         Line::from(" Navigation: ".yellow()),
         Line::from("  j/k/Down/Up: Move cursor (1 line)"),

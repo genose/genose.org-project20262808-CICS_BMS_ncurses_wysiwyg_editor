@@ -24,7 +24,7 @@ use crate::combo_keys::ComboKeyManager;
 pub fn render(f: &mut Frame, app: &crate::App, area: Rect) {
     let help_area = area;
     let block = Block::default()
-        .title(" Combo Key Help (Scroll: Up/Down/PgUp/PgDn/Home/End/Q to quit) ")
+        .title(" Combo Key Help - Concept: Genose.org (Cotillard Sebastien) ")
         .borders(Borders::ALL);
     f.render_widget(block, help_area);
     

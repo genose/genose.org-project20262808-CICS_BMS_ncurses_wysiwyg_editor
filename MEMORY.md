@@ -366,4 +366,6 @@ fn add_color_property(&mut self, name: &str, gui_name: &str, category: PropertyC
 > **Last Updated**: 2026-09-02
 > **Version**: 0.3.0
 > **Status**: 100% Lua OBJECTS-DEFINITIONS Parity Achieved ✅
-> **Author**: genose.org + Mistral Vibe
+> **Author**: Genose.org (Cotillard Sebastien)
+> **Concept**: Genose.org (Cotillard Sebastien)
+> **Contributors**: Mistral Vibe

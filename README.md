@@ -391,5 +391,6 @@ MIT License - voir [LICENSE](LICENSE)
 
 ## 📞 Contact
 
-- **Auteur**: genose.org
+- **Auteur**: Genose.org (Cotillard Sebastien)
+- **Concept**: Genose.org (Cotillard Sebastien)
 - **Repository**: [genose.org-project20262808-CICS_BMS_ncurses_wysiwyg_editor](https://github.com/genose.org/genose.org-project20262808-CICS_BMS_ncurses_wysiwyg_editor)
