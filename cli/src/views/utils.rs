@@ -5,7 +5,7 @@
 use ratatui::style::Color as TuiColor;
 use std::path::Path;
 
-use crate::model::{BmsColor};
+use cobol_bms_core::model::Color as BmsColor;
 
 /// Check if the current terminal is running inside VSCode
 /// VSCode uses a specific terminal identifier that we can detect
@@ -200,7 +200,7 @@ pub fn get_min_height(field_type: &crate::FieldType) -> u16 {
         // Physical vs Symbolic
         PhysicalMap | SymbolicMap | MapSet => 1,
         // Special field types
-        InputOnly | FieldType::OutputOnly | FieldType::InputOutput => 1,
+        InputOnly | OutputOnly | InputOutput => 1,
         SymbolicMap | PhysicalMap => 1,
         _ => 1,  // Default minimum height
     }
