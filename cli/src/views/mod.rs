@@ -21,6 +21,7 @@ pub mod color_picker;
 pub mod combo_key_help;
 pub mod confirm;
 pub mod help;
+pub mod insert_position_dialog;
 pub mod map_type_picker;
 pub mod open_dialog;
 pub mod save_dialog;

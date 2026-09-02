@@ -56,6 +56,7 @@ use combo_keys::{ComboKeyManager, ComboAction, ComboContext, TerminalType};
 mod views;
 use views::add_object_dialog::{render as render_add_object_dialog, handle_mode as handle_add_object_dialog_mode};
 use views::attribute_picker::{render as render_attribute_picker, handle_mode as handle_attribute_picker_mode};
+use views::insert_position_dialog::{render as render_insert_position_dialog, handle_mode as handle_insert_position_mode};
 use views::color_picker::{render as render_color_picker, handle_mode as handle_color_picker_mode};
 use views::combo_key_help::{render as render_combo_key_help, handle_mode as handle_combo_key_help_mode};
 use views::confirm::{render as render_confirm, handle_mode as handle_confirm_mode};
@@ -666,7 +667,7 @@ pub struct App {
     // Pour le mode properties
     property_index: usize,
     // Pour le mode insert position
-    pending_object: Option<InsertableObject>,
+    pending_object: Option<types::InsertableObject>,
     pending_position: (u16, u16),
     // Pour le mode edit properties
     edit_properties_field: Option<BmsField>,
@@ -2328,69 +2329,7 @@ fn handle_properties_mode(app: &mut App, key: event::KeyEvent) {
     }
 }
 
-fn handle_insert_position_mode(app: &mut App, key: event::KeyEvent) {
-    // Handle Enter for confirmation (terminal doesn't support Shift+Enter detection)
-    if key.code == KeyCode::Enter {
-        let obj = if let Some(obj) = app.pending_object.take() {
-            Some(obj)
-        } else if app.active_panel == ActivePanel::Sidebar {
-            // Fallback: try to get object from sidebar selection
-            app.sidebar_objects_selected.and_then(|idx| {
-                InsertableObject::all().get(idx).cloned()
-            })
-        } else {
-            None
-        };
-        
-        if let Some(obj) = obj {
-            // Check if position is valid before inserting
-            let field_length = obj.default_length();
-            if !app.is_valid_field_position(app.pending_position, field_length) {
-                app.set_message(&format!("Cannot insert: Invalid position ({},{}) for {}", 
-                    app.pending_position.0, app.pending_position.1, obj.display()));
-                // Keep pending_object for retry
-                app.pending_object = Some(obj);
-                return;
-            }
-            
-            let field = obj.create_field(app.pending_position);
-            app.editor.map.fields.push(field);
-            app.mode = AppMode::Edit;
-            app.pending_object = None;
-            app.sidebar_objects_selected = None;
-            app.active_panel = ActivePanel::Canvas;
-            app.set_message(&format!("Inserted {}", obj.display()));
-        } else {
-            app.set_message("No object selected!");
-        }
-        return;
-    }
-    
-    match key.code {
-        KeyCode::Esc => {
-            app.mode = AppMode::Edit;
-            app.pending_object = None;
-            app.sidebar_objects_selected = None;
-        }
-        KeyCode::Up => {
-            if app.pending_position.0 > 1 {
-                app.pending_position.0 -= 1;
-            }
-        }
-        KeyCode::Down => {
-            app.pending_position.0 += 1;
-        }
-        KeyCode::Left => {
-            if app.pending_position.1 > 1 {
-                app.pending_position.1 -= 1;
-            }
-        }
-        KeyCode::Right => {
-            app.pending_position.1 += 1;
-        }
-        _ => {}
-    }
-}
+
 
 fn handle_edit_properties_mode(app: &mut App, key: event::KeyEvent) {
     // Handle Enter for saving
@@ -3209,62 +3148,7 @@ fn render_properties_panel(f: &mut Frame, app: &App, area: Rect) {
     }
 }
 
-fn render_insert_position_dialog(f: &mut Frame, app: &App, area: Rect) {
-    let panel_width = 30;
-    let panel_area = Rect {
-        x: area.x + area.width - panel_width,
-        y: area.y,
-        width: panel_width,
-        height: 10,
-    };
-    
-    let block = Block::default()
-        .title(" Insert Position [Arrows:Move|Enter:Confirm|Esc:Cancel|Live Preview]")
-        .borders(Borders::ALL);
-    f.render_widget(block, panel_area);
-    
-    let inner = Rect {
-        x: panel_area.x + 1,
-        y: panel_area.y + 1,
-        width: panel_area.width.saturating_sub(2),
-        height: panel_area.height.saturating_sub(2),
-    };
-    
-    let obj_name = app.pending_object.map(|o| o.display()).unwrap_or("Object");
-    let (row, col) = app.pending_position;
-    
-    // Check if position is valid
-    let is_valid = if let Some(obj) = app.pending_object {
-        app.editor.map.is_valid_field_position(app.pending_position, obj.default_length())
-    } else {
-        false
-    };
-    
-    let validity_text = if is_valid {
-        Line::from("Status: Valid".green())
-    } else {
-        Line::from("Status: INVALID - will not be inserted".red())
-    };
-    
-    let lines = vec![
-        Line::from(format!("Object: {}", obj_name)),
-        Line::from(""),
-        Line::from("Position:".yellow()),
-        Line::from(format!("  Row: {}", row)),
-        Line::from(format!("  Col: {}", col)),
-        Line::from(""),
-        validity_text,
-        Line::from(""),
-        Line::from("Arrows: Move".dim()),
-        Line::from("Enter: Confirm".dim()),
-        Line::from("Esc: Cancel".dim()),
-    ];
-    
-    let text = Text::from(lines);
-    let paragraph = Paragraph::new(text)
-        .block(Block::default().borders(Borders::NONE));
-    f.render_widget(paragraph, inner);
-}
+
 
 /// Minimum height per field type
 /// Fieldset/Group requires minimum 3 rows (first line = title, last line = border, middle = content)

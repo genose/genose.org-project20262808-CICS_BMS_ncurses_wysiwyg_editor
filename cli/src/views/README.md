@@ -9,12 +9,13 @@ The views module is being actively extracted from `main.rs`. A new `types.rs` mo
 Currently extracted views:
 
 ### ✅ Fully Extracted and Integrated:
-- `add_object_dialog.rs` - Add object dialog with object type selection (NEW)
+- `add_object_dialog.rs` - Add object dialog with object type selection
 - `attribute_picker.rs` - Attribute selection dialog
 - `color_picker.rs` - Color selection dialog
 - `combo_key_help.rs` - Combo key bindings help view
 - `confirm.rs` - Confirmation dialog
 - `help.rs` - Help view with keyboard shortcuts
+- `insert_position_dialog.rs` - Insert position dialog with live preview (NEW)
 - `map_type_picker.rs` - Map type selection dialog
 - `open_dialog.rs` - Open file dialog with file browser
 - `save_dialog.rs` - Save dialog
@@ -84,7 +85,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `render_bms_text_preview`
 - `render_sidebar`
 - `render_properties_panel`
-- `render_insert_position_dialog` (TO DO - complex dependencies)
+- `render_insert_position_dialog` (EXTRACTED)
 - `render_edit_properties_panel` (TO DO - complex dependencies)
 - `render_map_type_picker`
 - `render_color_picker` (EXTRACTED)
@@ -106,7 +107,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `handle_edit_mode`
 - `handle_normal_mode`
 - `handle_properties_mode`
-- `handle_insert_position_mode`
+- `handle_insert_position_mode` (EXTRACTED)
 - `handle_edit_properties_mode`
 - `handle_map_type_picker_mode`
 - `handle_color_picker_mode` (EXTRACTED)
