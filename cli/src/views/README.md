@@ -20,7 +20,9 @@ Currently extracted views:
 - `image_import_dialog.rs` - Image import dialog for ASCII art conversion
 - `open_dialog.rs` - Open file dialog with file browser
 - `save_dialog.rs` - Save dialog
+- `edit_properties_mode.rs` - Edit properties mode input handling
 - `normal_mode.rs` - Normal mode input handling
+- `properties_mode.rs` - Properties mode input handling
 - `status_bar.rs` - Status bar rendering
 - `text_input.rs` - Text input dialog
 - `utils.rs` - Utility functions (color handling, file scanning, etc.)
@@ -109,7 +111,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `handle_combo_action`
 - `handle_edit_mode`
 - `handle_normal_mode`
-- `handle_properties_mode`
+- `handle_properties_mode` (EXTRACTED)
 - `handle_insert_position_mode` (EXTRACTED)
 - `handle_edit_properties_mode`
 - `handle_map_type_picker_mode`
