@@ -233,7 +233,7 @@ impl ActivePanel {
 
 /// Actions disponibles dans la sidebar
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum SidebarAction {
+pub enum SidebarAction {
     Edit,
     Delete,
     Move,
@@ -454,7 +454,7 @@ fn get_object_type_metadata() -> HashMap<InsertableObject, ObjectTypeMetadata> {
 
 /// Section de la sidebar active
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum SidebarSection {
+pub enum SidebarSection {
     Actions,
     Objects,
 }

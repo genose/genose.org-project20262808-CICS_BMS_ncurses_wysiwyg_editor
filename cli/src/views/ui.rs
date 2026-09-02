@@ -13,6 +13,7 @@ use crate::App;
 use crate::AppMode;
 use crate::ActivePanel;
 use super::canvas::render as render_canvas;
+use super::sidebar::render as render_sidebar;
 
 /// Main UI rendering function
 /// 
@@ -68,7 +69,7 @@ pub fn render(f: &mut Frame, app: &App) {
     match app.mode {
         AppMode::Edit | AppMode::Normal => {
             render_canvas(f, app, content_area);
-            crate::render_sidebar(f, app, content_area);
+            render_sidebar(f, app, content_area);
         }
         AppMode::Properties => {
             render_canvas(f, app, content_area);
