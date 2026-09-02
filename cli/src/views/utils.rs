@@ -5,7 +5,7 @@
 use ratatui::style::Color as TuiColor;
 use std::path::Path;
 
-use crate::model::{BmsColor};
+use cobol_bms_core::model::Color as BmsColor;
 
 /// Check if the current terminal is running inside VSCode
 /// VSCode uses a specific terminal identifier that we can detect

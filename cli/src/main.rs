@@ -71,8 +71,8 @@ use views::edit_properties_mode::handle_mode as handle_edit_properties_mode;
 use views::mouse_input::handle_mode as handle_mouse_input;
 use views::normal_mode::handle_mode as handle_normal_mode;
 use views::properties_mode::handle_mode as handle_properties_mode;
+use views::ui::render as render_ui;
 use views::utils::*;
-use crate::FieldType;
 
 
 /// COBOL BMS WYSIWYG Editor - Editeur visuel pour les maps BMS CICS
@@ -1260,7 +1260,7 @@ fn run_editor(editor: BmsEditor) -> Result<()> {
             break;
         }
         
-        terminal.draw(|f| ui(f, &app))?;
+        terminal.draw(|f| render_ui(f, &app))?;
         
         // Handle input
         if event::poll(Duration::from_millis(50))? {
@@ -2006,153 +2006,8 @@ fn handle_edit_mode(app: &mut App, key: event::KeyEvent) {
 
 // ==================== UI ====================
 
-fn ui(f: &mut Frame, app: &App) {
-    let size = f.area();
-    
-    // Main layout
-    let main_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(1),    // Header
-            Constraint::Min(1),       // Canvas + Sidebar
-            Constraint::Length(2),    // Status bar
-        ])
-        .split(size);
-    
-    // Header
-    let header_title = match app.mode {
-        AppMode::Edit => " WYSIWYG EDITOR ",
-        AppMode::Properties => " PROPERTIES ",
-        AppMode::InsertPosition => " INSERT POSITION ",
-        AppMode::EditProperties => " EDIT PROPERTIES ",
-        AppMode::MapTypePicker => " MAP TYPE ",
-        AppMode::ColorPicker => " COLOR PICKER ",
-        AppMode::AttributePicker => " ATTRIBUTES ",
-        AppMode::SaveDialog => " SAVE FILE ",
-        AppMode::OpenDialog => " OPEN FILE ",
-        AppMode::AddObjectDialog => " ADD OBJECT ",
-        AppMode::TextInput => " TEXT INPUT ",
-        AppMode::Help => " HELP ",
-        AppMode::ComboKeyHelp => " COMBO KEY HELP ",
-        AppMode::Confirm => " CONFIRM ",
-        AppMode::ImageImport => " IMAGE IMPORT ",
-        AppMode::Normal => " PREVIEW ",
-    };
-    
-    let header = Block::default()
-        .title(header_title)
-        .title_alignment(ratatui::layout::Alignment::Center)
-        .borders(Borders::TOP)
-        .style(Style::default().bg(TuiColor::Blue).fg(TuiColor::White));
-    f.render_widget(header, main_layout[0]);
-    
-    // Main content area
-    let content_area = main_layout[1];
-    
-    match app.mode {
-        AppMode::Edit | AppMode::Normal => {
-            render_canvas(f, app, content_area);
-            render_sidebar(f, app, content_area);
-        }
-        AppMode::Properties => {
-            render_canvas(f, app, content_area);
-            render_properties_panel(f, app, content_area);
-        }
-        AppMode::InsertPosition => {
-            render_canvas(f, app, content_area);
-            render_insert_position_dialog(f, app, content_area);
-        }
-        AppMode::EditProperties => {
-            render_canvas(f, app, content_area);
-            render_edit_properties_panel(f, app, content_area);
-        }
-        AppMode::MapTypePicker => {
-            render_canvas(f, app, content_area);
-            render_map_type_picker(f, app, content_area);
-        }
-        AppMode::ColorPicker => {
-            render_canvas(f, app, content_area);
-            render_color_picker(f, app, content_area);
-        }
-        AppMode::AttributePicker => {
-            render_canvas(f, app, content_area);
-            render_attribute_picker(f, app, content_area);
-        }
-        AppMode::SaveDialog => {
-            render_save_dialog(f, app, content_area);
-        }
-        AppMode::OpenDialog => {
-            render_canvas(f, app, content_area);
-            render_open_dialog(f, app, content_area);
-        }
-        AppMode::AddObjectDialog => {
-            render_canvas(f, app, content_area);
-            render_add_object_dialog(f, app, content_area);
-        }
-        AppMode::TextInput => {
-            render_canvas(f, app, content_area);
-            render_text_input(f, app, content_area);
-        }
-        AppMode::Help => {
-            render_help(f, app, content_area);
-        }
-        AppMode::ComboKeyHelp => {
-            render_combo_key_help(f, app, content_area);
-        }
-        AppMode::Confirm => {
-            render_confirm(f, app, content_area);
-        }
-        AppMode::ImageImport => {
-            render_canvas(f, app, content_area);
-            render_image_import_dialog(f, app, content_area);
-        }
-    }
-    
-    // Status bar
-    render_status_bar(f, app, main_layout[2]);
-}
 
-fn render_canvas(f: &mut Frame, app: &App, area: Rect) {
-    let canvas_width = area.width.saturating_sub(25);
-    let canvas_area = Rect {
-        x: area.x,
-        y: area.y,
-        width: canvas_width,
-        height: area.height,
-    };
-    
-    // Draw border
-    let canvas_title = match app.active_panel {
-        ActivePanel::Canvas => format!(" [>] Canvas ({}x{}) [Ctrl+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav|Ctrl+Space:Preview]", app.editor.map.size.0, app.editor.map.size.1),
-        ActivePanel::Sidebar => format!(" Canvas ({}x{}) [Ctrl+P:Toggle|Tab:Next|Shift+Tab:Prev|Alt/Ctrl+Arrows:Nav|Ctrl+Space:Preview]", app.editor.map.size.0, app.editor.map.size.1),
-    };
-    
-    // Couleur du cadre en fonction de l'activation
-    let border_color = match app.active_panel {
-        ActivePanel::Canvas => TuiColor::Yellow,
-        ActivePanel::Sidebar => TuiColor::White,
-    };
-    
-    let canvas_block = Block::default()
-        .title(canvas_title)
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(border_color));
-    f.render_widget(canvas_block, canvas_area);
-    
-    // Render content based on mode
-    let content_area = Rect {
-        x: canvas_area.x + 1,
-        y: canvas_area.y + 1,
-        width: canvas_area.width.saturating_sub(2),
-        height: canvas_area.height.saturating_sub(2),
-    };
-    
-    if app.show_bms_text {
-        render_bms_text_preview(f, app, content_area);
-    } else {
-        render_bms_grid(f, app, content_area);
-    }
-}
+
 
 fn render_bms_grid(f: &mut Frame, app: &App, area: Rect) {
     let map = &app.editor.map;
