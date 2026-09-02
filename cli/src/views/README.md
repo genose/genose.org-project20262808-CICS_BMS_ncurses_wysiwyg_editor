@@ -17,10 +17,13 @@ Currently extracted views:
 - `help.rs` - Help view with keyboard shortcuts
 - `insert_position_dialog.rs` - Insert position dialog with live preview (NEW)
 - `map_type_picker.rs` - Map type selection dialog
+- `image_import_dialog.rs` - Image import dialog for ASCII art conversion
 - `open_dialog.rs` - Open file dialog with file browser
 - `save_dialog.rs` - Save dialog
+- `normal_mode.rs` - Normal mode input handling
 - `status_bar.rs` - Status bar rendering
 - `text_input.rs` - Text input dialog
+- `utils.rs` - Utility functions (color handling, file scanning, etc.)
 
 ### 📋 Template/Reference:
 - `help.rs` - Template file with improved paging (not yet activated)
@@ -29,7 +32,7 @@ Currently extracted views:
 - Canvas rendering
 - Sidebar
 - Properties panel
-- Various dialogs (save, open, add_object, image_import)
+- Various dialogs (text_input, image_import)
 - Main input handling and mode management
 
 ## Intended Structure
@@ -97,7 +100,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `render_help` (EXTRACTED)
 - `render_combo_key_help`
 - `render_confirm`
-- `render_image_import_dialog` (TO DO - complex dependencies)
+- `render_image_import_dialog` (EXTRACTED)
 - `render_status_bar`
 
 ### Handle Functions (30+ found):
@@ -119,7 +122,7 @@ The following render and handle functions exist in main.rs and should be extract
 - `handle_help_mode` (EXTRACTED)
 - `handle_combo_key_help_mode`
 - `handle_confirm_mode`
-- `handle_image_import_mode`
+- `handle_image_import_mode` (EXTRACTED)
 
 ## Example: Help View (Already Partially Fixed)
 
